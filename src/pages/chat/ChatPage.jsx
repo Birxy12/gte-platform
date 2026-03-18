@@ -1,0 +1,440 @@
+import React, { useState, useEffect } from "react";
+import { useAuth } from "../../context/AuthProvider";
+import { chatService } from "../../services/chatService";
+import { db } from "../../config/firebase";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import {
+    Search,
+    Plus,
+    MessageCircle,
+    Users,
+    Phone,
+    Video,
+    MoreVertical,
+    Send,
+    ArrowLeft
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { format } from "date-fns";
+import ZegoCall from "../../components/calling/ZegoCall";
+import "../../styles/messenger-ui.css";
+
+export default function ChatPage() {
+    const { user } = useAuth();
+    const [chats, setChats] = useState([]);
+    const [activeChat, setActiveChat] = useState(null);
+    const [messages, setMessages] = useState([]);
+    const [inputText, setInputText] = useState("");
+    const [showNewChat, setShowNewChat] = useState(false);
+    const [showNewGroup, setShowNewGroup] = useState(false);
+    const [activeCall, setActiveCall] = useState(null);
+    const [users, setUsers] = useState([]);
+    const [error, setError] = useState(null);
+    const [searchTerm, setSearchTerm] = useState("");
+
+    // Subscriptions
+    useEffect(() => {
+        if (!user) return;
+        const unsubscribe = chatService.subscribeToUserChats(user.uid, (updatedChats) => {
+            setChats(updatedChats);
+            setError(null);
+        }, (err) => {
+            if (err.code === "permission-denied") {
+                setError("Firestore rules need review. Click for details.");
+            }
+        });
+        return unsubscribe;
+    }, [user]);
+
+    useEffect(() => {
+        if (!activeChat) return;
+        const unsubscribe = chatService.subscribeToMessages(activeChat.id, (updatedMessages) => {
+            setMessages(updatedMessages);
+        });
+        return unsubscribe;
+    }, [activeChat]);
+
+    // Fetch all users for global search
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                const q = query(collection(db, "users"), where("uid", "!=", user?.uid));
+                const querySnapshot = await getDocs(q);
+                const userList = querySnapshot.docs.map(doc => doc.data());
+                setUsers(userList);
+            } catch (err) {
+                console.error("Error fetching users:", err);
+            }
+        };
+        if (user) fetchUsers();
+    }, [user]);
+
+    const handleSendMessage = async (e) => {
+        e.preventDefault();
+        if (!inputText.trim() || !activeChat) return;
+        try {
+            await chatService.sendMessage(activeChat.id, user.uid, inputText);
+            setInputText("");
+        } catch (err) {
+            console.error("Send message error:", err);
+            setError("Failed to send message.");
+        }
+    };
+
+    const startDirectChat = async (targetUser) => {
+        try {
+            const chatId = await chatService.getOrCreateDirectChat(user.uid, targetUser.uid);
+            setActiveChat({ id: chatId, ...targetUser, type: "direct" });
+            setShowNewChat(false);
+        } catch (err) {
+            console.error("Start chat error:", err);
+            setError("Failed to start chat.");
+        }
+    };
+
+    const handleCreateGroup = async (groupName, participantIds) => {
+        try {
+            const chatId = await chatService.createGroupChat(user.uid, participantIds, groupName);
+            setActiveChat({ id: chatId, groupName, type: "group" });
+            setShowNewChat(false);
+            setShowNewGroup(false);
+        } catch (err) {
+            console.error("Create group error:", err);
+            setError("Failed to create group.");
+        }
+    };
+
+    return (
+        <div className="messenger-wrapper">
+            {/* Sidebar */}
+            <div className={`messenger-sidebar ${activeChat ? 'hidden md:flex' : 'flex'}`}>
+                <div className="sidebar-header">
+                    <div className="sidebar-top">
+                        <div className="flex items-center gap-2">
+                            <img src="/GlobixTech-logo.png" alt="Logo" className="sidebar-logo" />
+                            <h1 className="text-xl font-bold flex items-center gap-2">
+                                <MessageCircle size={20} className="text-msger-primary" />
+                                Chats
+                            </h1>
+                        </div>
+                        <button
+                            className="w-10 h-10 rounded-full bg-msger-hover flex items-center justify-center text-msger-text hover:bg-msger-active transition-all"
+                            onClick={() => setShowNewChat(true)}
+                        >
+                            <Plus size={22} />
+                        </button>
+                    </div>
+                    <div className="sidebar-search">
+                        <Search size={16} className="search-icon" />
+                        <input
+                            type="text"
+                            placeholder="Search Messenger"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                </div>
+
+                <div className="chat-list">
+                    {error && (
+                        <div className="p-4 m-2 bg-red-900/20 text-red-400 rounded-lg text-xs font-medium border border-red-900/40">
+                            ⚠️ {error}
+                            <button onClick={() => setError(null)} className="ml-2 underline">Dismiss</button>
+                        </div>
+                    )}
+
+                    {/* Filtered Chats */}
+                    {chats.filter(chat =>
+                        (chat.groupName || chat.displayName || "").toLowerCase().includes(searchTerm.toLowerCase())
+                    ).map((chat) => (
+                        <div
+                            key={chat.id}
+                            onClick={() => setActiveChat(chat)}
+                            className={`chat-item ${activeChat?.id === chat.id ? 'active' : ''}`}
+                        >
+                            <div className="chat-avatar">
+                                {chat.photoURL ? (
+                                    <img src={chat.photoURL} className="w-full h-full rounded-full object-cover" alt="User" />
+                                ) : (
+                                    <div className="w-full h-full rounded-full flex items-center justify-center bg-msger-primary-gradient text-white text-lg">
+                                        {chat.groupName ? <Users size={24} /> : (chat.displayName || "U")[0]}
+                                    </div>
+                                )}
+                                <div className="status-indicator"></div>
+                            </div>
+                            <div className="chat-info">
+                                <div className="chat-info-top">
+                                    <span className="chat-name">
+                                        {chat.groupName || chat.displayName || "Direct Chat"}
+                                    </span>
+                                    <span className="chat-time">
+                                        {chat.lastMessageAt && format(chat.lastMessageAt.toDate(), "HH:mm")}
+                                    </span>
+                                </div>
+                                <div className="chat-preview">
+                                    {chat.lastMessage || "No messages yet"}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+
+                    {/* Global People Search */}
+                    {searchTerm.length > 2 && (
+                        <div className="mt-4">
+                            <h3 className="px-4 py-2 text-xs font-bold text-msger-text-dim uppercase tracking-wider">People</h3>
+                            {users
+                                .filter(u =>
+                                    (u.displayName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                    (u.email || "").toLowerCase().includes(searchTerm.toLowerCase())
+                                )
+                                .filter(u => !chats.some(c => c.participants?.includes(u.uid))) // Don't show if already in chats
+                                .map(u => (
+                                    <div
+                                        key={u.uid}
+                                        onClick={() => startDirectChat(u)}
+                                        className="chat-item"
+                                    >
+                                        <div className="chat-avatar">
+                                            <img src={u.photoURL || `https://ui-avatars.com/api/?name=${u.displayName || u.email}`} className="w-full h-full rounded-full object-cover" alt="User" />
+                                        </div>
+                                        <div className="chat-info">
+                                            <span className="chat-name block font-semibold">{u.displayName || u.email.split('@')[0]}</span>
+                                            <span className="chat-preview text-xs text-msger-text-dim">New chat</span>
+                                        </div>
+                                    </div>
+                                ))
+                            }
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Main Messenger Area */}
+            <div className={`messenger-main ${!activeChat ? 'hidden md:flex' : 'flex'}`}>
+                {activeChat ? (
+                    <>
+                        <div className="chat-header">
+                            <div className="header-user">
+                                <button onClick={() => setActiveChat(null)} className="md:hidden text-msger-primary p-2">
+                                    <ArrowLeft size={24} />
+                                </button>
+                                <div className="chat-avatar !w-10 !h-10">
+                                    <img
+                                        src={activeChat.photoURL || "https://ui-avatars.com/api/?name=" + (activeChat.groupName || activeChat.displayName || "C")}
+                                        className="w-full h-full rounded-full object-cover"
+                                        alt="Chat"
+                                    />
+                                </div>
+                                <div>
+                                    <h2>{activeChat.groupName || activeChat.displayName || "Chat"}</h2>
+                                    <span>Active now</span>
+                                </div>
+                            </div>
+                            <div className="header-actions">
+                                <Phone size={20} className="hidden sm:block" onClick={() => setActiveCall({ id: activeChat.id, type: 'voice' })} />
+                                <Video size={20} className="hidden sm:block" onClick={() => setActiveCall({ id: activeChat.id, type: 'video' })} />
+                                <MoreVertical size={20} />
+                            </div>
+                        </div>
+
+                        <div className="messages-container no-scrollbar">
+                            {messages.map((msg, idx) => (
+                                <div
+                                    key={msg.id}
+                                    className={`message-wrapper ${msg.senderId === user.uid ? 'sent' : 'received'}`}
+                                >
+                                    <div className="message-bubble">
+                                        {msg.text}
+                                    </div>
+                                    <span className="message-time">
+                                        {msg.timestamp && format(msg.timestamp.toDate(), "HH:mm")}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+
+                        <form onSubmit={handleSendMessage} className="chat-input-area">
+                            <button type="button" className="text-msger-primary hover:opacity-70 transition-opacity">
+                                <Plus size={24} />
+                            </button>
+                            <div className="input-container">
+                                <input
+                                    type="text"
+                                    placeholder="Aa"
+                                    value={inputText}
+                                    onChange={(e) => setInputText(e.target.value)}
+                                />
+                            </div>
+                            <button
+                                type="submit"
+                                disabled={!inputText.trim()}
+                                className="send-btn text-msger-primary disabled:opacity-30"
+                            >
+                                <Send size={24} fill="currentColor" />
+                            </button>
+                        </form>
+                    </>
+                ) : (
+                    <div className="messenger-placeholder">
+                        <div className="placeholder-illustration">
+                            <img src="/GlobixTech-logo.png" alt="Globix Tech" className="opacity-40 grayscale hover:opacity-100 hover:grayscale-0 transition-all duration-500" />
+                        </div>
+                        <h2>Your Messages</h2>
+                        <p>Send private photos and messages to a friend or group. Connect with your peers in real-time.</p>
+                        <button
+                            className="mt-6 px-8 py-2.5 bg-msger-primary-gradient text-white rounded-full font-bold shadow-lg hover:scale-105 transition-all"
+                            onClick={() => setShowNewChat(true)}
+                        >
+                            Send Message
+                        </button>
+                    </div>
+                )}
+            </div>
+
+
+            {/* New Chat Modal */}
+            <AnimatePresence>
+                {showNewChat && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center"
+                        onClick={() => setShowNewChat(false)}
+                    >
+                        <motion.div
+                            initial={{ x: "-100%" }}
+                            animate={{ x: 0 }}
+                            exit={{ x: "-100%" }}
+                            className="bg-msger-bg w-full md:max-w-md h-full md:h-[80vh] flex flex-col border-r border-msger-border shadow-2xl"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <div className="p-6 bg-msger-primary-gradient text-white flex items-center gap-4">
+                                <button onClick={() => { setShowNewChat(false); setShowNewGroup(false); }} className="hover:bg-white/20 p-2 rounded-full transition-colors">
+                                    <ArrowLeft />
+                                </button>
+                                <h2 className="font-bold text-xl">{showNewGroup ? "New Group" : "New Message"}</h2>
+                            </div>
+
+                            {!showNewGroup ? (
+                                <>
+                                    <div className="p-3">
+                                        <button
+                                            onClick={() => setShowNewGroup(true)}
+                                            className="w-full p-4 hover:bg-msger-hover flex items-center gap-4 transition-all rounded-xl border border-msger-border"
+                                        >
+                                            <div className="w-12 h-12 rounded-full bg-msger-primary-gradient text-white flex items-center justify-center shadow-lg">
+                                                <Users size={24} />
+                                            </div>
+                                            <span className="font-semibold text-msger-text">Create a Group</span>
+                                        </button>
+                                    </div>
+
+                                    <div className="px-6 py-4 text-msger-text-dim font-bold uppercase text-xs tracking-widest">
+                                        Suggested
+                                    </div>
+
+                                    <div className="flex-1 overflow-y-auto no-scrollbar">
+                                        {users.map(u => (
+                                            <div
+                                                key={u.uid}
+                                                onClick={() => startDirectChat(u)}
+                                                className="px-6 py-4 flex items-center gap-4 hover:bg-msger-hover cursor-pointer transition-all border-b border-msger-border"
+                                            >
+                                                <div className="chat-avatar shrink-0">
+                                                    <img src={u.photoURL || "https://ui-avatars.com/api/?name=" + (u.displayName || "User")} className="w-full h-full rounded-full object-cover" alt="U" />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="font-semibold text-msger-text">{u.displayName || "Unnamed User"}</h4>
+                                                    <p className="text-sm text-msger-text-dim truncate">{u.email}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </>
+                            ) : (
+                                <GroupCreationView
+                                    users={users}
+                                    onCreate={handleCreateGroup}
+                                    onBack={() => setShowNewGroup(false)}
+                                />
+                            )}
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Call Overlay */}
+            {activeCall && (
+                <ZegoCall
+                    callID={activeCall.id}
+                    type={activeCall.type}
+                    onEnd={() => setActiveCall(null)}
+                />
+            )}
+        </div>
+    );
+}
+
+function GroupCreationView({ users, onCreate, onBack }) {
+    const [groupName, setGroupName] = useState("");
+    const [selectedUsers, setSelectedUsers] = useState([]);
+
+    const toggleUser = (userId) => {
+        if (selectedUsers.includes(userId)) {
+            setSelectedUsers(selectedUsers.filter(id => id !== userId));
+        } else {
+            setSelectedUsers([...selectedUsers, userId]);
+        }
+    };
+
+    return (
+        <div className="flex-1 flex flex-col overflow-hidden bg-msger-bg">
+            <div className="p-6 border-b border-msger-border">
+                <input
+                    type="text"
+                    placeholder="Group Name"
+                    className="w-full bg-msger-hover rounded-xl px-4 py-3 outline-none text-lg text-msger-text placeholder:text-msger-text-dim transition-all focus:ring-2 focus:ring-msger-primary"
+                    value={groupName}
+                    onChange={(e) => setGroupName(e.target.value)}
+                />
+            </div>
+            <div className="p-4 text-xs font-bold text-msger-text-dim uppercase tracking-widest">
+                Select Participants ({selectedUsers.length})
+            </div>
+            <div className="flex-1 overflow-y-auto no-scrollbar">
+                {users.map(u => (
+                    <div
+                        key={u.uid}
+                        onClick={() => toggleUser(u.uid)}
+                        className={`p-4 flex items-center justify-between hover:bg-msger-hover cursor-pointer transition-colors border-b border-msger-border ${selectedUsers.includes(u.uid) ? 'bg-msger-active' : ''}`}
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="chat-avatar shrink-0 border border-msger-border">
+                                <img src={u.photoURL || "https://ui-avatars.com/api/?name=" + (u.displayName || "User")} className="w-full h-full rounded-full object-cover" alt="U" />
+                            </div>
+                            <div>
+                                <h4 className="font-semibold text-msger-text">{u.displayName || "Unnamed User"}</h4>
+                                <p className="text-sm text-msger-text-dim">{u.email}</p>
+                            </div>
+                        </div>
+                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${selectedUsers.includes(u.uid) ? 'bg-msger-primary border-msger-primary' : 'border-msger-text-dim'}`}>
+                            {selectedUsers.includes(u.uid) && <Plus size={16} className="text-white" />}
+                        </div>
+                    </div>
+                ))}
+            </div>
+            <div className="p-6 border-t border-msger-border bg-msger-sidebar flex justify-center">
+                <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    whileHover={{ scale: 1.05 }}
+                    disabled={!groupName.trim() || selectedUsers.length === 0}
+                    onClick={() => onCreate(groupName, selectedUsers)}
+                    className="w-full py-4 bg-msger-primary-gradient text-white rounded-xl shadow-xl font-bold disabled:opacity-50 transition-all"
+                >
+                    Create Group
+                </motion.button>
+            </div>
+        </div>
+    );
+}

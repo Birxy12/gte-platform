@@ -1,0 +1,180 @@
+:root {
+    --wa-teal: #00a884;
+    --wa-teal-light: #005a4e;
+    --wa-green: #25d366;
+    --wa-bg-dark: #111b21;
+    --wa-bg-sidebar: #111b21;
+    --wa-bg-chat: #0b141a;
+    --wa-header-bg: #202c33;
+    --wa-bubble-sent: #005c4b;
+    --wa-bubble-rec: #202c33;
+    --wa-text: #e9edef;
+    --wa-text-secondary: #8696a0;
+    --wa-border: #222d34;
+    --wa-shadow: rgba(0, 0, 0, 0.3);
+    --wa-input-bg: #2a3942;
+    --wa-active-chat: #2a3942;
+}
+
+.wa-container {
+    background-color: var(--wa-bg-dark);
+    height: 100vh;
+    display: flex;
+    color: var(--wa-text);
+}
+
+.wa-sidebar {
+    background: var(--wa-bg-sidebar);
+    border-right: 1px solid var(--wa-border);
+    display: flex;
+    flex-direction: column;
+}
+
+.wa-header {
+    background-color: var(--wa-header-bg);
+    padding: 10px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--wa-border);
+    backdrop-filter: blur(10px);
+}
+
+.wa-search-container {
+    padding: 8px 12px;
+    background: var(--wa-bg-sidebar);
+    border-bottom: 1px solid var(--wa-border);
+}
+
+.wa-search-bar {
+    background-color: var(--wa-header-bg);
+    border-radius: 8px;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.wa-search-input {
+    background: transparent;
+    border: none;
+    width: 100%;
+    outline: none;
+    font-size: 14px;
+    color: var(--wa-text);
+}
+
+.wa-search-input::placeholder {
+    color: var(--wa-text-secondary);
+}
+
+.wa-chat-item {
+    padding: 12px 16px;
+    display: flex;
+    gap: 12px;
+    cursor: pointer;
+    transition: background 0.1s;
+    border-bottom: 0.5px solid var(--wa-border);
+}
+
+.wa-chat-item:hover {
+    background-color: var(--wa-header-bg);
+}
+
+.wa-chat-item.active {
+    background-color: var(--wa-active-chat);
+}
+
+.wa-avatar {
+    width: 49px;
+    height: 49px;
+    border-radius: 50%;
+    background-color: #3b4a54;
+    overflow: hidden;
+}
+
+.wa-message-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.wa-main {
+    flex: 1;
+    background-color: var(--wa-bg-chat);
+    background-image: url('https://web.whatsapp.com/img/bg-chat-tile-dark_a4be512e71a95133d760754564893ca.png');
+    background-repeat: repeat;
+    background-size: 400px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    opacity: 0.9;
+}
+
+.wa-bubble {
+    max-width: 65%;
+    padding: 6px 7px 8px 9px;
+    border-radius: 8px;
+    position: relative;
+    font-size: 14.2px;
+    margin-bottom: 2px;
+    box-shadow: 0 1px 0.5px var(--wa-shadow);
+    color: var(--wa-text);
+}
+
+.wa-bubble-sent {
+    background-color: var(--wa-bubble-sent);
+    align-self: flex-end;
+    border-top-right-radius: 0;
+}
+
+.wa-bubble-rec {
+    background-color: var(--wa-bubble-rec);
+    align-self: flex-start;
+    border-top-left-radius: 0;
+}
+
+.wa-input-area {
+    background-color: var(--wa-header-bg);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.wa-input-box {
+    background: var(--wa-input-bg);
+    border-radius: 8px;
+    flex: 1;
+    padding: 9px 12px;
+    border: none;
+    outline: none;
+    color: var(--wa-text);
+}
+
+.wa-input-box::placeholder {
+    color: var(--wa-text-secondary);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* Animations */
+.fade-in {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}

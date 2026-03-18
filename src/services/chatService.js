@@ -1,0 +1,101 @@
+import { db, auth } from "../config/firebase";
+import {
+    collection,
+    addDoc,
+    query,
+    where,
+    orderBy,
+    onSnapshot,
+    serverTimestamp,
+    doc,
+    updateDoc,
+    getDocs,
+    setDoc,
+    getDoc
+} from "firebase/firestore";
+
+export const chatService = {
+    // Create or get existing 1:1 chat
+    getOrCreateDirectChat: async (user1Id, user2Id) => {
+        const chatId = [user1Id, user2Id].sort().join("_");
+        const chatRef = doc(db, "chats", chatId);
+        const chatSnap = await getDoc(chatRef);
+
+        if (!chatSnap.exists()) {
+            await setDoc(chatRef, {
+                participants: [user1Id, user2Id],
+                type: "direct",
+                createdAt: serverTimestamp(),
+                lastMessage: "",
+                lastMessageAt: serverTimestamp()
+            });
+        }
+        return chatId;
+    },
+
+    // Create group chat
+    createGroupChat: async (creatorId, participantIds, groupName) => {
+        const chatData = {
+            participants: [creatorId, ...participantIds],
+            type: "group",
+            groupName: groupName,
+            createdBy: creatorId,
+            createdAt: serverTimestamp(),
+            lastMessage: "",
+            lastMessageAt: serverTimestamp()
+        };
+        const docRef = await addDoc(collection(db, "chats"), chatData);
+        return docRef.id;
+    },
+
+    // Send message
+    sendMessage: async (chatId, senderId, text, type = "text") => {
+        const messageData = {
+            chatId,
+            senderId,
+            text,
+            type,
+            timestamp: serverTimestamp()
+        };
+
+        await addDoc(collection(db, "chats", chatId, "messages"), messageData);
+
+        // Update last message in chat document
+        await updateDoc(doc(db, "chats", chatId), {
+            lastMessage: text,
+            lastMessageAt: serverTimestamp()
+        });
+    },
+
+    // Listen for messages in a chat
+    subscribeToMessages: (chatId, callback) => {
+        if (!auth.currentUser) return () => { };
+        const q = query(
+            collection(db, "chats", chatId, "messages"),
+            orderBy("timestamp", "asc")
+        );
+        return onSnapshot(q, (snapshot) => {
+            const messages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            callback(messages);
+        }, (error) => {
+            console.error("Messages subscription error:", error);
+        });
+    },
+
+    // Listen for user's chats
+    subscribeToUserChats: (userId, callback, onError) => {
+        if (!auth.currentUser) return () => { };
+        const q = query(
+            collection(db, "chats"),
+            where("participants", "array-contains", userId),
+            orderBy("lastMessageAt", "desc")
+        );
+        return onSnapshot(q, (snapshot) => {
+            const chats = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            callback(chats);
+        }, (error) => {
+            console.error("Chats subscription error:", error);
+            if (onError) onError(error);
+        });
+    }
+};
