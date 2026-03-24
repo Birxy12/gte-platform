@@ -1,0 +1,86 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Helpers ---
+    function isAuthenticated() { return request.auth != null; }
+    function isAdmin() { return isAuthenticated() && request.auth.token.admin == true; }
+    function isOwner(userId) { return isAuthenticated() && request.auth.uid == userId; }
+
+    // --- Users ---
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isAdmin();
+    }
+
+    // --- Social & App Settings ---
+    match /friends/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+    match /friendRequests/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+    match /followers/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+    match /reports/{reportId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // --- Presence ---
+    match /presence/{userId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isOwner(userId);
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+
+    // --- Chats & Messages ---
+    match /chats/{chatId} {
+      // Simplified chat rules merged as requested
+      allow read, write: if isAuthenticated();
+
+      match /messages/{messageId} {
+        allow read, write: if isAuthenticated();
+      }
+
+      match /typing/{userId} {
+        allow read, write: if isAuthenticated();
+      }
+
+      match /reads/{messageId} {
+        allow read, write: if isAuthenticated();
+      }
+    }
+
+    // --- Content & LMS ---
+    match /courses/{courseId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    match /posts/{postId} {
+      allow read: if true; // Public posts
+      allow write: if isAdmin();
+    }
+    match /statuses/{statusId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isOwner(resource.data.userId) || isAdmin();
+    }
+
+    // --- Analytics & Admin ---
+    match /analytics/{docId} { allow read, write: if isAdmin(); }
+    match /logs/{logId} { allow read: if isAdmin(); allow create: if isAuthenticated(); }
+    match /notifications/{notificationId} {
+      allow read, delete: if isOwner(resource.data.userId);
+      allow create: if isAuthenticated();
+    }
+  }
+}

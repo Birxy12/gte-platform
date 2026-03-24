@@ -104,6 +104,23 @@ export default function ChatPage() {
         }
     };
 
+    // Hydrate chats to include other user's details for direct chats
+    const hydratedChats = chats.map(chat => {
+        if (chat.type === "direct") {
+            const otherUserId = chat.participants?.find(p => p !== user?.uid);
+            const otherUser = users.find(u => u.uid === otherUserId || u.id === otherUserId);
+            if (otherUser) {
+                return {
+                    ...chat,
+                    displayName: otherUser.displayName || "Unknown User",
+                    photoURL: otherUser.photoURL,
+                    otherUser
+                };
+            }
+        }
+        return chat;
+    });
+
     return (
         <div className="messenger-wrapper">
             {/* Sidebar */}
@@ -144,7 +161,7 @@ export default function ChatPage() {
                     )}
 
                     {/* Filtered Chats */}
-                    {chats.filter(chat =>
+                    {hydratedChats.filter(chat =>
                         (chat.groupName || chat.displayName || "").toLowerCase().includes(searchTerm.toLowerCase())
                     ).map((chat) => (
                         <div
@@ -275,18 +292,51 @@ export default function ChatPage() {
                         </form>
                     </>
                 ) : (
-                    <div className="messenger-placeholder">
-                        <div className="placeholder-illustration">
-                            <img src="/GlobixTech-logo.png" alt="Globix Tech" className="opacity-40 grayscale hover:opacity-100 hover:grayscale-0 transition-all duration-500" />
+                    <div className="messenger-placeholder flex flex-col items-center justify-center w-full h-full p-4 overflow-y-auto no-scrollbar">
+                        <div className="placeholder-illustration mt-10">
+                            <img src="/GlobixTech-logo.png" alt="Globix Tech" className="opacity-40 grayscale hover:opacity-100 hover:grayscale-0 transition-all duration-500 w-32 h-auto" />
                         </div>
-                        <h2>Your Messages</h2>
-                        <p>Send private photos and messages to a friend or group. Connect with your peers in real-time.</p>
+                        <h2 className="text-2xl font-bold mt-6 text-msger-text">Your Messages</h2>
+                        <p className="text-msger-text-dim text-center mt-2 max-w-md">Send private photos and messages to a friend or group. Connect with your peers in real-time.</p>
                         <button
                             className="mt-6 px-8 py-2.5 bg-msger-primary-gradient text-white rounded-full font-bold shadow-lg hover:scale-105 transition-all"
                             onClick={() => setShowNewChat(true)}
                         >
                             Send Message
                         </button>
+
+                        {/* Suggested Users Section */}
+                        {users.filter(u => !chats.some(c => c.participants?.includes(u.uid))).length > 0 && (
+                            <div className="suggested-users-section mt-16 w-full max-w-2xl px-4 pb-10">
+                                <h3 className="text-left font-bold text-msger-text uppercase tracking-widest mb-4 border-b border-msger-border pb-2 flex items-center gap-2">
+                                    <Users size={18} className="text-msger-primary" /> Suggestions For You
+                                </h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {users
+                                        .filter(u => !chats.some(c => c.participants?.includes(u.uid)))
+                                        .slice(0, 6)
+                                        .map(u => (
+                                            <div
+                                                key={u.uid}
+                                                onClick={() => startDirectChat(u)}
+                                                className="p-4 bg-msger-hover rounded-xl flex items-center gap-4 cursor-pointer hover:bg-msger-active transition-all border border-msger-border group hover:scale-[1.02] shadow-sm"
+                                            >
+                                                <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 border border-msger-border">
+                                                    <img src={u.photoURL || `https://ui-avatars.com/api/?name=${u.displayName || u.email}`} alt={u.displayName} className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
+                                                </div>
+                                                <div className="flex-1 text-left min-w-0">
+                                                    <h4 className="font-semibold text-msger-text truncate">{u.displayName || "Unknown User"}</h4>
+                                                    <p className="text-xs text-msger-text-dim truncate">{u.role || "Student"}</p>
+                                                </div>
+                                                <button className="text-msger-primary p-2 bg-msger-primary/10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <MessageCircle size={18} />
+                                                </button>
+                                            </div>
+                                        ))
+                                    }
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

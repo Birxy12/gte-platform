@@ -10,6 +10,13 @@ export default function ZegoCall({ callID, onEnd, type = "video" }) {
         // Generate Kit Token
         const appID = Number(import.meta.env.VITE_ZEGO_APP_ID) || 123456789;
         const serverSecret = import.meta.env.VITE_ZEGO_SERVER_SECRET || "xxxxxxxxxxxx";
+
+        if (appID === 123456789) {
+            alert("ZEGOCLOUD is not fully configured. Please provide a valid VITE_ZEGO_APP_ID in your .env file to enable Voice/Video calling.");
+            if (onEnd) onEnd();
+            return;
+        }
+
         const kitToken = ZegoUIKitPrebuilt.generateKitTokenForTest(
             appID,
             serverSecret,

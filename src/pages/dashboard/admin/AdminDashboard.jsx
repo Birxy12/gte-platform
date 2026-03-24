@@ -73,6 +73,10 @@ export default function AdminDashboard() {
             <span className="ad-nav-icon">📰</span>
             <span>Manage Posts</span>
           </Link>
+          <Link to="/admin/reports" className={isActive("/admin/reports")}>
+            <span className="ad-nav-icon">🛡️</span>
+            <span>Moderation</span>
+          </Link>
           <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', margin: '1rem 0' }} />
           <Link to="/admin/create-course" className={isActive("/admin/create-course")}>
             <span className="ad-nav-icon">✨</span>
@@ -81,6 +85,11 @@ export default function AdminDashboard() {
           <Link to="/admin/create-post" className={isActive("/admin/create-post")}>
             <span className="ad-nav-icon">🖋️</span>
             <span>New Post</span>
+          </Link>
+          <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', margin: '1rem 0' }} />
+          <Link to="/admin/settings" className={isActive("/admin/settings")}>
+            <span className="ad-nav-icon">⚙️</span>
+            <span>Settings</span>
           </Link>
         </nav>
 

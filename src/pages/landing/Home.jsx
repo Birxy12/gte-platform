@@ -49,7 +49,6 @@ export default function Home() {
 
     return (
         <div className="landing">
-            <Navbar />
 
             {/* ─── Hero Section ─── */}
             <section className="hero">
@@ -255,7 +254,6 @@ export default function Home() {
                     </div>
                 </div>
             </section>
-            <Footer />
         </div>
     );
 }

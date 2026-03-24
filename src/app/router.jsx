@@ -14,6 +14,8 @@ import ManageUsers from "../pages/dashboard/admin/ManageUsers";
 import ManageCourses from "../pages/dashboard/admin/ManageCourses";
 import ManagePosts from "../pages/dashboard/admin/ManagePosts";
 import EditCourse from "../pages/dashboard/admin/EditCourse";
+import AdminSettings from "../pages/dashboard/admin/AdminSettings";
+import ManageReports from "../pages/dashboard/admin/ManageReports";
 
 import UserDashboard from "../pages/dashboard/user/UserDashboard";
 import EditProfile from "../pages/dashboard/user/EditProfile";
@@ -23,6 +25,7 @@ import MyPosts from "../pages/dashboard/user/MyPosts";
 import Blog from "../pages/blog/Blog";
 import Courses from "../pages/courses/Courses";
 import ChatPage from "../pages/chat/ChatPage";
+import DiscoverUsers from "../pages/social/DiscoverUsers";
 
 import ProtectedRoute from "../components/common/ProtectedRoute";
 import AdminRoute from "../routes/AdminRoute";
@@ -66,6 +69,12 @@ export default function Router() {
           </ProtectedRoute>
         } />
 
+        <Route path="/discover" element={
+          <ProtectedRoute>
+            <DiscoverUsers />
+          </ProtectedRoute>
+        } />
+
         {/* Protected Admin Routes */}
         <Route path="/admin" element={
           <AdminRoute>
@@ -78,6 +87,8 @@ export default function Router() {
           <Route path="edit-course/:id" element={<EditCourse />} />
           <Route path="create-post" element={<CreatePost />} />
           <Route path="create-course" element={<CreateCourse />} />
+          <Route path="settings" element={<AdminSettings />} />
+          <Route path="reports" element={<ManageReports />} />
         </Route>
 
         {/* 404 fallback */}

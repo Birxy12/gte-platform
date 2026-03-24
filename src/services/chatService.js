@@ -87,11 +87,18 @@ export const chatService = {
         if (!auth.currentUser) return () => { };
         const q = query(
             collection(db, "chats"),
-            where("participants", "array-contains", userId),
-            orderBy("lastMessageAt", "desc")
+            where("participants", "array-contains", userId)
         );
         return onSnapshot(q, (snapshot) => {
             const chats = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+            // Client-side sort to avoid Firebase Composite Index requirement
+            chats.sort((a, b) => {
+                const timeA = a.lastMessageAt?.toMillis() || 0;
+                const timeB = b.lastMessageAt?.toMillis() || 0;
+                return timeB - timeA;
+            });
+
             callback(chats);
         }, (error) => {
             console.error("Chats subscription error:", error);
