@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { X, Send, Minimize2, Maximize2 } from "lucide-react";
 import { chatService } from "../../services/chatService";
+import { presenceService } from "../../services/presenceService";
 import { useAuth } from "../../context/AuthProvider";
 import { format } from "date-fns";
 import "./ChatPopup.css";
@@ -11,6 +12,7 @@ export default function ChatPopup({ targetUser, onClose }) {
     const [inputText, setInputText] = useState("");
     const [chatId, setChatId] = useState(null);
     const [minimized, setMinimized] = useState(false);
+    const [isTargetOnline, setIsTargetOnline] = useState(false);
     const messagesEndRef = useRef(null);
 
     useEffect(() => {
@@ -25,6 +27,18 @@ export default function ChatPopup({ targetUser, onClose }) {
             }
         };
         initChat();
+
+        // Subscribe to target user's presence state
+        const unsubscribePresence = presenceService.subscribeToPresence(
+            targetUser.uid || targetUser.id,
+            (presenceData) => {
+                setIsTargetOnline(presenceData?.isOnline || false);
+            }
+        );
+
+        return () => {
+            if (unsubscribePresence) unsubscribePresence();
+        };
     }, [user, targetUser]);
 
     useEffect(() => {
@@ -65,7 +79,7 @@ export default function ChatPopup({ targetUser, onClose }) {
                             src={targetUser.photoURL || `https://ui-avatars.com/api/?name=${targetUser.displayName || targetUser.email || 'U'}`}
                             alt="avatar"
                         />
-                        <div className="online-indicator"></div>
+                        <div className={`online-indicator ${isTargetOnline ? 'active' : ''}`} style={{ backgroundColor: isTargetOnline ? '#2ecc71' : '#95a5a6' }}></div>
                     </div>
                     <span className="font-semibold text-sm truncate max-w-[120px]">
                         {targetUser.displayName || targetUser.username || targetUser.email.split('@')[0]}

@@ -11,7 +11,8 @@ import {
     updateDoc,
     getDocs,
     setDoc,
-    getDoc
+    getDoc,
+    deleteDoc
 } from "firebase/firestore";
 
 export const chatService = {
@@ -103,6 +104,27 @@ export const chatService = {
         }, (error) => {
             console.error("Chats subscription error:", error);
             if (onError) onError(error);
+        });
+    },
+
+    // Set typing status
+    setTypingStatus: async (chatId, userId, isTyping) => {
+        if (!chatId || !userId) return;
+        const typingRef = doc(db, "chats", chatId, "typing", userId);
+        if (isTyping) {
+            await setDoc(typingRef, { isTyping: true, lastTypedAt: serverTimestamp() });
+        } else {
+            await deleteDoc(typingRef).catch(() => {});
+        }
+    },
+
+    // Subscribe to others typing
+    subscribeToTyping: (chatId, callback) => {
+        if (!chatId) return () => {};
+        const q = query(collection(db, "chats", chatId, "typing"));
+        return onSnapshot(q, (snapshot) => {
+            const typingUsers = snapshot.docs.map(doc => doc.id);
+            callback(typingUsers);
         });
     }
 };
