@@ -4,7 +4,7 @@ function Footer() {
   return (
     <footer className="footer">
       <div className="footer-brand">
-        <img src="/GlobixTech-logo.png" alt="Logo" />
+        <img src="/GlobixTech-logo.png" alt="Logo" className="footer-logo" />
       </div>
       <div className="footer-links-group">
         <div className="footer-links">
@@ -30,6 +30,18 @@ function Footer() {
         <p>
           Contact us at <a href="mailto:support@example.com">support@example.com</a>
         </p>
+      </div>
+      <div className="footer-socials">
+        <h4>Follow Us</h4>
+        <a href="https://facebook.com" target="_blank" rel="noopener noreferrer">
+          <img src="/icons/facebook.svg" alt="Facebook" className="social-icon" />
+        </a>
+        <a href="https://twitter.com" target="_blank" rel="noopener noreferrer">
+          <img src="/icons/twitter.svg" alt="Twitter" className="social-icon" />
+        </a>
+        <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer">
+          <img src="/icons/linkedin.svg" alt="LinkedIn" className="social-icon" />
+        </a>
       </div>
       <div className="footer-bottom">
         <p>&copy; {new Date().getFullYear()} Your Company. All rights reserved.</p>
