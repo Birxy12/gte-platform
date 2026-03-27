@@ -4,8 +4,7 @@ function Footer() {
   return (
     <footer className="footer">
       <div className="footer-brand">
-        {/* Use absolute path from public folder */}
-        <img src="/logo.png" alt="Logo" />
+        <img src="/GlobixTech-logo.png" alt="Logo" />
       </div>
       <div className="footer-links-group">
         <div className="footer-links">
