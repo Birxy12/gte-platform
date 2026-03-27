@@ -1,4 +1,5 @@
 /* Footer Styling */
+/* Footer Styling */
 .footer {
   background-color: #1f2937;
   color: #e2e8f0;
@@ -7,8 +8,10 @@
 }
 
 .footer-logo {
-  max-width: 150px; /* Adjust size as necessary */
-  height: auto;
+  width: 100px; /* Set a fixed width for the image */
+  height: 100px; /* Set a fixed height to make it a square */
+  object-fit: cover; /* Ensure the image doesn't stretch or distort */
+  border-radius: 50%; /* This makes the image a circle */
   margin-bottom: 20px;
 }
 
