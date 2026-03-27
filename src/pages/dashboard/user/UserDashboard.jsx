@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate, Outlet } from "react-router-dom";
 import { useAuth } from "../../../context/AuthProvider";
 import { auth, db } from "../../../config/firebase";
 import { signOut } from "firebase/auth";
-import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, getDoc, query, collection, where, getDocs } from "firebase/firestore";
 import { StatusFeed } from "../../../components/status/StatusSystem";
 import "./UserDashboard.css";
 
@@ -60,6 +60,15 @@ export default function UserDashboard() {
                     </Link>
                     <Link to="/dashboard/my-posts" className={isActive("/dashboard/my-posts")}>
                         <span className="ud-nav-icon">📄</span> My Posts
+                    </Link>
+                    <Link to="/dashboard/progress" className={isActive("/dashboard/progress")}>
+                        <span className="ud-nav-icon">📊</span> Progress
+                    </Link>
+                    <Link to="/dashboard/quiz" className={isActive("/dashboard/quiz")}>
+                        <span className="ud-nav-icon">📝</span> Take Quiz
+                    </Link>
+                    <Link to="/dashboard/certificate" className={isActive("/dashboard/certificate")}>
+                        <span className="ud-nav-icon">🏅</span> Certificates
                     </Link>
                     <Link to="/chat" className="ud-nav-item">
                         <span className="ud-nav-icon">💬</span> Chat
