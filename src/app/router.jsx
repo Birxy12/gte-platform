@@ -21,6 +21,9 @@ import UserDashboard from "../pages/dashboard/user/UserDashboard";
 import EditProfile from "../pages/dashboard/user/EditProfile";
 import UserBlogPost from "../pages/dashboard/user/UserBlogPost";
 import MyPosts from "../pages/dashboard/user/MyPosts";
+import ProgressPage from "../pages/dashboard/user/ProgressPage";  // Added Progress Page
+import QuizPage from "../pages/dashboard/user/QuizPage";  // Added Quiz Page
+import CertificatePage from "../pages/dashboard/user/CertificatePage";  // Added Certificate Page
 
 import Blog from "../pages/blog/Blog";
 import Courses from "../pages/courses/Courses";
@@ -35,12 +38,10 @@ import Footer from "../components/layout/Footer";
 export default function Router() {
   return (
     <BrowserRouter>
-
       {/* Global Layout */}
       <Navbar />
 
       <Routes>
-
         {/* Redirect root */}
         <Route path="/" element={<Navigate to="/login" replace />} />
 
@@ -61,6 +62,9 @@ export default function Router() {
           <Route path="profile" element={<EditProfile />} />
           <Route path="create-post" element={<UserBlogPost />} />
           <Route path="my-posts" element={<MyPosts />} />
+          <Route path="progress" element={<ProgressPage />} /> {/* Progress Page */}
+          <Route path="quiz" element={<QuizPage />} /> {/* Quiz Page */}
+          <Route path="certificate" element={<CertificatePage />} /> {/* Certificate Page */}
         </Route>
 
         <Route path="/chat" element={
@@ -97,7 +101,6 @@ export default function Router() {
       </Routes>
 
       <Footer />
-
     </BrowserRouter>
   );
 }
