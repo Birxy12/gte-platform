@@ -1,17 +1,17 @@
 /* Footer Styling */
-/* Footer Styling */
 .footer {
   background-color: #1f2937;
   color: #e2e8f0;
   padding: 40px 20px;
   text-align: center;
+  font-family: Arial, sans-serif;
 }
 
 .footer-logo {
-  width: 100px; /* Set a fixed width for the image */
-  height: 100px; /* Set a fixed height to make it a square */
-  object-fit: cover; /* Ensure the image doesn't stretch or distort */
-  border-radius: 50%; /* This makes the image a circle */
+  width: 60px; /* Adjusted smaller size for logo */
+  height: 60px; /* Ensure it’s square */
+  object-fit: cover; /* Preserve image aspect ratio without distortion */
+  border-radius: 50%; /* Circle the logo */
   margin-bottom: 20px;
 }
 
