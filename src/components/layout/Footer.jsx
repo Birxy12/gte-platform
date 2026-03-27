@@ -1,11 +1,11 @@
 import React from 'react';
-import logo from '../../assets/logo.png';
 
 function Footer() {
   return (
     <footer className="footer">
       <div className="footer-brand">
-        <img src={logo} alt="Logo" />
+        {/* Use absolute path from public folder */}
+        <img src="/logo.png" alt="Logo" />
       </div>
       <div className="footer-links-group">
         <div className="footer-links">
