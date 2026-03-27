@@ -30,6 +30,7 @@ import Blog from "../pages/blog/Blog";
 import Courses from "../pages/courses/Courses";
 import ChatPage from "../pages/chat/ChatPage";
 import DiscoverUsers from "../pages/social/DiscoverUsers";
+import PrivacyPolicy from "../pages/PrivacyPolicy"; // Privacy Policy page
 
 import ProtectedRoute from "../components/common/ProtectedRoute";
 import AdminRoute from "../routes/AdminRoute";
@@ -79,6 +80,9 @@ export default function Router() {
             <DiscoverUsers />
           </ProtectedRoute>
         } />
+
+        {/* Privacy Policy */}
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
         {/* Protected Admin Routes */}
         <Route path="/admin" element={
