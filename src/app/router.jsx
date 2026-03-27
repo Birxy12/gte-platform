@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
+// Importing pages
 import Home from "../pages/landing/Home";
 import About from "../pages/landing/About";
 import Contact from "../pages/landing/Contact";
@@ -21,9 +22,9 @@ import UserDashboard from "../pages/dashboard/user/UserDashboard";
 import EditProfile from "../pages/dashboard/user/EditProfile";
 import UserBlogPost from "../pages/dashboard/user/UserBlogPost";
 import MyPosts from "../pages/dashboard/user/MyPosts";
-import ProgressPage from "../pages/dashboard/user/ProgressPage";  // Added Progress Page
-import QuizPage from "../pages/dashboard/user/QuizPage";  // Added Quiz Page
-import CertificatePage from "../pages/dashboard/user/CertificatePage";  // Added Certificate Page
+import ProgressPage from "../pages/dashboard/user/ProgressPage";  // ProgressPage
+import QuizPage from "../pages/dashboard/user/QuizPage";  // QuizPage
+import CertificatePage from "../pages/dashboard/user/CertificatePage";  // CertificatePage
 
 import Blog from "../pages/blog/Blog";
 import Courses from "../pages/courses/Courses";
@@ -97,7 +98,6 @@ export default function Router() {
 
         {/* 404 fallback */}
         <Route path="*" element={<Navigate to="/login" replace />} />
-
       </Routes>
 
       <Footer />
