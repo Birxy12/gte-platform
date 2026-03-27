@@ -1,32 +1,56 @@
-# Privacy Policy
+import React from 'react';
 
-**Effective Date: 2026-03-26**
+function PrivacyPolicy() {
+  return (
+    <div className="privacy-policy">
+      <h1>Privacy Policy</h1>
+      <p>Effective Date: January 1, 2023</p>
 
-This Privacy Policy describes how your personal information is collected, used, and shared when you visit or make a purchase from our website.
+      <h2>Introduction</h2>
+      <p>Welcome to GlobixTech. We value your privacy and are committed to protecting your personal information. This Privacy Policy outlines how we collect, use, disclose, and safeguard your information when you visit our website or use our services.</p>
 
-## Information We Collect
+      <h2>Information We Collect</h2>
+      <p>We collect personal information such as:</p>
+      <ul>
+        <li>Personal Identification Information (name, email address, phone number, etc.)</li>
+        <li>Usage data (IP address, browser type, device information, etc.)</li>
+      </ul>
 
-We collect information about you when you visit our website, including information about your device, web browser, IP address, time zone, and some of the cookies that are installed on your device. Additionally, as you browse the site, we collect information about the individual web pages or products that you view, what websites or search terms referred you to the site, and information about how you interact with the site.
+      <h2>How We Use Your Information</h2>
+      <p>We use the information we collect to:</p>
+      <ul>
+        <li>Provide and improve our services</li>
+        <li>Communicate with you, including sending promotional materials</li>
+        <li>Comply with legal obligations</li>
+      </ul>
 
-## Use of Your Information
+      <h2>How We Share Your Information</h2>
+      <p>We do not sell or rent your personal information. We may share your information with third-party service providers for the purposes of providing services to you, such as:</p>
+      <ul>
+        <li>Hosting providers</li>
+        <li>Payment processors</li>
+        <li>Marketing and analytics services</li>
+      </ul>
 
-We use the information we collect to:
-- Communicate with you
-- Screen our orders for potential risk
-- When in line with the preferences you have shared with us, provide you with information or advertising relating to our products or services.
+      <h2>Your Rights</h2>
+      <p>You have the right to:</p>
+      <ul>
+        <li>Access, update, or delete your personal data</li>
+        <li>Object to processing or restrict the use of your data</li>
+        <li>Request a copy of your personal information</li>
+      </ul>
 
-## Sharing Your Information
+      <h2>Security</h2>
+      <p>We take appropriate measures to protect your information from unauthorized access, alteration, or disclosure. However, no data transmission over the internet can be guaranteed to be 100% secure.</p>
 
-We share your Personal Information with third parties to help us use your Personal Information, as described above. We may also use your Personal Information to comply with applicable laws and regulations, to respond to a subpoena, search warrant or other lawful request for information we receive, or to otherwise protect our rights.
+      <h2>Changes to This Privacy Policy</h2>
+      <p>We may update this Privacy Policy from time to time. Any changes will be posted on this page with an updated effective date.</p>
 
-## Your Rights
+      <h2>Contact Us</h2>
+      <p>If you have any questions or concerns about this Privacy Policy, please contact us at:</p>
+      <p><a href="mailto:support@example.com">support@example.com</a></p>
+    </div>
+  );
+}
 
-If you are a European resident, you have the right to access the personal information we hold about you and to ask that your personal information be corrected, updated, or deleted. If you would like to exercise this right, please contact us through the contact information below.
-
-## Contact Us
-
-For more information about our privacy practices, if you have questions, or if you would like to make a complaint, please contact us by e-mail at privacy@example.com or by mail using the details provided below.
-
-## Changes
-
-We may update this privacy policy from time to time in order to reflect, for example, changes to our practices or for other operational, legal, or regulatory reasons.
+export default PrivacyPolicy;
