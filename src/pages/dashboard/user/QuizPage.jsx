@@ -1,5 +1,5 @@
 import React from 'react';
-import Quiz from '../components/layout/Quiz';  // Adjusted import
+import Quiz from "../../components/layout/Quiz";  // Corrected import path
 
 const QuizPage = ({ userId }) => {
   return (
