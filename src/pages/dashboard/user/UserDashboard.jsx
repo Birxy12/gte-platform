@@ -5,6 +5,9 @@ import { auth, db } from "../../../config/firebase";
 import { signOut } from "firebase/auth";
 import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { StatusFeed } from "../../../components/status/StatusSystem";
+import { progressService } from "../../../services/progressService";
+import CertificateModal from "./CertificateModal";
+import { Award, FileText } from "lucide-react";
 import "./UserDashboard.css";
 
 export default function UserDashboard() {
@@ -13,6 +16,8 @@ export default function UserDashboard() {
     const navigate = useNavigate();
     const [profile, setProfile] = useState(null);
     const [postCount, setPostCount] = useState(0);
+    const [completedCourses, setCompletedCourses] = useState([]);
+    const [selectedCert, setSelectedCert] = useState(null);
 
     useEffect(() => {
         if (!user) return;
@@ -30,8 +35,15 @@ export default function UserDashboard() {
                 setPostCount(snap.size);
             } catch (e) { console.error(e); }
         };
+        const loadProgress = async () => {
+            try {
+                const completed = await progressService.getUserCompletedCourses(user.uid);
+                setCompletedCourses(completed);
+            } catch (e) { console.error(e); }
+        };
         loadProfile();
         loadPostCount();
+        loadProgress();
     }, [user]);
 
     const handleLogout = async () => {
@@ -67,6 +79,9 @@ export default function UserDashboard() {
                     <Link to="/courses" className="ud-nav-item">
                         <span className="ud-nav-icon">📚</span> Courses
                     </Link>
+                    <Link to="/dashboard/enrolled" className={isActive("/dashboard/enrolled")}>
+                        <span className="ud-nav-icon">🎓</span> Learning Journey
+                    </Link>
                     <Link to="/blog" className="ud-nav-item">
                         <span className="ud-nav-icon">📝</span> Blog
                     </Link>
@@ -93,14 +108,14 @@ export default function UserDashboard() {
                                 <p className="ud-stat-value">{postCount}</p>
                                 <p className="ud-stat-label">Blog Posts</p>
                             </div>
-                            <div className="ud-stat">
+                            <Link to="/dashboard/enrolled" className="ud-stat" style={{ textDecoration: 'none', cursor: 'pointer' }}>
                                 <div className="ud-stat-icon">📚</div>
-                                <p className="ud-stat-value">0</p>
+                                <p className="ud-stat-value">{completedCourses.length}</p>
                                 <p className="ud-stat-label">Enrolled Courses</p>
-                            </div>
+                            </Link>
                             <div className="ud-stat">
                                 <div className="ud-stat-icon">🏆</div>
-                                <p className="ud-stat-value">0</p>
+                                <p className="ud-stat-value">{completedCourses.length}</p>
                                 <p className="ud-stat-label">Certificates</p>
                             </div>
                             <div className="ud-stat">
@@ -138,6 +153,36 @@ export default function UserDashboard() {
                             </div>
                         </div>
 
+                        {/* Certificates Section */}
+                        {completedCourses.length > 0 && (
+                            <div className="ud-card" style={{ marginTop: '2rem' }}>
+                                <h3>My Certificates 🎓</h3>
+                                <div style={{ display: 'grid', gap: '1rem', marginTop: '1rem' }}>
+                                    {completedCourses.map(course => (
+                                        <div key={course.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                                <div style={{ background: 'linear-gradient(135deg, #10b981, #059669)', padding: '0.75rem', borderRadius: '50%', color: 'white' }}>
+                                                    <Award size={24} />
+                                                </div>
+                                                <div>
+                                                    <h4 style={{ color: 'white', margin: 0, fontSize: '1rem' }}>{course.courseTitle}</h4>
+                                                    <p style={{ color: '#94a3b8', margin: 0, fontSize: '0.85rem' }}>Completed on {course.completedAt?.toDate ? course.completedAt.toDate().toLocaleDateString() : 'Recently'}</p>
+                                                </div>
+                                            </div>
+                                            <button 
+                                                onClick={() => setSelectedCert(course)}
+                                                style={{ background: 'transparent', border: '1px solid #3b82f6', color: '#60a5fa', padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'all 0.2s', fontWeight: '500' }}
+                                                onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(59,130,246,0.1)' }}
+                                                onMouseOut={(e) => { e.currentTarget.style.background = 'transparent' }}
+                                            >
+                                                <FileText size={16} /> View Certificate
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         {/* Profile Card */}
                         <div className="ud-card">
                             <h3>Profile Summary</h3>
@@ -157,6 +202,15 @@ export default function UserDashboard() {
                     <Outlet />
                 )}
             </main>
+            
+            {/* Certificate Modal Overlay */}
+            {selectedCert && (
+                <CertificateModal 
+                    course={selectedCert} 
+                    profile={profile || user} 
+                    onClose={() => setSelectedCert(null)} 
+                />
+            )}
         </div>
     );
 }

@@ -6,6 +6,8 @@ import {
 } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { useNavigate, Link } from "react-router-dom";
+import { User, Mail, Phone, Lock, ArrowRight } from "lucide-react";
+import { motion } from "framer-motion";
 
 import "./Login.css";
 
@@ -127,12 +129,16 @@ export default function Register() {
 
   return (
     <div className="login-container">
-
-      <div className="login-card" style={{ maxWidth: "450px" }}>
-
+      <motion.div 
+        className="login-card" 
+        style={{ maxWidth: "480px" }}
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
         <div className="login-header">
           <h2>Create Account</h2>
-          <p>Join our learning community today!</p>
+          <p>Join our <span>global</span> learning community today!</p>
         </div>
 
         {error && <div className="error-message">{error}</div>}
@@ -187,34 +193,40 @@ export default function Register() {
             type="submit"
             className="btn-primary"
             disabled={loading}
-            style={{ marginTop: "0.5rem" }}
+            style={{ marginTop: "1rem" }}
           >
-            {loading ? <span className="loader"></span> : "Register"}
+            {loading ? <span className="loader"></span> : (
+              <>
+                Register Now <ArrowRight size={18} style={{ marginLeft: '8px' }} />
+              </>
+            )}
           </button>
 
         </form>
 
         <div className="divider">
-          <span>or</span>
+          <span>already a member?</span>
         </div>
 
-        <div style={{ textAlign: "center", marginTop: "1rem" }}>
-          <p style={{ color: "#94a3b8", fontSize: "0.95rem" }}>
-            Already have an account?{" "}
+        <div style={{ textAlign: "center", marginTop: "0.5rem" }}>
+          <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.95rem" }}>
             <Link
               to="/login"
               style={{
                 color: "#60a5fa",
                 textDecoration: "none",
-                fontWeight: "500"
+                fontWeight: "600",
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '4px'
               }}
             >
-              Sign In here
+              Sign In to Your Account
             </Link>
           </p>
         </div>
-
-      </div>
+      </motion.div>
     </div>
   );
 }

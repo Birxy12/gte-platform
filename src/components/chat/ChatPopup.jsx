@@ -13,6 +13,8 @@ export default function ChatPopup({ targetUser, onClose }) {
     const [chatId, setChatId] = useState(null);
     const [minimized, setMinimized] = useState(false);
     const [isTargetOnline, setIsTargetOnline] = useState(false);
+    const [isTyping, setIsTyping] = useState(false);
+    const [typingTimeout, setTypingTimeout] = useState(null);
     const messagesEndRef = useRef(null);
 
     useEffect(() => {
@@ -46,15 +48,37 @@ export default function ChatPopup({ targetUser, onClose }) {
         const unsubscribe = chatService.subscribeToMessages(chatId, (updatedMessages) => {
             setMessages(updatedMessages);
         });
-        return unsubscribe;
-    }, [chatId]);
+
+        const unsubscribeTyping = chatService.subscribeToTyping(chatId, (typingUsers) => {
+            // Check if the target user is in the typing array
+            setIsTyping(typingUsers.includes(targetUser.uid || targetUser.id));
+        });
+
+        return () => {
+            unsubscribe();
+            unsubscribeTyping();
+        };
+    }, [chatId, targetUser]);
 
     // Auto-scroll to bottom
     useEffect(() => {
         if (!minimized) {
             messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
         }
-    }, [messages, minimized]);
+    }, [messages, isTyping, minimized]);
+
+    const handleInputChange = (e) => {
+        setInputText(e.target.value);
+        if (!chatId) return;
+
+        chatService.setTypingStatus(chatId, user.uid, true);
+
+        if (typingTimeout) clearTimeout(typingTimeout);
+        const timeout = setTimeout(() => {
+            chatService.setTypingStatus(chatId, user.uid, false);
+        }, 1500);
+        setTypingTimeout(timeout);
+    };
 
     const handleSend = async (e) => {
         e.preventDefault();
@@ -63,6 +87,8 @@ export default function ChatPopup({ targetUser, onClose }) {
         try {
             await chatService.sendMessage(chatId, user.uid, inputText);
             setInputText("");
+            chatService.setTypingStatus(chatId, user.uid, false);
+            if (typingTimeout) clearTimeout(typingTimeout);
         } catch (err) {
             console.error("Popup send error:", err);
         }
@@ -115,6 +141,13 @@ export default function ChatPopup({ targetUser, onClose }) {
                                 );
                             })
                         )}
+                        {isTyping && (
+                            <div className="popup-msg-wrapper received">
+                                <div className="popup-msg-bubble text-gray-500 italic text-xs">
+                                    typing...
+                                </div>
+                            </div>
+                        )}
                         <div ref={messagesEndRef} />
                     </div>
 
@@ -123,7 +156,7 @@ export default function ChatPopup({ targetUser, onClose }) {
                             type="text"
                             placeholder="Type a message..."
                             value={inputText}
-                            onChange={(e) => setInputText(e.target.value)}
+                            onChange={handleInputChange}
                         />
                         <button type="submit" disabled={!inputText.trim()} className="text-blue-500 disabled:opacity-50">
                             <Send size={18} />

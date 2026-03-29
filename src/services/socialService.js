@@ -10,6 +10,7 @@ import {
     where,
     serverTimestamp
 } from "firebase/firestore";
+import { notificationService } from "./notificationService";
 
 export const socialService = {
     /**
@@ -23,6 +24,15 @@ export const socialService = {
             receiverId,
             status: "pending",
             createdAt: serverTimestamp()
+        });
+
+        // Notify receiver
+        await notificationService.createNotification({
+            userId: receiverId,
+            type: "friend_request",
+            message: "Someone sent you a friend request.",
+            fromUserId: senderId,
+            link: "/discover" // Adjust link as needed
         });
     },
 
@@ -47,6 +57,15 @@ export const socialService = {
         // Delete the request
         const requestRef = doc(db, "friendRequests", requestId);
         await deleteDoc(requestRef);
+
+        // Notify sender that their request was accepted
+        await notificationService.createNotification({
+            userId: senderId,
+            type: "follow",
+            message: "Someone accepted your friend request.",
+            fromUserId: receiverId,
+            link: "/discover"
+        });
     },
 
     /**
@@ -58,6 +77,15 @@ export const socialService = {
             followerId,
             targetUserId,
             createdAt: serverTimestamp()
+        });
+
+        // Notify target that they have a new follower
+        await notificationService.createNotification({
+            userId: targetUserId,
+            type: "follow",
+            message: "Someone started following you.",
+            fromUserId: followerId,
+            link: "/discover"
         });
     },
 
@@ -85,6 +113,15 @@ export const socialService = {
         const q = query(collection(db, "followers"), where("followerId", "==", userId));
         const snapshot = await getDocs(q);
         return snapshot.docs.map(doc => doc.data().targetUserId);
+    },
+
+    /**
+     * Get list of followers
+     */
+    async getFollowers(userId) {
+        const q = query(collection(db, "followers"), where("targetUserId", "==", userId));
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => doc.data().followerId);
     },
 
     /**

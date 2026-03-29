@@ -14,6 +14,7 @@ import {
     getDoc,
     deleteDoc
 } from "firebase/firestore";
+import { notificationService } from "./notificationService";
 
 export const chatService = {
     // Create or get existing 1:1 chat
@@ -66,6 +67,25 @@ export const chatService = {
             lastMessage: text,
             lastMessageAt: serverTimestamp()
         });
+
+        // Notify other participants
+        const chatSnap = await getDoc(doc(db, "chats", chatId));
+        if (chatSnap.exists()) {
+            const chatData = chatSnap.data();
+            const groupName = chatData.groupName;
+            
+            chatData.participants.forEach(pId => {
+                if (pId !== senderId) {
+                    notificationService.createNotification({
+                        userId: pId,
+                        type: "message",
+                        message: groupName ? `New message in ${groupName}` : "You received a new message.",
+                        fromUserId: senderId,
+                        link: "/chat"
+                    });
+                }
+            });
+        }
     },
 
     // Listen for messages in a chat

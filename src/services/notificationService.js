@@ -1,4 +1,4 @@
-import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { collection, query, where, onSnapshot, orderBy, addDoc, serverTimestamp, doc, updateDoc, writeBatch } from "firebase/firestore";
 import { db } from "../config/firebase";
 
 export const notificationService = {
@@ -14,41 +14,87 @@ export const notificationService = {
     },
 
     /**
-     * Subscribe to new messages for the user.
-     * Compares the chat's lastMessage sender to see if it's someone else.
+     * Subscribe to real notifications for the user.
      */
-    subscribeToUnread(userId, onUpdate) {
+    subscribeToNotifications(userId, onUpdate) {
         if (!userId) return () => { };
 
         const q = query(
-            collection(db, "chats"),
-            where("participants", "array-contains", userId)
+            collection(db, "notifications"),
+            where("userId", "==", userId),
+            orderBy("timestamp", "desc")
         );
 
         return onSnapshot(q, (snapshot) => {
+            const notifications = [];
             let unreadCount = 0;
-            let latestMessageMap = new Map();
+            let newUnreadIds = new Set();
 
             snapshot.forEach((doc) => {
                 const data = doc.data();
-                // If the last message was NOT sent by me, and it exists
-                if (data.lastMessageSenderId && data.lastMessageSenderId !== userId) {
+                const notification = { id: doc.id, ...data };
+                notifications.push(notification);
+                
+                if (!data.read) {
                     unreadCount++;
-
-                    // Check if we need to trigger a desktop notification
-                    if (data.lastMessageAt) {
-                        const timeKey = data.lastMessageAt.toMillis();
-                        latestMessageMap.set(doc.id, {
-                            text: data.lastMessage,
-                            sender: data.groupName || "New Message",
-                            time: timeKey
-                        });
-                    }
+                    newUnreadIds.add(doc.id);
                 }
             });
 
-            onUpdate(unreadCount, latestMessageMap);
+            onUpdate(notifications, unreadCount, newUnreadIds);
         });
+    },
+
+    /**
+     * Create a notification in Firestore
+     */
+    async createNotification({ userId, type, message, fromUserId, link }) {
+        if (!userId) return;
+        try {
+            await addDoc(collection(db, "notifications"), {
+                userId,
+                type,
+                message,
+                fromUserId: fromUserId || null,
+                link: link || null,
+                read: false,
+                timestamp: serverTimestamp()
+            });
+        } catch (error) {
+            console.error("Failed to create notification:", error);
+        }
+    },
+
+    /**
+     * Mark a single notification as read
+     */
+    async markAsRead(notificationId) {
+        if (!notificationId) return;
+        try {
+            await updateDoc(doc(db, "notifications", notificationId), {
+                read: true
+            });
+        } catch (error) {
+            console.error("Failed to mark as read:", error);
+        }
+    },
+
+    /**
+     * Mark all notifications as read for a user
+     */
+    async markAllAsRead(userId, notificationsList) {
+        if (!userId || !notificationsList?.length) return;
+        try {
+            const batch = writeBatch(db);
+            notificationsList.forEach(n => {
+                if (!n.read) {
+                    batch.update(doc(db, "notifications", n.id), { read: true });
+                }
+            });
+            await batch.commit();
+        } catch (error) {
+            console.error("Failed to mark all as read:", error);
+        }
     },
 
     /**

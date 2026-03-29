@@ -2,7 +2,10 @@ import { useEffect, useState } from "react";
 import { db } from "../../config/firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { useAuth } from "../../context/AuthProvider";
-import { Search, PlayCircle, BookOpen, Clock, Star, X } from "lucide-react";
+import { Search, PlayCircle, BookOpen, Clock, Star, X, CheckCircle, Award } from "lucide-react";
+import { progressService } from "../../services/progressService";
+import { notificationService } from "../../services/notificationService";
+import Quiz from "./Quiz";
 import "./Courses.css";
 
 export default function Courses() {
@@ -13,6 +16,9 @@ export default function Courses() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [selectedCourse, setSelectedCourse] = useState(null); // For Video Modal
+  const [completedCourses, setCompletedCourses] = useState(new Set());
+  const [completing, setCompleting] = useState(false);
+  const [showQuiz, setShowQuiz] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -45,7 +51,19 @@ export default function Courses() {
       }
     };
 
+    const fetchProgress = async () => {
+      if (!user) return;
+      try {
+        const completed = await progressService.getUserCompletedCourses(user.uid);
+        const completedIds = new Set(completed.map(c => c.courseId));
+        setCompletedCourses(completedIds);
+      } catch (err) {
+        console.error("Error fetching progress:", err);
+      }
+    };
+
     fetchCourses();
+    fetchProgress();
   }, [user]);
 
   useEffect(() => {
@@ -63,6 +81,44 @@ export default function Courses() {
   }, [searchQuery, activeCategory, courses]);
 
   const categories = ["All", "Beginner", "Intermediate", "Advanced", "Programming", "Design", "Business"];
+
+  const getEmbedUrl = (url) => {
+    if (!url) return null;
+    if (url.includes("youtube.com/watch?v=")) {
+      return url.replace("watch?v=", "embed/");
+    }
+    if (url.includes("youtu.be/")) {
+      return url.replace("youtu.be/", "youtube.com/embed/");
+    }
+    if (url.includes("vimeo.com/")) {
+      const vimeoId = url.split("/").pop();
+      return `https://player.vimeo.com/video/${vimeoId}`;
+    }
+    return url;
+  };
+
+  const handleComplete = async (course) => {
+    if (!user || completing) return;
+    setCompleting(true);
+    try {
+      await progressService.markCourseCompleted(user.uid, course.id, course.title);
+      setCompletedCourses(prev => new Set(prev).add(course.id));
+      
+      // Notify them
+      await notificationService.createNotification({
+          userId: user.uid,
+          type: "message", // Or a new 'achievement' type
+          message: `Congratulations! You have completed ${course.title} and earned a certificate!`,
+          link: "/dashboard"
+      });
+      
+    } catch (err) {
+      console.error(err);
+      alert("Failed to mark course as completed.");
+    } finally {
+      setCompleting(false);
+    }
+  };
 
   return (
     <div className="courses-page">
@@ -174,13 +230,12 @@ export default function Courses() {
               </button>
             </div>
             <div className="video-wrapper">
-              {selectedCourse.videoUrl ? (
+              {getEmbedUrl(selectedCourse.videoUrl) ? (
                 <iframe
-                  src={selectedCourse.videoUrl.replace("watch?v=", "embed/")}
+                  src={getEmbedUrl(selectedCourse.videoUrl)}
                   title={selectedCourse.title}
                   frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
                   className="w-full h-full"
                 ></iframe>
               ) : (
@@ -191,10 +246,33 @@ export default function Courses() {
             </div>
             <div className="video-modal-footer">
               <p className="text-gray-300">{selectedCourse.description}</p>
-              <p className="mt-4 text-sm text-gray-500">Instructor: {selectedCourse.instructor || "Globix Academy"}</p>
+              <div className="mt-4 flex items-center justify-between">
+                <p className="text-sm text-gray-500">Instructor: {selectedCourse.instructor || "Globix Academy"}</p>
+                {completedCourses.has(selectedCourse.id) ? (
+                  <button className="flex items-center gap-2 px-4 py-2 bg-green-500/20 text-green-400 border border-green-500/50 rounded-lg cursor-default">
+                    <Award size={18} /> Completed 🏆
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => setShowQuiz(true)}
+                    className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-medium rounded-lg transition-all transform hover:scale-105"
+                  >
+                    <CheckCircle size={18} /> Take Quiz & Earn Certificate 🎓
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
+      )}
+
+      {/* Quiz Overlay */}
+      {showQuiz && selectedCourse && (
+        <Quiz 
+          course={selectedCourse}
+          onComplete={() => handleComplete(selectedCourse)}
+          onClose={() => setShowQuiz(false)}
+        />
       )}
     </div>
   );

@@ -3,6 +3,8 @@ import { useAuth } from "../../../context/AuthProvider";
 import { db } from "../../../config/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
+import { notificationService } from "../../../services/notificationService";
+import { socialService } from "../../../services/socialService";
 
 export default function UserBlogPost() {
     const { user } = useAuth();
@@ -32,6 +34,22 @@ export default function UserBlogPost() {
                 comments: [],
                 createdAt: serverTimestamp()
             });
+
+            // Notify followers
+            try {
+                const followers = await socialService.getFollowers(user.uid);
+                followers.forEach(followerId => {
+                    notificationService.createNotification({
+                        userId: followerId,
+                        type: "blog",
+                        message: `${user.displayName || user.email.split('@')[0]} published a new blog post: ${title.trim()}`,
+                        fromUserId: user.uid,
+                        link: "/blog"
+                    });
+                });
+            } catch (notifyErr) {
+                console.error("Error notifying followers:", notifyErr);
+            }
 
             navigate("/dashboard/my-posts");
         } catch (err) {

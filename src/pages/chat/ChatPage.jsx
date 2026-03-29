@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../context/AuthProvider";
 import { chatService } from "../../services/chatService";
+import { presenceService } from "../../services/presenceService";
 import { db } from "../../config/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import {
@@ -31,6 +32,10 @@ export default function ChatPage() {
     const [users, setUsers] = useState([]);
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
+    const [typingUsers, setTypingUsers] = useState([]);
+    const [typingTimeout, setTypingTimeout] = useState(null);
+    const [onlineUsers, setOnlineUsers] = useState({});
+    const messagesEndRef = useRef(null);
 
     // Subscriptions
     useEffect(() => {
@@ -51,10 +56,22 @@ export default function ChatPage() {
         const unsubscribe = chatService.subscribeToMessages(activeChat.id, (updatedMessages) => {
             setMessages(updatedMessages);
         });
-        return unsubscribe;
-    }, [activeChat]);
 
-    // Fetch all users for global search
+        const unsubscribeTyping = chatService.subscribeToTyping(activeChat.id, (typings) => {
+            setTypingUsers(typings.filter(id => id !== user.uid));
+        });
+
+        return () => {
+            unsubscribe();
+            unsubscribeTyping();
+        };
+    }, [activeChat, user]);
+
+    // Auto-scroll to bottom
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages, typingUsers]);
+
     useEffect(() => {
         const fetchUsers = async () => {
             try {
@@ -62,6 +79,13 @@ export default function ChatPage() {
                 const querySnapshot = await getDocs(q);
                 const userList = querySnapshot.docs.map(doc => doc.data());
                 setUsers(userList);
+
+                // Listen to presence for all these users (for a large app, scale this differently)
+                userList.forEach(u => {
+                    presenceService.subscribeToPresence(u.uid, (presence) => {
+                        setOnlineUsers(prev => ({ ...prev, [u.uid]: presence?.isOnline || false }));
+                    });
+                });
             } catch (err) {
                 console.error("Error fetching users:", err);
             }
@@ -69,12 +93,27 @@ export default function ChatPage() {
         if (user) fetchUsers();
     }, [user]);
 
+    const handleInputChange = (e) => {
+        setInputText(e.target.value);
+        if (!activeChat) return;
+
+        chatService.setTypingStatus(activeChat.id, user.uid, true);
+
+        if (typingTimeout) clearTimeout(typingTimeout);
+        const timeout = setTimeout(() => {
+            chatService.setTypingStatus(activeChat.id, user.uid, false);
+        }, 1500);
+        setTypingTimeout(timeout);
+    };
+
     const handleSendMessage = async (e) => {
         e.preventDefault();
         if (!inputText.trim() || !activeChat) return;
         try {
             await chatService.sendMessage(activeChat.id, user.uid, inputText);
             setInputText("");
+            chatService.setTypingStatus(activeChat.id, user.uid, false);
+            if (typingTimeout) clearTimeout(typingTimeout);
         } catch (err) {
             console.error("Send message error:", err);
             setError("Failed to send message.");
@@ -177,7 +216,9 @@ export default function ChatPage() {
                                         {chat.groupName ? <Users size={24} /> : (chat.displayName || "U")[0]}
                                     </div>
                                 )}
-                                <div className="status-indicator"></div>
+                                {chat.type === "direct" && chat.otherUser && onlineUsers[chat.otherUser.uid] && (
+                                    <div className="status-indicator" style={{ backgroundColor: '#2ecc71', width: '12px', height: '12px', borderRadius: '50%', border: '2px solid white', position: 'absolute', bottom: '0', right: '0' }}></div>
+                                )}
                             </div>
                             <div className="chat-info">
                                 <div className="chat-info-top">
@@ -235,16 +276,24 @@ export default function ChatPage() {
                                 <button onClick={() => setActiveChat(null)} className="md:hidden text-msger-primary p-2">
                                     <ArrowLeft size={24} />
                                 </button>
-                                <div className="chat-avatar !w-10 !h-10">
+                                <div className="chat-avatar !w-10 !h-10 relative">
                                     <img
                                         src={activeChat.photoURL || "https://ui-avatars.com/api/?name=" + (activeChat.groupName || activeChat.displayName || "C")}
                                         className="w-full h-full rounded-full object-cover"
                                         alt="Chat"
                                     />
+                                    {activeChat.type === "direct" && activeChat.otherUser && onlineUsers[activeChat.otherUser.uid] && (
+                                        <div className="status-indicator" style={{ backgroundColor: '#2ecc71', width: '12px', height: '12px', borderRadius: '50%', border: '2px solid white', position: 'absolute', bottom: '0', right: '0' }}></div>
+                                    )}
                                 </div>
                                 <div>
                                     <h2>{activeChat.groupName || activeChat.displayName || "Chat"}</h2>
-                                    <span>Active now</span>
+                                    <span className="text-xs text-msger-text-dim">
+                                        {typingUsers.length > 0
+                                            ? "typing..."
+                                            : (activeChat.type === "direct" && activeChat.otherUser && onlineUsers[activeChat.otherUser.uid] ? "Online" : "")
+                                        }
+                                    </span>
                                 </div>
                             </div>
                             <div className="header-actions">
@@ -268,6 +317,14 @@ export default function ChatPage() {
                                     </span>
                                 </div>
                             ))}
+                            {typingUsers.length > 0 && (
+                                <div className="message-wrapper received">
+                                    <div className="message-bubble bg-gray-200 text-gray-500 italic text-sm">
+                                        typing...
+                                    </div>
+                                </div>
+                            )}
+                            <div ref={messagesEndRef} />
                         </div>
 
                         <form onSubmit={handleSendMessage} className="chat-input-area">
@@ -279,7 +336,7 @@ export default function ChatPage() {
                                     type="text"
                                     placeholder="Aa"
                                     value={inputText}
-                                    onChange={(e) => setInputText(e.target.value)}
+                                    onChange={handleInputChange}
                                 />
                             </div>
                             <button

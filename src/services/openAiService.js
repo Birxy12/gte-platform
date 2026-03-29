@@ -46,5 +46,48 @@ export const openAiService = {
             console.error("OpenAI Moderation Error:", error);
             throw error;
         }
+    },
+
+    async askAssistant(userMessages) {
+        const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+        if (!apiKey) {
+            throw new Error("OpenAI API Key is missing. Please set VITE_OPENAI_API_KEY.");
+        }
+
+        try {
+            const formattedMessages = [
+                {
+                    role: "system",
+                    content: "You are Globix, a friendly, helpful, and highly intelligent AI assistant for the GlobixTech learning platform. Your job is to answer user questions about courses, technology, learning, or general inquiries in a concise but engaging manner."
+                },
+                ...userMessages.map(m => ({
+                    role: m.sender === "bot" ? "assistant" : "user",
+                    content: m.text
+                }))
+            ];
+
+            const response = await fetch("https://api.openai.com/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${apiKey}`
+                },
+                body: JSON.stringify({
+                    model: "gpt-3.5-turbo",
+                    messages: formattedMessages,
+                    temperature: 0.7
+                })
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error?.message || "Failed to get AI response");
+            }
+
+            return data.choices[0].message.content;
+        } catch (error) {
+            console.error("AI Assistant Error:", error);
+            throw error;
+        }
     }
 };

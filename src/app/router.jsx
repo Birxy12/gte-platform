@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Home from "../pages/landing/Home";
 import About from "../pages/landing/About";
 import Contact from "../pages/landing/Contact";
+import Pricing from "../pages/landing/Pricing";
 import LoginAccount from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
 import ForgotPassword from "../pages/auth/ForgotPassword";
@@ -17,6 +18,7 @@ import EditCourse from "../pages/dashboard/admin/EditCourse";
 import AdminSettings from "../pages/dashboard/admin/AdminSettings";
 import ManageReports from "../pages/dashboard/admin/ManageReports";
 
+import EnrolledCourses from "../pages/dashboard/student/EnrolledCourses";
 import UserDashboard from "../pages/dashboard/user/UserDashboard";
 import EditProfile from "../pages/dashboard/user/EditProfile";
 import UserBlogPost from "../pages/dashboard/user/UserBlogPost";
@@ -31,6 +33,7 @@ import ProtectedRoute from "../components/common/ProtectedRoute";
 import AdminRoute from "../routes/AdminRoute";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
+import AiChatBot from "../components/bot/AiChatBot";
 
 export default function Router() {
   return (
@@ -53,6 +56,7 @@ export default function Router() {
         <Route path="/home" element={<Home />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/pricing" element={<Pricing />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/courses" element={<Courses />} />
 
@@ -61,6 +65,7 @@ export default function Router() {
           <Route path="profile" element={<EditProfile />} />
           <Route path="create-post" element={<UserBlogPost />} />
           <Route path="my-posts" element={<MyPosts />} />
+          <Route path="enrolled" element={<EnrolledCourses />} />
         </Route>
 
         <Route path="/chat" element={
@@ -97,6 +102,7 @@ export default function Router() {
       </Routes>
 
       <Footer />
+      <AiChatBot />
 
     </BrowserRouter>
   );
