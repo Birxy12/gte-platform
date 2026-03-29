@@ -1,72 +1,202 @@
-/* Footer Styling */
-.footer {
-  background-color: #1f2937;
+/* 🌌 GLASS FOOTER CONTAINER */
+.footer-container {
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+
   color: #e2e8f0;
-  padding: 40px 20px;
-  text-align: center;
-  font-family: Arial, sans-serif;
+  padding: 60px 20px 30px;
+  font-family: 'Inter', sans-serif;
+  position: relative;
+  overflow: hidden;
 }
 
+/* ✨ Glow effect */
+.footer-container::before {
+  content: "";
+  position: absolute;
+  top: -100px;
+  left: -100px;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, #3b82f6, transparent 70%);
+  opacity: 0.2;
+  filter: blur(80px);
+}
+
+.footer-container::after {
+  content: "";
+  position: absolute;
+  bottom: -100px;
+  right: -100px;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, #6366f1, transparent 70%);
+  opacity: 0.2;
+  filter: blur(80px);
+}
+
+/* 📦 LAYOUT */
+.footer-content {
+  max-width: 1200px;
+  margin: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 40px;
+  position: relative;
+  z-index: 2;
+}
+
+/* 🏷 BRAND */
 .footer-logo {
-  width: 60px; /* Adjusted smaller size for logo */
-  height: 60px; /* Ensure it’s square */
-  object-fit: cover; /* Preserve image aspect ratio without distortion */
-  border-radius: 50%; /* Circle the logo */
-  margin-bottom: 20px;
-}
-
-.footer-links-group {
   display: flex;
-  justify-content: space-around;
-  margin-bottom: 20px;
+  align-items: center;
+  gap: 10px;
 }
 
-.footer-links {
-  flex: 1;
-  padding: 10px;
+.footer-logo img {
+  width: 55px;
+  height: 55px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
 }
 
-.footer-links h4 {
+.footer-logo h3 {
   font-size: 1.2rem;
-  margin-bottom: 15px;
+  font-weight: 700;
 }
 
-.footer-links a {
-  display: block;
-  color: #e2e8f0;
-  text-decoration: none;
-  margin: 5px 0;
+.footer-logo span {
+  color: #3b82f6;
+}
+
+/* 📝 TAGLINE */
+.footer-tagline {
+  margin-top: 10px;
   font-size: 0.9rem;
+  color: #94a3b8;
+  line-height: 1.5;
 }
 
-.footer-links a:hover {
+/* 🔗 LINKS */
+.footer-links-group h4 {
+  font-size: 1rem;
+  margin-bottom: 12px;
+  color: #f1f5f9;
+}
+
+.footer-links-group a {
+  display: block;
+  margin: 6px 0;
+  color: #cbd5f5;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.footer-links-group a:hover {
   color: #60a5fa;
+  transform: translateX(4px);
 }
 
+/* 📞 CONTACT */
 .footer-contact p {
-  margin: 15px 0;
+  margin: 8px 0;
+  font-size: 0.9rem;
+  color: #cbd5f5;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
+/* 🌐 SOCIALS */
 .footer-socials {
-  margin-top: 20px;
+  margin-top: 15px;
+  display: flex;
+  gap: 10px;
 }
 
-.social-icon {
-  width: 30px;
-  margin: 0 10px;
-  transition: transform 0.2s;
+.footer-socials a {
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+
+  transition: all 0.3s ease;
 }
 
-.social-icon:hover {
-  transform: scale(1.1);
+.footer-socials a:hover {
+  background: #3b82f6;
+  transform: translateY(-3px) scale(1.1);
 }
 
-.footer-bottom {
-  margin-top: 20px;
-  font-size: 0.85rem;
+/* 📧 NEWSLETTER */
+.newsletter {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+}
+
+.newsletter input {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: none;
+  outline: none;
+  background: rgba(255,255,255,0.08);
+  color: white;
+}
+
+.newsletter input::placeholder {
   color: #94a3b8;
 }
 
-.footer-bottom p {
-  margin: 0;
+.newsletter button {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  color: white;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.newsletter button:hover {
+  transform: scale(1.05);
+}
+
+/* 🔻 BOTTOM */
+.footer-bottom {
+  margin-top: 40px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #94a3b8;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding-top: 20px;
+}
+
+/* 📱 MOBILE */
+@media (max-width: 768px) {
+  .footer-content {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .footer-logo {
+    justify-content: center;
+  }
+
+  .footer-socials {
+    justify-content: center;
+  }
+
+  .newsletter {
+    flex-direction: column;
+  }
 }
