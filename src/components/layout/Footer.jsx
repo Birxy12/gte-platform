@@ -1,53 +1,99 @@
-import React from 'react';
+import { useLocation, Link } from "react-router-dom";
+import {
+  Github,
+  Twitter,
+  Linkedin,
+  Facebook,
+  Mail,
+  Phone,
+  MapPin
+} from "lucide-react";
+import "./Footer.css";
 
-function Footer() {
+export default function Footer() {
+  const location = useLocation();
+
+  // Hide footer on auth, chat, admin, dashboard
+  const hiddenPaths = ["/login", "/register", "/forgot-password", "/chat"];
+  if (
+    hiddenPaths.includes(location.pathname) ||
+    location.pathname.startsWith("/dashboard") ||
+    location.pathname.startsWith("/admin")
+  ) return null;
+
+  const currentYear = new Date().getFullYear();
+
   return (
-    <footer className="footer">
-      <div className="footer-brand">
-        <img src="/GlobixTech-logo.png" alt="Logo" className="footer-logo" />
-      </div>
-      <div className="footer-links-group">
-        <div className="footer-links">
+    <footer className="footer-container">
+      <div className="footer-content">
+
+        {/* BRAND */}
+        <div className="footer-brand">
+          <div className="footer-logo">
+            <img src="/GlobixTech-logo.png" alt="GlobixTech Ent Logo" />
+            <h3>GlobixTech <span>Ent</span></h3>
+          </div>
+
+          <p className="footer-tagline">
+            Empowering education through premium digital experiences.
+            Learn, build, and connect with a global tech community.
+          </p>
+
+          <div className="footer-socials">
+            <a href="#"><Github size={20} /></a>
+            <a href="#"><Twitter size={20} /></a>
+            <a href="#"><Linkedin size={20} /></a>
+            <a href="#"><Facebook size={20} /></a>
+          </div>
+        </div>
+
+        {/* PLATFORM */}
+        <div className="footer-links-group">
           <h4>Platform</h4>
-          <a href="/dashboard">Dashboard</a>
-          <a href="/courses">Courses</a>
-          <a href="/blog">Blog</a>
+          <Link to="/home">Dashboard</Link>
+          <Link to="/courses">Courses</Link>
+          <Link to="/blog">Blog</Link>
+          <Link to="/chat">Community</Link>
         </div>
-        <div className="footer-links">
+
+        {/* COMPANY */}
+        <div className="footer-links-group">
           <h4>Company</h4>
-          <a href="/about-us">About Us</a>
-          <a href="/contact">Contact</a>
-          <a href="/register">Register</a>
+          <Link to="/about">About</Link>
+          <Link to="/contact">Contact</Link>
+          <Link to="/register">Join Us</Link>
         </div>
-        <div className="footer-links">
+
+        {/* LEGAL */}
+        <div className="footer-links-group">
           <h4>Legal</h4>
-          <a href="/privacy-policy">Privacy Policy</a>
-          <a href="/terms-of-service">Terms of Service</a>
-          <a href="/cookie-guidelines">Cookie Guidelines</a>
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms of Service</a>
+          <a href="#">Cookies</a>
         </div>
+
+        {/* CONTACT + NEWSLETTER */}
+        <div className="footer-contact">
+          <h4>Stay Updated</h4>
+
+          <p><Mail size={16} /> globixtechinc@gmail.com</p>
+          <p><Phone size={16} /> +234 XXX XXX XXXX</p>
+          <p><MapPin size={16} /> Nigeria</p>
+
+          <div className="newsletter">
+            <input type="email" placeholder="Enter your email" />
+            <button>Subscribe</button>
+          </div>
+        </div>
+
       </div>
-      <div className="footer-contact">
-        <p>
-          Contact us at <a href="mailto:support@example.com">support@example.com</a>
-        </p>
-      </div>
-      <div className="footer-socials">
-        <h4>Follow Us</h4>
-        <a href="https://facebook.com" target="_blank" rel="noopener noreferrer">
-          <img src="/icons/facebook.svg" alt="Facebook" className="social-icon" />
-        </a>
-        <a href="https://twitter.com" target="_blank" rel="noopener noreferrer">
-          <img src="/icons/twitter.svg" alt="Twitter" className="social-icon" />
-        </a>
-        <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer">
-          <img src="/icons/linkedin.svg" alt="LinkedIn" className="social-icon" />
-        </a>
-      </div>
+
+      {/* BOTTOM */}
       <div className="footer-bottom">
-        <p>&copy; {new Date().getFullYear()} Your Company. All rights reserved.</p>
+        <p>
+          © {currentYear} <strong>GlobixTech Ent</strong>. All rights reserved.
+        </p>
       </div>
     </footer>
   );
 }
-
-export default Footer;
