@@ -10,16 +10,19 @@ import {
 } from "lucide-react";
 import "./Footer.css";
 
-export default function Footer() {
+const Footer = () => {
   const location = useLocation();
 
-  // Hide footer on auth, chat, admin, dashboard
+  // Hide footer on certain pages
   const hiddenPaths = ["/login", "/register", "/forgot-password", "/chat"];
+
   if (
     hiddenPaths.includes(location.pathname) ||
     location.pathname.startsWith("/dashboard") ||
     location.pathname.startsWith("/admin")
-  ) return null;
+  ) {
+    return null;
+  }
 
   const currentYear = new Date().getFullYear();
 
@@ -30,7 +33,7 @@ export default function Footer() {
         {/* BRAND */}
         <div className="footer-brand">
           <div className="footer-logo">
-            <img src="/GlobixTech-logo.png" alt="GlobixTech Ent Logo" />
+            <img src="/GlobixTech-logo.png" alt="GlobixTech Logo" />
             <h3>GlobixTech <span>Ent</span></h3>
           </div>
 
@@ -40,10 +43,18 @@ export default function Footer() {
           </p>
 
           <div className="footer-socials">
-            <a href="#"><Github size={20} /></a>
-            <a href="#"><Twitter size={20} /></a>
-            <a href="#"><Linkedin size={20} /></a>
-            <a href="#"><Facebook size={20} /></a>
+            <a href="https://github.com" target="_blank" rel="noreferrer">
+              <Github size={20} />
+            </a>
+            <a href="https://twitter.com" target="_blank" rel="noreferrer">
+              <Twitter size={20} />
+            </a>
+            <a href="https://linkedin.com" target="_blank" rel="noreferrer">
+              <Linkedin size={20} />
+            </a>
+            <a href="https://facebook.com" target="_blank" rel="noreferrer">
+              <Facebook size={20} />
+            </a>
           </div>
         </div>
 
@@ -67,12 +78,12 @@ export default function Footer() {
         {/* LEGAL */}
         <div className="footer-links-group">
           <h4>Legal</h4>
-          <a href="#">Privacy Policy</a>
+          <Link to="/privacy-policy">Privacy Policy</Link>
           <a href="#">Terms of Service</a>
           <a href="#">Cookies</a>
         </div>
 
-        {/* CONTACT + NEWSLETTER */}
+        {/* CONTACT */}
         <div className="footer-contact">
           <h4>Stay Updated</h4>
 
@@ -82,7 +93,7 @@ export default function Footer() {
 
           <div className="newsletter">
             <input type="email" placeholder="Enter your email" />
-            <button>Subscribe</button>
+            <button type="button">Subscribe</button>
           </div>
         </div>
 
@@ -96,4 +107,6 @@ export default function Footer() {
       </div>
     </footer>
   );
-}
+};
+
+export default Footer;
