@@ -1,5 +1,5 @@
 import React from 'react';
-import ProgressBar from '../components/layout/ProgressBar';  // Adjusted import
+import ProgressBar from "../../../components/layout/ProgressBar";
 
 const ProgressPage = ({ userId }) => {
   return (
