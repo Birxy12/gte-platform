@@ -1,0 +1,306 @@
+.dossier-page {
+    background-color: #030712;
+    background-image: radial-gradient(circle at 50% 50%, rgba(234, 179, 8, 0.05) 0%, transparent 80%);
+    min-height: 100vh;
+    padding: 100px 20px 50px;
+    display: flex;
+    justify-content: center;
+}
+
+.dossier-container {
+    width: 100%;
+    max-width: 900px;
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid rgba(234, 179, 8, 0.15);
+    border-radius: 32px;
+    padding: 3rem;
+    box-shadow: 0 40px 100px rgba(0,0,0,0.5);
+    backdrop-filter: blur(20px);
+    position: relative;
+    overflow: hidden;
+}
+
+.dossier-container::before {
+    content: "SECRET // PERSONNEL DOSSIER";
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.7rem;
+    color: rgba(234, 179, 8, 0.2);
+    letter-spacing: 2px;
+}
+
+.dossier-back {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    font-weight: 600;
+    margin-bottom: 2.5rem;
+    transition: all 0.2s;
+}
+
+.dossier-back:hover {
+    color: #eab308;
+    transform: translateX(-5px);
+}
+
+.dossier-header {
+    display: flex;
+    gap: 3rem;
+    align-items: flex-start;
+    margin-bottom: 3rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding-bottom: 3rem;
+}
+
+.dossier-avatar-wrapper {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.dossier-avatar {
+    width: 200px;
+    height: 200px;
+    border-radius: 20px;
+    object-fit: cover;
+    border: 2px solid rgba(234, 179, 8, 0.3);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+}
+
+.dossier-rank-badge {
+    position: absolute;
+    bottom: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #eab308;
+    color: #0f172a;
+    padding: 0.4rem 1.2rem;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 900;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    box-shadow: 0 5px 15px rgba(234, 179, 8, 0.4);
+}
+
+.dossier-main-info {
+    flex: 1;
+}
+
+.dossier-main-info h1 {
+    font-size: 2.8rem;
+    margin: 0;
+    letter-spacing: -1px;
+    color: white;
+}
+
+.dossier-tagline {
+    color: #eab308;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    letter-spacing: 2px;
+    margin: 0.5rem 0 1.5rem;
+}
+
+.dossier-meta-grid {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.dossier-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: #94a3b8;
+    font-size: 0.95rem;
+}
+
+.dossier-stats-strip {
+    display: flex;
+    gap: 3rem;
+    background: rgba(0,0,0,0.3);
+    padding: 1.5rem 2.5rem;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.stat-unit {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-unit strong {
+    font-size: 1.6rem;
+    color: white;
+}
+
+.stat-unit span {
+    font-size: 0.75rem;
+    color: #64748b;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.dossier-section {
+    margin-bottom: 3rem;
+}
+
+.dossier-section h3 {
+    font-size: 1.1rem;
+    color: #eab308;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.dossier-section h3::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, rgba(234, 179, 8, 0.3), transparent);
+}
+
+.dossier-bio {
+    color: #e2e8f0;
+    line-height: 1.8;
+    opacity: 0.9;
+    font-size: 1.1rem;
+}
+
+.dossier-reels-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1.5rem;
+}
+
+.dossier-reel-card {
+    aspect-ratio: 9/16;
+    background: #000;
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.05);
+    transition: all 0.3s;
+}
+
+.dossier-reel-card:hover {
+    transform: translateY(-5px) scale(1.02);
+    border-color: #eab308;
+}
+
+.dossier-reel-card video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.6;
+}
+
+.reel-card-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+    color: white;
+}
+
+.reel-card-overlay span {
+    font-size: 0.8rem;
+    font-weight: 800;
+    margin-top: 5px;
+}
+
+.dossier-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.dossier-btn-primary {
+    flex: 1;
+    background: #eab308;
+    color: #0f172a;
+    border: none;
+    padding: 1.2rem;
+    border-radius: 12px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.dossier-btn-primary:hover {
+    background: white;
+    transform: scale(1.02);
+}
+
+.dossier-btn-secondary {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1.2rem;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.dossier-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.dossier-loading {
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #eab308;
+    font-weight: 900;
+    letter-spacing: 3px;
+    background: #030712;
+}
+
+@media (max-width: 768px) {
+    .dossier-header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    
+    .dossier-meta-grid {
+        justify-content: center;
+    }
+    
+    .dossier-stats-strip {
+        justify-content: space-around;
+        gap: 1rem;
+        padding: 1rem;
+    }
+    
+    .dossier-actions {
+        flex-direction: column;
+    }
+}

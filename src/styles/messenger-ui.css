@@ -3,18 +3,18 @@
    ═══════════════════════════════════════════════════ */
 
 :root {
-    --msger-bg: #0a0e1a;
-    --msger-sidebar: #111827;
-    --msger-header: rgba(17, 24, 39, 0.8);
+    --msger-bg: #0f172a;
+    --msger-sidebar: rgba(15, 23, 42, 0.85);
+    --msger-header: rgba(15, 23, 42, 0.7);
     --msger-border: rgba(255, 255, 255, 0.08);
-    --msger-text: #f3f4f6;
-    --msger-text-dim: #9ca3af;
-    --msger-primary: #0084ff;
-    --msger-primary-gradient: linear-gradient(135deg, #0084ff, #00c6ff);
-    --msger-bubble-received: #262626;
+    --msger-text: #f8fafc;
+    --msger-text-dim: #94a3b8;
+    --msger-primary: #3b82f6;
+    --msger-primary-gradient: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    --msger-bubble-received: rgba(255, 255, 255, 0.05);
     --msger-bubble-sent: var(--msger-primary-gradient);
-    --msger-hover: rgba(255, 255, 255, 0.04);
-    --msger-active: rgba(0, 132, 255, 0.1);
+    --msger-hover: rgba(255, 255, 255, 0.05);
+    --msger-active: rgba(59, 130, 246, 0.15);
 }
 
 .messenger-wrapper {
@@ -27,12 +27,15 @@
 
 /* ─── Sidebar ─── */
 .messenger-sidebar {
-    width: 360px;
+    width: 380px;
     background: var(--msger-sidebar);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border-right: 1px solid var(--msger-border);
     display: flex;
     flex-direction: column;
     z-index: 10;
+    box-shadow: 4px 0 25px rgba(0,0,0,0.2);
 }
 
 .sidebar-header {
@@ -95,19 +98,24 @@
 .chat-item {
     display: flex;
     align-items: center;
-    gap: 0.8rem;
-    padding: 0.8rem;
-    border-radius: 12px;
+    gap: 1rem;
+    padding: 0.8rem 1rem;
+    border-radius: 16px;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-bottom: 0.2rem;
+    border: 1px solid transparent;
 }
 
 .chat-item:hover {
     background: var(--msger-hover);
+    transform: translateY(-1px);
 }
 
 .chat-item.active {
     background: var(--msger-active);
+    border-color: rgba(59, 130, 246, 0.3);
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.1);
 }
 
 .chat-avatar {
@@ -175,14 +183,16 @@
 }
 
 .chat-header {
-    padding: 0.8rem 1.5rem;
+    padding: 1rem 1.5rem;
     background: var(--msger-header);
-    backdrop-filter: blur(20px);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
     border-bottom: 1px solid var(--msger-border);
     display: flex;
     justify-content: space-between;
     align-items: center;
     z-index: 5;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
 }
 
 .header-user {
@@ -241,11 +251,17 @@
 }
 
 .message-bubble {
-    padding: 0.6rem 1rem;
-    border-radius: 18px;
+    padding: 0.8rem 1.2rem;
+    border-radius: 20px;
     font-size: 0.95rem;
-    line-height: 1.4;
+    line-height: 1.5;
     position: relative;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    transition: transform 0.2s;
+}
+
+.message-bubble:hover {
+    transform: scale(1.01);
 }
 
 .sent .message-bubble {
@@ -258,6 +274,7 @@
     background: var(--msger-bubble-received);
     color: var(--msger-text);
     border-bottom-left-radius: 4px;
+    border: 1px solid var(--msger-border);
 }
 
 .message-time {
@@ -282,11 +299,20 @@
 
 .input-container {
     flex: 1;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--msger-border);
     border-radius: 24px;
-    padding: 0.6rem 1.2rem;
+    padding: 0.8rem 1.2rem;
     display: flex;
     align-items: center;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+    transition: all 0.2s;
+}
+
+.input-container:focus-within {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
 .input-container input {

@@ -5,7 +5,8 @@ export const openAiService = {
     async evaluateReport(reason, details, userMessages = []) {
         const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
         if (!apiKey) {
-            throw new Error("OpenAI API Key is missing. Please set VITE_OPENAI_API_KEY.");
+            console.warn("OpenAI API Key is missing. Please set VITE_OPENAI_API_KEY.");
+            return { decision: "ignore", confidence: 100, reasoning: "Evaluation skipped due to missing API key." };
         }
 
         try {
@@ -51,14 +52,15 @@ export const openAiService = {
     async askAssistant(userMessages) {
         const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
         if (!apiKey) {
-            throw new Error("OpenAI API Key is missing. Please set VITE_OPENAI_API_KEY.");
+            console.warn("OpenAI API Key is missing. Chatbot functionalities are offline.");
+            return "To use the AI Chatbot, please provide a valid `VITE_OPENAI_API_KEY` in your `.env` file.";
         }
 
         try {
             const formattedMessages = [
                 {
                     role: "system",
-                    content: "You are Globix, a friendly, helpful, and highly intelligent AI assistant for the GlobixTech learning platform. Your job is to answer user questions about courses, technology, learning, or general inquiries in a concise but engaging manner."
+                    content: "You are Birxy, a friendly, helpful, and highly intelligent AI assistant for the GlobixTech learning platform. Your job is to answer user questions about courses, technology, learning, or general inquiries in a concise but engaging manner."
                 },
                 ...userMessages.map(m => ({
                     role: m.sender === "bot" ? "assistant" : "user",

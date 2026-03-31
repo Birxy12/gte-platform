@@ -75,6 +75,18 @@
   z-index: 0;
 }
 
+.cert-header {
+  margin-bottom: 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+.cert-logo {
+  height: 80px;
+  margin-bottom: 1.5rem;
+  object-fit: contain;
+}
+
 .cert-header h1 {
   font-size: 3rem;
   font-weight: 800;

@@ -9,6 +9,8 @@ export default function CreateCourse() {
   const [description, setDescription] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
   const [instructor, setInstructor] = useState("");
+  const [monthlyPrice, setMonthlyPrice] = useState("");
+  const [annualPrice, setAnnualPrice] = useState("");
   const [loading, setLoading] = useState(false);
 
   const createCourse = async (e) => {
@@ -20,6 +22,8 @@ export default function CreateCourse() {
         description: description.trim(),
         videoUrl: videoUrl.trim(),
         instructor: instructor.trim(),
+        monthlyPrice: monthlyPrice.trim() || "0",
+        annualPrice: annualPrice.trim() || "0",
         createdAt: serverTimestamp()
       });
       alert("Education course created successfully! 🎓");
@@ -82,6 +86,26 @@ export default function CreateCourse() {
                 value={instructor}
                 onChange={(e) => setInstructor(e.target.value)}
                 required
+              />
+            </div>
+
+            <div className="ad-field">
+              <label>Monthly Price ($)</label>
+              <input
+                type="number"
+                placeholder="29"
+                value={monthlyPrice}
+                onChange={(e) => setMonthlyPrice(e.target.value)}
+              />
+            </div>
+
+            <div className="ad-field">
+              <label>Annual Price ($)</label>
+              <input
+                type="number"
+                placeholder="19"
+                value={annualPrice}
+                onChange={(e) => setAnnualPrice(e.target.value)}
               />
             </div>
           </div>

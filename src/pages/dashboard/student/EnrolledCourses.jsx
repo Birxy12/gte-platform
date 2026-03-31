@@ -4,13 +4,15 @@ import { useAuth } from "../../../context/AuthProvider";
 import { db } from "../../../config/firebase";
 import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
 import { progressService } from "../../../services/progressService";
-import { PlayCircle, Award, Clock, BookOpen } from "lucide-react";
+import { PlayCircle, Award, Clock, BookOpen, FileBadge } from "lucide-react";
+import CertificateModal from "../user/CertificateModal";
 import "./EnrolledCourses.css";
 
 export default function EnrolledCourses() {
     const { user } = useAuth();
     const [enrolledCourses, setEnrolledCourses] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [viewCertCourse, setViewCertCourse] = useState(null);
 
     useEffect(() => {
         if (!user) return;
@@ -100,8 +102,16 @@ export default function EnrolledCourses() {
                                         {course.completed ? "Review Course" : "Continue Learning"}
                                     </Link>
                                     {course.completed && (
-                                        <div className="text-green-400 flex items-center gap-1 text-sm font-bold">
-                                            <Award size={16} /> Certified
+                                        <div className="flex items-center gap-2">
+                                            <div className="text-green-400 flex items-center gap-1 text-sm font-bold">
+                                                <Award size={16} /> Certified
+                                            </div>
+                                            <button 
+                                                onClick={() => setViewCertCourse(course)}
+                                                className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors"
+                                            >
+                                                <FileBadge size={16} /> View Certificate
+                                            </button>
                                         </div>
                                     )}
                                 </div>
@@ -109,6 +119,14 @@ export default function EnrolledCourses() {
                         </div>
                     ))}
                 </div>
+            )}
+
+            {viewCertCourse && (
+                <CertificateModal
+                    course={viewCertCourse}
+                    profile={user}
+                    onClose={() => setViewCertCourse(null)}
+                />
             )}
         </div>
     );

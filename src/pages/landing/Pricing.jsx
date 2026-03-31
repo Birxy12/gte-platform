@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { db } from '../../config/firebase';
+import { collection, getDocs } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
 import { Check, Sparkles, Zap, Shield } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -7,58 +9,43 @@ import './Pricing.css';
 export default function Pricing() {
   const [isAnnual, setIsAnnual] = useState(false);
 
-  const plans = [
-    {
-      name: "Free",
-      icon: <Shield size={24} />,
-      desc: "Perfect for exploring the platform and learning basics.",
-      monthlyPrice: "0",
-      annualPrice: "0",
-      btnText: "Get Started for Free",
-      btnClass: "btn-secondary",
-      features: [
-        "Access to beginner courses",
-        "Community forum access",
-        "Basic progress tracking",
-        "Standard support"
-      ]
-    },
-    {
-      name: "Pro",
-      icon: <Sparkles size={24} />,
-      desc: "For serious learners wanting full access and certificates.",
-      monthlyPrice: "29",
-      annualPrice: "19",
-      btnText: "Upgrade to Pro",
-      btnClass: "btn-primary",
-      popular: true,
-      features: [
-        "Everything in Free",
-        "Unlimited premium courses",
-        "Official certificates of completion",
-        "Offline downloading",
-        "Globix AI Chatbot access",
-        "Priority support"
-      ]
-    },
-    {
-      name: "Enterprise",
-      icon: <Zap size={24} />,
-      desc: "For teams and businesses looking to upskill their workforce.",
-      monthlyPrice: "99",
-      annualPrice: "79",
-      btnText: "Contact Sales",
-      btnClass: "btn-secondary",
-      features: [
-        "Everything in Pro",
-        "Admin team dashboard",
-        "Analytics and reporting",
-        "Custom learning paths",
-        "Single Sign-On (SSO)",
-        "Dedicated success manager"
-      ]
-    }
-  ];
+  const [plans, setPlans] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "courses"));
+        const courseData = querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            name: data.title || "Untitled Course",
+            icon: <Sparkles size={24} />, // Default icon
+            desc: data.description || "No description provided.",
+            monthlyPrice: data.monthlyPrice || "0",
+            annualPrice: data.annualPrice || "0",
+            btnText: "Enroll Now",
+            btnClass: "btn-secondary",
+            features: [
+              "Full course access",
+              "Practice datasets",
+              "Official certificate",
+              "Community support"
+            ]
+          };
+        });
+        
+        // Let's sort them nicely or just use as is
+        setPlans(courseData);
+      } catch (err) {
+        console.error("Error fetching courses for pricing:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCourses();
+  }, []);
 
   return (
     <div className="pricing-page">
@@ -101,9 +88,14 @@ export default function Pricing() {
       </div>
 
       <div className="pricing-grid">
-        {plans.map((plan, idx) => (
-          <motion.div 
-            key={idx} 
+        {loading ? (
+          <div className="w-full text-center py-12 text-slate-400">Loading course pricing...</div>
+        ) : plans.length === 0 ? (
+          <div className="w-full text-center py-12 text-slate-400">No courses available currently.</div>
+        ) : (
+          plans.map((plan, idx) => (
+            <motion.div 
+              key={plan.id || idx} 
             className={`pricing-card ${plan.popular ? 'popular' : ''}`}
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -153,7 +145,7 @@ export default function Pricing() {
               {plan.btnText}
             </Link>
           </motion.div>
-        ))}
+        )))}
       </div>
     </div>
   );

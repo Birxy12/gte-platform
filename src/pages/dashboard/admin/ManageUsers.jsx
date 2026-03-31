@@ -54,7 +54,11 @@ export default function ManageUsers() {
       setUsers(users.map(u => u.id === id ? { ...u, role: nextRole } : u));
     } catch (err) {
       console.error("Error changing role:", err);
-      alert("Failed to update role");
+      if (err.code === "permission-denied") {
+        alert("Permission denied: Your account lacks sufficient privileges to change user roles. Please check your Firestore security rules.");
+      } else {
+        alert("Failed to update role. Please try again.");
+      }
     }
   };
 
@@ -70,9 +74,14 @@ export default function ManageUsers() {
     try {
       await deleteDoc(doc(db, "users", id));
       setUsers(users.filter(user => user.id !== id));
+      alert("User record permanently deleted from Firestore.");
     } catch (err) {
       console.error(err);
-      alert("Failed to delete user.");
+      if (err.code === "permission-denied") {
+        alert("Permission denied: Your account lacks sufficient privileges to delete users. Please check your Firestore security rules.");
+      } else {
+        alert("Failed to delete user. Please try again.");
+      }
     }
   };
 

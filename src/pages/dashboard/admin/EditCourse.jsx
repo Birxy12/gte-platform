@@ -8,7 +8,9 @@ export default function EditCourse() {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [course, setCourse] = useState({ title: "", description: "", videoUrl: "", instructor: "" });
+    const [course, setCourse] = useState({ 
+        title: "", description: "", videoUrl: "", instructor: "", monthlyPrice: "", annualPrice: "" 
+    });
 
     useEffect(() => {
         const fetchCourse = async () => {
@@ -91,9 +93,29 @@ export default function EditCourse() {
                         <div className="ad-field">
                             <label>Instructor</label>
                             <input
-                                value={course.instructor}
+                                value={course.instructor || ""}
                                 onChange={(e) => setCourse({ ...course, instructor: e.target.value })}
                                 required
+                            />
+                        </div>
+
+                        <div className="ad-field">
+                            <label>Monthly Price ($)</label>
+                            <input
+                                type="number"
+                                placeholder="0"
+                                value={course.monthlyPrice || ""}
+                                onChange={(e) => setCourse({ ...course, monthlyPrice: e.target.value })}
+                            />
+                        </div>
+
+                        <div className="ad-field">
+                            <label>Annual Price ($)</label>
+                            <input
+                                type="number"
+                                placeholder="0"
+                                value={course.annualPrice || ""}
+                                onChange={(e) => setCourse({ ...course, annualPrice: e.target.value })}
                             />
                         </div>
                     </div>

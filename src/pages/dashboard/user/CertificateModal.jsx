@@ -35,6 +35,7 @@ export default function CertificateModal({ course, profile, onClose }) {
           <div className="cert-watermark">GLOBIX ACADEMY</div>
           
           <div className="cert-header">
+            <img src="/GlobixTech-logo.png" alt="Globix Academy" className="cert-logo" />
             <h1>Certificate of Completion</h1>
             <p>This is to certify that</p>
           </div>

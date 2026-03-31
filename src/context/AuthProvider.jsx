@@ -9,9 +9,17 @@ const AuthContext = createContext();
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [role, setRole] = useState(null);
+  const [siteSettings, setSiteSettings] = useState({ siteName: "GTE Portal" });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Fetch global settings once
+    getDoc(doc(db, "settings", "global"))
+      .then(snap => {
+        if (snap.exists()) setSiteSettings(prev => ({ ...prev, ...snap.data() }));
+      })
+      .catch(err => console.error("Error fetching settings:", err));
+
     let unsubscribePresence = null;
 
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -52,6 +60,7 @@ export function AuthProvider({ children }) {
   const value = {
     user,
     role,
+    siteSettings,
     isAdmin: role === "admin",
     isInstructor: role === "instructor",
     loading

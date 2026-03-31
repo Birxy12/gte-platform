@@ -1,8 +1,19 @@
 import { useState, useEffect } from "react";
-import { X, MapPin, Calendar, Link as LinkIcon, Briefcase } from "lucide-react";
+import { X, MapPin, Calendar, Link as LinkIcon, Briefcase, Users } from "lucide-react";
+import { socialService } from "../../services/socialService";
 import "./UserProfileModal.css";
 
 export default function UserProfileModal({ profileUser, onClose, onMessage, onFollow, onAddFriend, isFollowing, isFriend }) {
+    const [friendsCount, setFriendsCount] = useState(0);
+
+    useEffect(() => {
+        if (profileUser) {
+            socialService.getFriends(profileUser.uid || profileUser.id)
+                .then(friends => setFriendsCount(friends.length))
+                .catch(err => console.error("Could not load friends", err));
+        }
+    }, [profileUser]);
+
     if (!profileUser) return null;
 
     const initials = profileUser.displayName ? profileUser.displayName.substring(0, 2).toUpperCase() : "U";
@@ -61,6 +72,10 @@ export default function UserProfileModal({ profileUser, onClose, onMessage, onFo
                                 <span>{profileUser.occupation}</span>
                             </div>
                         )}
+                        <div className="meta-item">
+                            <Users size={16} />
+                            <span>{friendsCount} Friend{friendsCount !== 1 ? 's' : ''}</span>
+                        </div>
                         <div className="meta-item">
                             <Calendar size={16} />
                             <span>Joined {joinDate}</span>

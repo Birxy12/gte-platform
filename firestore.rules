@@ -22,9 +22,7 @@ service cloud.firestore {
     }
 
     // --- User Progress ---
-    // Modified from your provided /user_progress/{userId} to /userProgress/{progressId}
-    // to correctly match the progressService.js collection name and composite document IDs.
-    // Also explicitly enabled `list` queries to prevent permission errors when querying by userId.
+    // Modified to correctly match progressService.js and prevent list errors
     match /userProgress/{progressId} {
       allow list: if isAuthenticated() && request.auth.uid == resource.data.userId;
       allow get, update, delete: if isOwner(resource.data.userId);
@@ -40,8 +38,8 @@ service cloud.firestore {
     // --- Certificates ---
     match /certificates/{userId} {
       allow read: if isOwner(userId);        // Users can read their own certificates
-      allow create: if isAdmin();            // Only admins can create certificates (or auto-create based on quiz completion)
-      allow update: if isOwner(userId);      // Users can update their certificates if needed
+      allow create: if isAdmin();            // Only admins can create certificates
+      allow update: if isOwner(userId);      // Users can update their certificates
       allow delete: if isAdmin();            // Admins can delete certificates
     }
 
@@ -74,7 +72,6 @@ service cloud.firestore {
 
     // --- Chats & Messages ---
     match /chats/{chatId} {
-      // Simplified chat rules merged as requested
       allow read, write: if isAuthenticated();
 
       match /messages/{messageId} {
@@ -106,11 +103,21 @@ service cloud.firestore {
       allow update, delete: if isOwner(resource.data.userId) || isAdmin();
     }
 
+    // --- Reels ---
+    // Added during Phase 4 upgrades to support the new video platform
+    match /reels/{reelId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated(); // For likes/comments
+      allow delete: if isAdmin() || (isAuthenticated() && request.auth.uid == (resource.data.userId));
+    }
+
     // --- Analytics & Admin ---
     match /analytics/{docId} { allow read, write: if isAdmin(); }
     match /logs/{logId} { allow read: if isAdmin(); allow create: if isAuthenticated(); }
     
-    // Explicitly updated notifications list queries so you do not receive permission errors
+    // --- Notifications ---
+    // Updated list queries to prevent permission errors
     match /notifications/{notificationId} {
       allow list: if isAuthenticated() && request.auth.uid == resource.data.userId;
       allow get, update, delete: if isOwner(resource.data.userId);

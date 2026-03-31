@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../../context/AuthProvider";
-import { db, storage } from "../../../config/firebase";
+import { auth, db, storage } from "../../../config/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
+import { updatePassword } from "firebase/auth";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 export default function EditProfile() {
@@ -14,6 +15,7 @@ export default function EditProfile() {
     const [bio, setBio] = useState("");
     const [photoURL, setPhotoURL] = useState("");
     const [previewURL, setPreviewURL] = useState("");
+    const [newPassword, setNewPassword] = useState("");
 
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState("");
@@ -78,6 +80,32 @@ export default function EditProfile() {
         } catch (err) {
             console.error(err);
             setError("Failed to update profile. Please try again.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handlePasswordChange = async (e) => {
+        e.preventDefault();
+        if (!newPassword || newPassword.length < 6) {
+            setError("Password must be at least 6 characters.");
+            return;
+        }
+        setLoading(true);
+        setError("");
+        setSuccess("");
+        try {
+            await updatePassword(auth.currentUser, newPassword);
+            setSuccess("Password updated successfully! 🔒");
+            setNewPassword("");
+            setTimeout(() => setSuccess(""), 3000);
+        } catch (err) {
+            console.error(err);
+            if (err.code === "auth/requires-recent-login") {
+                setError("Security Alert: Please log out and back in to change your password.");
+            } else {
+                setError("Failed to change password. You may have registered via Google.");
+            }
         } finally {
             setLoading(false);
         }
@@ -173,6 +201,34 @@ export default function EditProfile() {
                     <div className="ud-btn-row">
                         <button type="submit" className="ud-btn-primary" disabled={loading}>
                             {loading ? "Saving..." : "Save Changes"}
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div className="ud-card" style={{ marginTop: '2rem' }}>
+                <h3>Security Settings</h3>
+                <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: '1.5rem' }}>If you registered with Google, you cannot set a custom password here.</p>
+                <form onSubmit={handlePasswordChange}>
+                    <div className="ud-form-grid">
+                        <div className="ud-field">
+                            <label>New Password</label>
+                            <input
+                                type="password"
+                                placeholder="Enter at least 6 characters"
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                    <div className="ud-btn-row" style={{ marginTop: '1rem' }}>
+                        <button 
+                            type="submit" 
+                            className="ud-btn-primary" 
+                            style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)', border: 'none' }} 
+                            disabled={loading || !newPassword}
+                        >
+                            {loading ? "Updating..." : "Update Password"}
                         </button>
                     </div>
                 </form>

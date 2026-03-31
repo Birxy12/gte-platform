@@ -6,7 +6,7 @@ import "./AiChatBot.css";
 export default function AiChatBot() {
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState([
-        { id: 1, sender: "bot", text: "Hi there! I'm Globix, your AI learning assistant. How can I help you today?" }
+        { id: 1, sender: "bot", text: "Hi there! I'm Birxy, your AI learning assistant. How can I help you today?" }
     ]);
     const [input, setInput] = useState("");
     const [isTyping, setIsTyping] = useState(false);
@@ -54,7 +54,7 @@ export default function AiChatBot() {
                             <Bot size={20} />
                         </div>
                         <div className="ai-bot-title">
-                            <h3>Globix AI</h3>
+                            <h3>Birxy AI</h3>
                             <p>Online & Ready to Help</p>
                         </div>
                         <button className="ai-bot-close" onClick={() => setIsOpen(false)}>

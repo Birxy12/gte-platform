@@ -10,7 +10,7 @@ import { formatDistanceToNow } from "date-fns";
 import "./Navbar.css";
 
 export default function Navbar() {
-    const { user, isAdmin } = useAuth();
+    const { user, isAdmin, siteSettings } = useAuth();
     const location = useLocation();
     const navigate = useNavigate();
     const [menuOpen, setMenuOpen] = useState(false);
@@ -96,7 +96,7 @@ export default function Navbar() {
             <div className="navbar-container">
                 <Link to="/home" className="navbar-logo">
                     <img src="/GlobixTech-logo.png" alt="Globix Tech" />
-                    <h5>GTE Portal</h5>
+                    <h5>{siteSettings?.siteName || "GTE Portal"}</h5>
                 </Link>
 
                 <button className="navbar-toggle" onClick={() => setMenuOpen(!menuOpen)}>
@@ -113,6 +113,8 @@ export default function Navbar() {
                     {user && (
                         <>
                             <Link to="/discover" className={isActive("/discover")} onClick={() => setMenuOpen(false)}>Discover</Link>
+                            <Link to="/reels" className={isActive("/reels")} onClick={() => setMenuOpen(false)}>Reels</Link>
+                            <Link to="/leaderboard" className={isActive("/leaderboard")} onClick={() => setMenuOpen(false)}>Leaderboard</Link>
                             <Link to="/dashboard" className={isActive("/dashboard")} onClick={() => setMenuOpen(false)}>Dashboard</Link>
                         </>
                     )}

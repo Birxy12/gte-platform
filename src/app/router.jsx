@@ -28,6 +28,9 @@ import Blog from "../pages/blog/Blog";
 import Courses from "../pages/courses/Courses";
 import ChatPage from "../pages/chat/ChatPage";
 import DiscoverUsers from "../pages/social/DiscoverUsers";
+import Reels from "../pages/social/Reels";
+import Leaderboard from "../pages/social/Leaderboard";
+import PublicProfile from "../pages/social/PublicProfile";
 
 import ProtectedRoute from "../components/common/ProtectedRoute";
 import AdminRoute from "../routes/AdminRoute";
@@ -77,6 +80,24 @@ export default function Router() {
         <Route path="/discover" element={
           <ProtectedRoute>
             <DiscoverUsers />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/reels" element={
+          <ProtectedRoute>
+            <Reels />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/leaderboard" element={
+          <ProtectedRoute>
+            <Leaderboard />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/profile/:uid" element={
+          <ProtectedRoute>
+            <PublicProfile />
           </ProtectedRoute>
         } />
 

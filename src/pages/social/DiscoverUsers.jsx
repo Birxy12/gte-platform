@@ -17,6 +17,7 @@ export default function DiscoverUsers() {
     const [users, setUsers] = useState([]);
     const [friends, setFriends] = useState([]);
     const [following, setFollowing] = useState([]);
+    const [incomingRequests, setIncomingRequests] = useState([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [loading, setLoading] = useState(true);
 
@@ -43,9 +44,11 @@ export default function DiscoverUsers() {
             // Fetch relations
             const myFriends = await socialService.getFriends(user.uid);
             const myFollowing = await socialService.getFollowing(user.uid);
+            const myRequests = await socialService.getIncomingRequests(user.uid);
 
             setFriends(myFriends);
             setFollowing(myFollowing);
+            setIncomingRequests(myRequests);
 
         } catch (err) {
             console.error("Error fetching discover data:", err);
@@ -74,6 +77,17 @@ export default function DiscoverUsers() {
             alert("Friend request sent!");
         } catch (err) {
             console.error(err);
+        }
+    };
+
+    const handleAcceptRequest = async (senderId) => {
+        try {
+            await socialService.acceptFriendRequest(senderId, user.uid);
+            setIncomingRequests(prev => prev.filter(req => req.senderId !== senderId));
+            setFriends(prev => [...prev, senderId]);
+            alert("Friend request accepted! 🎉");
+        } catch (err) {
+            console.error("Failed to accept request:", err);
         }
     };
 
@@ -111,7 +125,42 @@ export default function DiscoverUsers() {
                 {loading ? (
                     <div className="loading-state">Loading community...</div>
                 ) : (
-                    <div className="users-grid">
+                    <>
+                        {incomingRequests.length > 0 && (
+                            <div className="bg-slate-800 border border-blue-500/30 rounded-xl p-6 mb-8 shadow-xl">
+                                <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                                    <span className="text-blue-400">👋</span> Pending Friend Requests ({incomingRequests.length})
+                                </h2>
+                                <div className="flex flex-col gap-3">
+                                    {incomingRequests.map(req => {
+                                        const sender = users.find(u => u.uid === req.senderId) || { displayName: "Someone" };
+                                        return (
+                                            <div key={req.id} className="flex items-center justify-between bg-slate-700/50 p-3 rounded-lg border border-slate-600">
+                                                <div className="flex items-center gap-3">
+                                                    <img 
+                                                        src={sender.photoURL || `https://ui-avatars.com/api/?name=${sender.displayName || 'U'}&background=random`} 
+                                                        alt="User"
+                                                        className="w-10 h-10 rounded-full object-cover"
+                                                    />
+                                                    <div>
+                                                        <p className="font-semibold text-white">{sender.displayName || "A user"}</p>
+                                                        <p className="text-xs text-slate-400">wants to be friends</p>
+                                                    </div>
+                                                </div>
+                                                <button 
+                                                    onClick={() => handleAcceptRequest(req.senderId)}
+                                                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors"
+                                                >
+                                                    Accept
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="users-grid">
                         {filteredUsers.map(u => (
                             <div key={u.id} className="user-discover-card">
                                 <div className="card-top" style={{ cursor: 'pointer' }} onClick={() => setViewingProfile(u)}>
@@ -161,6 +210,7 @@ export default function DiscoverUsers() {
                             </div>
                         )}
                     </div>
+                </>
                 )}
             </div>
 

@@ -1,0 +1,189 @@
+.leaderboard-page {
+    background-color: #030712;
+    min-height: 100vh;
+    padding: 100px 20px 50px;
+}
+
+.leaderboard-container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.leaderboard-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.leaderboard-header h1 {
+    font-size: 3rem;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 0.5rem;
+}
+
+.leaderboard-header p {
+    color: #94a3b8;
+    font-size: 1.1rem;
+}
+
+/* ─── Podium ─── */
+.leaderboard-podium {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 1.5rem;
+    margin-bottom: 4rem;
+}
+
+.podium-item {
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 24px;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    flex-grow: 1;
+    max-width: 280px;
+}
+
+.podium-item:hover {
+    transform: translateY(-10px);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.podium-avatar-wrapper {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 1.5rem;
+}
+
+.podium-avatar-wrapper img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+}
+
+.podium-badge {
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #eab308;
+    color: #0f172a;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+}
+
+.podium-item.gold {
+    max-width: 330px;
+    border-width: 2px;
+    border-color: rgba(234, 179, 8, 0.3);
+    z-index: 5;
+    padding-bottom: 3.5rem;
+}
+
+.podium-item.gold .podium-avatar-wrapper { width: 140px; height: 140px; }
+.podium-item.gold .podium-badge { width: 44px; height: 44px; background: #eab308; box-shadow: 0 0 20px rgba(234, 179, 8, 0.5); }
+
+.podium-item.silver { border-color: rgba(203, 213, 225, 0.3); }
+.podium-item.silver .podium-badge { background: #cbd5e1; }
+
+.podium-item.bronze { border-color: rgba(168, 85, 24, 0.3); }
+.podium-item.bronze .podium-badge { background: #a85518; color: white; }
+
+.podium-info h3 { font-size: 1.1rem; color: white; margin: 0; }
+.podium-info h2 { font-size: 1.6rem; color: #eab308; margin: 0; }
+.podium-rank { font-size: 0.75rem; color: #94a3b8; font-weight: 700; display: block; margin: 0.3rem 0; }
+
+.podium-score {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: white;
+}
+
+.podium-score.big { font-size: 1.6rem; color: #eab308; }
+
+/* ─── List Section ─── */
+.leaderboard-list {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 24px;
+    overflow: hidden;
+}
+
+.list-header {
+    display: grid;
+    grid-template-columns: 80px 1fr 150px 120px;
+    padding: 1rem 2rem;
+    background: rgba(234, 179, 8, 0.05);
+    color: #eab308;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.list-item {
+    display: grid;
+    grid-template-columns: 80px 1fr 150px 120px;
+    padding: 1.25rem 2rem;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.list-item:hover {
+    background: rgba(255, 255, 255, 0.03);
+    transform: translateX(5px);
+}
+
+.item-rank { font-size: 1.4rem; font-weight: 900; color: #334155; }
+.item-user { display: flex; align-items: center; gap: 1rem; }
+.item-user img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; }
+.item-name { font-weight: 700; color: white; }
+.item-level { font-size: 0.75rem; color: #64748b; }
+
+.item-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #166534;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.item-score { font-size: 1.3rem; font-weight: 900; color: white; text-align: right; }
+
+.leaderboard-loading {
+    height: 100vh;
+    background: #030712;
+    color: #eab308;
+    font-weight: 900;
+    letter-spacing: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@media (max-width: 768px) {
+    .leaderboard-podium { flex-direction: column; align-items: center; }
+    .podium-item { width: 100%; max-width: 400px; }
+    .list-header, .list-item { grid-template-columns: 50px 1fr 80px; }
+    .item-status { display: none; }
+}
