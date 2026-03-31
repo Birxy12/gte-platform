@@ -7,7 +7,11 @@ export default function AdminSettings() {
         maintenanceMode: false,
         allowRegistrations: true,
         siteName: "GTE Portal",
-        autoModerationEnabled: false
+        autoModerationEnabled: false,
+        maxReelUploadSize: 50,
+        maintenanceMessage: "System upgrade in progress. Check back soon for new mission intel.",
+        featuredCourseId: "",
+        socialFeaturesEnabled: true
     });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -127,6 +131,50 @@ export default function AdminSettings() {
                                 onChange={(e) => setSettings({ ...settings, autoModerationEnabled: e.target.checked })}
                             />
                         </label>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div>
+                            <h4 style={{ margin: '0 0 0.25rem 0', color: '#f1f5f9' }}>Social Platforms (Reels/Social)</h4>
+                            <p style={{ margin: 0, fontSize: '0.85rem', color: '#94a3b8' }}>Toggle vertical video feed and social dossiers across the platform.</p>
+                        </div>
+                        <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                            <input
+                                type="checkbox"
+                                style={{ width: '20px', height: '20px', accentColor: '#ec4899' }}
+                                checked={settings.socialFeaturesEnabled}
+                                onChange={(e) => setSettings({ ...settings, socialFeaturesEnabled: e.target.checked })}
+                            />
+                        </label>
+                    </div>
+
+                    <div className="ad-field">
+                        <label>Max Reel Upload Size (MB)</label>
+                        <input
+                            type="number"
+                            value={settings.maxReelUploadSize || 50}
+                            onChange={(e) => setSettings({ ...settings, maxReelUploadSize: parseInt(e.target.value) })}
+                        />
+                    </div>
+
+                    <div className="ad-field">
+                        <label>Maintenance Downtime Message</label>
+                        <textarea
+                            value={settings.maintenanceMessage || ''}
+                            onChange={(e) => setSettings({ ...settings, maintenanceMessage: e.target.value })}
+                            rows={3}
+                            style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0.75rem', borderRadius: '8px' }}
+                        />
+                    </div>
+
+                    <div className="ad-field">
+                        <label>Featured Course ID (Dossier Highlight)</label>
+                        <input
+                            type="text"
+                            placeholder="Course Firestore ID..."
+                            value={settings.featuredCourseId || ''}
+                            onChange={(e) => setSettings({ ...settings, featuredCourseId: e.target.value })}
+                        />
                     </div>
 
                 </div>

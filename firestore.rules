@@ -15,9 +15,9 @@ service cloud.firestore {
 
     // --- Users ---
     match /users/{userId} {
-      allow read: if isAuthenticated();
+      allow read, list: if isAuthenticated();
       allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
+      allow update: if isOwner(userId) || isAdmin();
       allow delete: if isAdmin();
     }
 
@@ -31,13 +31,13 @@ service cloud.firestore {
 
     // --- Quizzes ---
     match /quizzes/{quizId} {
-      allow read: if isAuthenticated();      // Anyone can read quizzes
+      allow read, list: if isAuthenticated();      // Anyone can read quizzes
       allow write: if isAdmin();             // Only admins can create or modify quizzes
     }
 
     // --- Certificates ---
     match /certificates/{userId} {
-      allow read: if isOwner(userId);        // Users can read their own certificates
+      allow read, list: if isOwner(userId);        // Users can read their own certificates
       allow create: if isAdmin();            // Only admins can create certificates
       allow update: if isOwner(userId);      // Users can update their certificates
       allow delete: if isAdmin();            // Admins can delete certificates
@@ -45,13 +45,13 @@ service cloud.firestore {
 
     // --- Social & App Settings ---
     match /friends/{docId} {
-      allow read, write: if isAuthenticated();
+      allow read, list, write: if isAuthenticated();
     }
     match /friendRequests/{docId} {
-      allow read, write: if isAuthenticated();
+      allow read, list, write: if isAuthenticated();
     }
     match /followers/{docId} {
-      allow read, write: if isAuthenticated();
+      allow read, list, write: if isAuthenticated();
     }
     match /reports/{reportId} {
       allow read: if isAdmin();
@@ -59,7 +59,7 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
     match /settings/{docId} {
-      allow read: if true;
+      allow read: if isAuthenticated();
       allow write: if isAdmin();
     }
 
@@ -72,10 +72,12 @@ service cloud.firestore {
 
     // --- Chats & Messages ---
     match /chats/{chatId} {
-      allow read, write: if isAuthenticated();
+      allow read, create, update: if isAuthenticated();
+      allow delete: if isAdmin();
 
       match /messages/{messageId} {
-        allow read, write: if isAuthenticated();
+        allow read, create: if isAuthenticated();
+        allow delete: if isAdmin() || (isAuthenticated() && request.auth.uid == (resource.data.senderId));
       }
 
       match /typing/{userId} {
@@ -106,22 +108,25 @@ service cloud.firestore {
     // --- Reels ---
     // Added during Phase 4 upgrades to support the new video platform
     match /reels/{reelId} {
-      allow read: if isAuthenticated();
+      allow read, list: if isAuthenticated();
       allow create: if isAuthenticated();
       allow update: if isAuthenticated(); // For likes/comments
       allow delete: if isAdmin() || (isAuthenticated() && request.auth.uid == (resource.data.userId));
     }
 
-    // --- Analytics & Admin ---
-    match /analytics/{docId} { allow read, write: if isAdmin(); }
-    match /logs/{logId} { allow read: if isAdmin(); allow create: if isAuthenticated(); }
-    
     // --- Notifications ---
     // Updated list queries to prevent permission errors
     match /notifications/{notificationId} {
-      allow list: if isAuthenticated() && request.auth.uid == resource.data.userId;
       allow get, update, delete: if isOwner(resource.data.userId);
+      allow list: if isAuthenticated();
       allow create: if isAuthenticated();
+    }
+
+    // --- Testimonials ---
+    match /testimonies/{testimonyId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
     }
   }
 }

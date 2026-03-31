@@ -1,6 +1,6 @@
-import { useAuth } from "../../context/AuthProvider";
-import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
+import { db } from "../../config/firebase";
+import { collection, query, where, getDocs, limit } from "firebase/firestore";
 import "./Home.css";
 import Navbar from "../../components/layout/Navbar";
 import Footer from "../../components/layout/Footer";
@@ -40,12 +40,37 @@ export default function Home() {
     const { user } = useAuth();
     const [currentTestimonial, setCurrentTestimonial] = useState(0);
 
+    const [dynamicTestimonials, setDynamicTestimonials] = useState(testimonials);
+
     useEffect(() => {
+        const fetchTestimonials = async () => {
+            try {
+                const q = query(collection(db, "testimonies"), where("published", "==", true), limit(6));
+                const snap = await getDocs(q);
+                if (!snap.empty) {
+                    const fetched = snap.docs.map(doc => {
+                        const data = doc.data();
+                        return {
+                            quote: data.text,
+                            author: data.userName,
+                            role: "Verified Soldier",
+                            initials: data.userName.substring(0, 2).toUpperCase(),
+                            color: "linear-gradient(135deg, #1e293b, #334155)"
+                        };
+                    });
+                    setDynamicTestimonials(fetched);
+                }
+            } catch (err) {
+                console.error("Error fetching testimonials:", err);
+            }
+        };
+        fetchTestimonials();
+
         const timer = setInterval(() => {
-            setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
+            setCurrentTestimonial((prev) => (prev + 1) % dynamicTestimonials.length);
         }, 5000);
         return () => clearInterval(timer);
-    }, []);
+    }, [dynamicTestimonials.length]);
 
     return (
         <div className="landing">
@@ -215,21 +240,21 @@ export default function Home() {
                                 transition={{ duration: 0.5, ease: "easeInOut" }}
                                 className="testimonial-card-active"
                             >
-                                <div className="testimonial-quote">"{testimonials[currentTestimonial].quote}"</div>
+                                <div className="testimonial-quote">"{dynamicTestimonials[currentTestimonial].quote}"</div>
                                 <div className="testimonial-author">
-                                    <div className="author-avatar" style={{ background: testimonials[currentTestimonial].color }}>
-                                        {testimonials[currentTestimonial].initials}
+                                    <div className="author-avatar" style={{ background: dynamicTestimonials[currentTestimonial].color }}>
+                                        {dynamicTestimonials[currentTestimonial].initials}
                                     </div>
                                     <div>
-                                        <strong>{testimonials[currentTestimonial].author}</strong>
-                                        <span>{testimonials[currentTestimonial].role}</span>
+                                        <strong>{dynamicTestimonials[currentTestimonial].author}</strong>
+                                        <span>{dynamicTestimonials[currentTestimonial].role}</span>
                                     </div>
                                 </div>
                             </motion.div>
                         </AnimatePresence>
                     </div>
                     <div className="testimonial-dots">
-                        {testimonials.map((_, idx) => (
+                        {dynamicTestimonials.map((_, idx) => (
                             <button
                                 key={idx}
                                 onClick={() => setCurrentTestimonial(idx)}

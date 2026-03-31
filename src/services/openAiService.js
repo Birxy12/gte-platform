@@ -14,7 +14,7 @@ export const openAiService = {
                 ? `\nRecent messages from this user:\n${userMessages.map(m => `- ${m}`).join("\n")}`
                 : "\n(No recent public messages provided)";
 
-            const response = await fetch("https://api.openai.com/v1/chat/completions", {
+            const response = await fetch("/api/openai/chat/completions", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -68,7 +68,7 @@ export const openAiService = {
                 }))
             ];
 
-            const response = await fetch("https://api.openai.com/v1/chat/completions", {
+            const response = await fetch("/api/openai/chat/completions", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

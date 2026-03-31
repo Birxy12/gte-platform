@@ -7,6 +7,7 @@ import { signOut } from "firebase/auth";
 import { notificationService } from "../../services/notificationService";
 import { Bell, Check, Users, MessageCircle, FileText, Heart, X } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { motion, AnimatePresence } from "framer-motion";
 import "./Navbar.css";
 
 export default function Navbar() {
@@ -133,71 +134,96 @@ export default function Navbar() {
                             >
                                 <Bell size={20} />
                                 {unreadCount > 0 && (
-                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full border border-slate-900">
+                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full border border-slate-900 animate-pulse">
                                         {unreadCount > 9 ? '9+' : unreadCount}
                                     </span>
                                 )}
                             </div>
 
                             {/* WhatsApp Style Notification Dropdown */}
-                            {showNotifications && (
-                                <div className="notification-dropdown absolute top-full right-0 mt-3 w-80 sm:w-96 bg-slate-800 rounded-xl shadow-2xl border border-slate-700 overflow-hidden z-50 animate-in slide-in-from-top-2">
-                                    <div className="p-4 border-b border-slate-700 flex items-center justify-between bg-slate-900/50">
-                                        <h3 className="font-bold text-white text-lg">Notifications</h3>
-                                        {unreadCount > 0 && (
-                                            <button 
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    notificationService.markAllAsRead(user.uid, notifications);
-                                                }}
-                                                className="text-xs text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1"
-                                            >
-                                                <Check size={14} /> Mark all read
-                                            </button>
-                                        )}
-                                    </div>
-                                    <div className="max-h-[400px] overflow-y-auto no-scrollbar bg-slate-800/80">
-                                        {notifications.length === 0 ? (
-                                            <div className="p-8 text-center text-slate-400 flex flex-col items-center">
-                                                <Bell size={40} className="opacity-20 mb-3" />
-                                                <p>No notifications yet</p>
-                                            </div>
-                                        ) : (
-                                            notifications.map(notif => (
-                                                <div 
-                                                    key={notif.id} 
-                                                    onClick={() => handleNotificationClick(notif)}
-                                                    className={`p-4 border-b border-slate-700/50 cursor-pointer hover:bg-slate-700 transition-colors flex gap-3 items-start ${!notif.read ? 'bg-slate-700/30 relative' : 'opacity-80'}`}
+                            <AnimatePresence>
+                                {showNotifications && (
+                                    <motion.div 
+                                        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                                        className="notification-dropdown absolute top-full right-0 mt-3 w-80 sm:w-96 bg-slate-800 rounded-xl shadow-2xl border border-slate-700 overflow-hidden z-50 shadow-blue-500/10"
+                                    >
+                                        <div className="p-4 border-b border-slate-700 flex items-center justify-between bg-slate-900/50">
+                                            <h3 className="font-bold text-white text-lg flex items-center gap-2">
+                                                <Bell size={18} className="text-blue-400" /> Notifications
+                                            </h3>
+                                            {notifications.length > 0 && (
+                                                <button 
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        notificationService.clearAll(user.uid, notifications);
+                                                    }}
+                                                    className="text-xs text-red-400 hover:text-red-300 transition-colors flex items-center gap-1 font-bold underline underline-offset-4"
                                                 >
-                                                    {!notif.read && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>}
-                                                    <div className="p-2 rounded-full bg-slate-900 shrink-0">
-                                                        {getNotificationIcon(notif.type)}
+                                                    <X size={14} /> Empty Tray
+                                                </button>
+                                            )}
+                                        </div>
+                                        <div className="max-h-[400px] overflow-y-auto no-scrollbar bg-slate-800/80">
+                                            {notifications.length === 0 ? (
+                                                <div className="p-10 text-center text-slate-400 flex flex-col items-center">
+                                                    <div className="w-16 h-16 rounded-full bg-slate-700/50 flex items-center justify-center mb-4">
+                                                        <Bell size={32} className="opacity-20" />
                                                     </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className={`text-sm ${!notif.read ? 'text-white font-medium' : 'text-slate-300'} line-clamp-2`}>
-                                                            {notif.message}
-                                                        </p>
-                                                        <span className="text-[10px] text-slate-500 font-medium mt-1 block uppercase tracking-wider">
-                                                            {notif.timestamp ? formatDistanceToNow(notif.timestamp.toDate(), { addSuffix: true }) : 'Just now'}
-                                                        </span>
-                                                    </div>
-                                                    {!notif.read && <div className="w-2 h-2 rounded-full bg-blue-500 mt-2 shrink-0"></div>}
+                                                    <p className="font-medium">All quiet on the front</p>
+                                                    <span className="text-xs opacity-50">No new intel received.</span>
                                                 </div>
-                                            ))
+                                            ) : (
+                                                notifications.map(notif => (
+                                                    <div 
+                                                        key={notif.id} 
+                                                        onClick={() => handleNotificationClick(notif)}
+                                                        className={`p-4 border-b border-slate-700/50 cursor-pointer hover:bg-slate-700/50 transition-all flex gap-3 items-start ${!notif.read ? 'bg-blue-500/5 relative group' : 'opacity-70 hover:opacity-100'}`}
+                                                    >
+                                                        {!notif.read && <div className="absolute left-0 top-2 bottom-2 w-1 bg-blue-500 rounded-r-full"></div>}
+                                                        <div className={`p-2 rounded-lg shrink-0 ${!notif.read ? 'bg-blue-500/20 text-blue-400' : 'bg-slate-900 text-slate-500'}`}>
+                                                            {getNotificationIcon(notif.type)}
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className={`text-sm ${!notif.read ? 'text-white font-semibold' : 'text-slate-300'} line-clamp-2`}>
+                                                                {notif.message}
+                                                            </p>
+                                                            <div className="flex items-center gap-2 mt-1">
+                                                                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                                                                    {notif.timestamp ? formatDistanceToNow(notif.timestamp.toDate(), { addSuffix: true }) : 'Just now'}
+                                                                </span>
+                                                                {!notif.read && <span className="w-1 h-1 rounded-full bg-blue-500"></span>}
+                                                            </div>
+                                                        </div>
+                                                        {!notif.read && <div className="w-2 h-2 rounded-full bg-blue-500 mt-2 shrink-0 group-hover:scale-125 transition-transform"></div>}
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                        {notifications.length > 0 && (
+                                            <div className="p-3 bg-slate-900/50 border-t border-slate-700 text-center">
+                                                <Link to="/dashboard" className="text-xs text-slate-400 hover:text-white font-bold uppercase tracking-widest transition-colors">
+                                                    View All Intel
+                                                </Link>
+                                            </div>
                                         )}
-                                    </div>
-                                </div>
-                            )}
-                            <img
-                                src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || user.email.split('@')[0]}&background=0D8ABC&color=fff`}
-                                alt="User Avatar"
-                                style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.2)' }}
-                                className="navbar-avatar"
-                            />
-                            <span className="user-email hidden sm:block">
-                                {user.displayName || user.email.split("@")[0]}
-                            </span>
-                            <button onClick={handleLogout} className="btn-nav-outline">Sign Out</button>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+
+                            <Link to={`/profile/${user.uid}`} className="flex items-center gap-2 group">
+                                <img
+                                    src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || user.email.split('@')[0]}&background=0D8ABC&color=fff`}
+                                    alt="User Avatar"
+                                    style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.2)' }}
+                                    className="navbar-avatar group-hover:border-blue-500 transition-all shadow-lg"
+                                />
+                                <span className="user-email hidden sm:block font-bold text-gray-300 group-hover:text-white transition-colors">
+                                    {user.displayName || user.email.split("@")[0]}
+                                </span>
+                            </Link>
+                            <button onClick={handleLogout} className="btn-nav-outline ml-2">Sign Out</button>
                         </div>
                     ) : (
                         <Link to="/login" className="btn-nav-primary">Sign In</Link>

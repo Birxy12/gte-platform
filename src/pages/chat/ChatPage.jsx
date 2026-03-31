@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthProvider";
 import { chatService } from "../../services/chatService";
 import { presenceService } from "../../services/presenceService";
@@ -17,11 +18,12 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
+import { getArmyRank, ARMY_RANKS } from "../../config/armyRanks";
 import ZegoCall from "../../components/calling/ZegoCall";
 import "../../styles/messenger-ui.css";
 
 export default function ChatPage() {
-    const { user } = useAuth();
+    const { user, isAdmin } = useAuth();
     const [chats, setChats] = useState([]);
     const [activeChat, setActiveChat] = useState(null);
     const [messages, setMessages] = useState([]);
@@ -32,9 +34,10 @@ export default function ChatPage() {
     const [users, setUsers] = useState([]);
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
-    const [typingUsers, setTypingUsers] = useState([]);
-    const [typingTimeout, setTypingTimeout] = useState(null);
     const [onlineUsers, setOnlineUsers] = useState({});
+    const [userStatuses, setUserStatuses] = useState({}); // {uid: 'typing' | 'recording'}
+    const [typingTimeout, setTypingTimeout] = useState(null);
+    const [isRecording, setIsRecording] = useState(false);
     const messagesEndRef = useRef(null);
 
     // Subscriptions
@@ -53,24 +56,24 @@ export default function ChatPage() {
 
     useEffect(() => {
         if (!activeChat) return;
-        const unsubscribe = chatService.subscribeToMessages(activeChat.id, (updatedMessages) => {
-            setMessages(updatedMessages);
-        });
-
-        const unsubscribeTyping = chatService.subscribeToTyping(activeChat.id, (typings) => {
-            setTypingUsers(typings.filter(id => id !== user.uid));
+        const unsubscribeStatuses = chatService.subscribeToStatuses(activeChat.id, (statuses) => {
+            const others = {};
+            Object.entries(statuses).forEach(([uid, status]) => {
+                if (uid !== user.uid) others[uid] = status;
+            });
+            setUserStatuses(others);
         });
 
         return () => {
             unsubscribe();
-            unsubscribeTyping();
+            unsubscribeStatuses();
         };
     }, [activeChat, user]);
 
     // Auto-scroll to bottom
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages, typingUsers]);
+    }, [messages, userStatuses]);
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -97,13 +100,21 @@ export default function ChatPage() {
         setInputText(e.target.value);
         if (!activeChat) return;
 
-        chatService.setTypingStatus(activeChat.id, user.uid, true);
+        chatService.setStatus(activeChat.id, user.uid, "typing");
 
         if (typingTimeout) clearTimeout(typingTimeout);
         const timeout = setTimeout(() => {
-            chatService.setTypingStatus(activeChat.id, user.uid, false);
-        }, 1500);
+            chatService.setStatus(activeChat.id, user.uid, "none");
+        }, 2000);
         setTypingTimeout(timeout);
+    };
+
+    const toggleRecording = () => {
+        const newRecording = !isRecording;
+        setIsRecording(newRecording);
+        if (activeChat) {
+            chatService.setStatus(activeChat.id, user.uid, newRecording ? "recording" : "none");
+        }
     };
 
     const handleSendMessage = async (e) => {
@@ -112,7 +123,7 @@ export default function ChatPage() {
         try {
             await chatService.sendMessage(activeChat.id, user.uid, inputText);
             setInputText("");
-            chatService.setTypingStatus(activeChat.id, user.uid, false);
+            chatService.setStatus(activeChat.id, user.uid, "none");
             if (typingTimeout) clearTimeout(typingTimeout);
         } catch (err) {
             console.error("Send message error:", err);
@@ -153,12 +164,23 @@ export default function ChatPage() {
                     ...chat,
                     displayName: otherUser.displayName || "Unknown User",
                     photoURL: otherUser.photoURL,
+                    rank: otherUser.rank || 0,
                     otherUser
                 };
             }
         }
         return chat;
     });
+
+    const handleDeleteMessage = async (msgId) => {
+        if (!window.confirm("Abort this transmission?")) return;
+        try {
+            await chatService.deleteMessage(activeChat.id, msgId);
+        } catch (err) {
+            console.error(err);
+            alert("Failed to delete message.");
+        }
+    };
 
     return (
         <div className="messenger-wrapper">
@@ -209,21 +231,28 @@ export default function ChatPage() {
                             className={`chat-item ${activeChat?.id === chat.id ? 'active' : ''}`}
                         >
                             <div className="chat-avatar">
-                                {chat.photoURL ? (
-                                    <img src={chat.photoURL} className="w-full h-full rounded-full object-cover" alt="User" />
-                                ) : (
-                                    <div className="w-full h-full rounded-full flex items-center justify-center bg-msger-primary-gradient text-white text-lg">
-                                        {chat.groupName ? <Users size={24} /> : (chat.displayName || "U")[0]}
-                                    </div>
-                                )}
+                                <Link to={chat.type === 'direct' ? `/profile/${chat.otherUser?.uid}` : '#'} onClick={(e) => chat.type === 'direct' && e.stopPropagation()}>
+                                    {chat.photoURL ? (
+                                        <img src={chat.photoURL} className="w-full h-full rounded-full object-cover" alt="User" />
+                                    ) : (
+                                        <div className="w-full h-full rounded-full flex items-center justify-center bg-msger-primary-gradient text-white text-lg">
+                                            {chat.groupName ? <Users size={24} /> : (chat.displayName || "U")[0]}
+                                        </div>
+                                    )}
+                                </Link>
                                 {chat.type === "direct" && chat.otherUser && onlineUsers[chat.otherUser.uid] && (
                                     <div className="status-indicator" style={{ backgroundColor: '#2ecc71', width: '12px', height: '12px', borderRadius: '50%', border: '2px solid white', position: 'absolute', bottom: '0', right: '0' }}></div>
                                 )}
                             </div>
                             <div className="chat-info">
                                 <div className="chat-info-top">
-                                    <span className="chat-name">
+                                    <span className="chat-name flex items-center gap-2">
                                         {chat.groupName || chat.displayName || "Direct Chat"}
+                                        {chat.type === 'direct' && chat.rank > 0 && (
+                                            <span className="text-[10px] bg-slate-700 px-1.5 py-0.5 rounded text-gray-300 font-bold uppercase tracking-wider">
+                                                {getArmyRank(chat.rank).title}
+                                            </span>
+                                        )}
                                     </span>
                                     <span className="chat-time">
                                         {chat.lastMessageAt && format(chat.lastMessageAt.toDate(), "HH:mm")}
@@ -277,22 +306,28 @@ export default function ChatPage() {
                                     <ArrowLeft size={24} />
                                 </button>
                                 <div className="chat-avatar !w-10 !h-10 relative">
-                                    <img
-                                        src={activeChat.photoURL || "https://ui-avatars.com/api/?name=" + (activeChat.groupName || activeChat.displayName || "C")}
-                                        className="w-full h-full rounded-full object-cover"
-                                        alt="Chat"
-                                    />
+                                    <Link to={activeChat.type === 'direct' ? `/profile/${activeChat.otherUser?.uid}` : '#'}>
+                                        <img
+                                            src={activeChat.photoURL || "https://ui-avatars.com/api/?name=" + (activeChat.groupName || activeChat.displayName || "C")}
+                                            className="w-full h-full rounded-full object-cover"
+                                            alt="Chat"
+                                        />
+                                    </Link>
                                     {activeChat.type === "direct" && activeChat.otherUser && onlineUsers[activeChat.otherUser.uid] && (
                                         <div className="status-indicator" style={{ backgroundColor: '#2ecc71', width: '12px', height: '12px', borderRadius: '50%', border: '2px solid white', position: 'absolute', bottom: '0', right: '0' }}></div>
                                     )}
                                 </div>
                                 <div>
-                                    <h2>{activeChat.groupName || activeChat.displayName || "Chat"}</h2>
+                                    <h2 className="flex items-center gap-2">
+                                        {activeChat.groupName || activeChat.displayName || "Chat"}
+                                        {activeChat.type === "direct" && activeChat.otherUser && onlineUsers[activeChat.otherUser.uid] && (
+                                            <span className="flex h-2 w-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"></span>
+                                        )}
+                                    </h2>
                                     <span className="text-xs text-msger-text-dim">
-                                        {typingUsers.length > 0
-                                            ? "typing..."
-                                            : (activeChat.type === "direct" && activeChat.otherUser && onlineUsers[activeChat.otherUser.uid] ? "Online" : "")
-                                        }
+                                        {Object.values(userStatuses).some(s => s === 'typing') ? "typing..." : 
+                                         Object.values(userStatuses).some(s => s === 'recording') ? "recording audio..." : 
+                                         (activeChat.type === "direct" && activeChat.otherUser && onlineUsers[activeChat.otherUser.uid] ? "Online" : "Last seen recently")}
                                     </span>
                                 </div>
                             </div>
@@ -309,27 +344,51 @@ export default function ChatPage() {
                                     key={msg.id}
                                     className={`message-wrapper ${msg.senderId === user.uid ? 'sent' : 'received'}`}
                                 >
-                                    <div className="message-bubble">
+                                    <div className="message-bubble relative group/msg">
                                         {msg.text}
+                                        {(msg.senderId === user.uid || isAdmin) && (
+                                            <button 
+                                                onClick={() => handleDeleteMessage(msg.id)}
+                                                className="absolute -top-2 -right-2 bg-red-900 border border-red-500 text-white p-1 rounded-full opacity-0 group-hover/msg:opacity-100 transition-opacity z-10 hover:bg-red-600 scale-75"
+                                                title="Delete for everyone"
+                                            >
+                                                <X size={10} />
+                                            </button>
+                                        )}
                                     </div>
-                                    <span className="message-time">
-                                        {msg.timestamp && format(msg.timestamp.toDate(), "HH:mm")}
-                                    </span>
+                                    <div className="flex items-center gap-1 mt-1">
+                                        <span className="message-time">
+                                            {msg.timestamp && format(msg.timestamp.toDate(), "HH:mm")}
+                                        </span>
+                                    </div>
                                 </div>
                             ))}
-                            {typingUsers.length > 0 && (
-                                <div className="message-wrapper received">
-                                    <div className="message-bubble bg-gray-200 text-gray-500 italic text-sm">
-                                        typing...
+                            {Object.entries(userStatuses).map(([uid, status]) => (
+                                <div key={uid} className="message-wrapper received">
+                                    <div className="message-bubble bg-msger-hover text-msger-text-dim italic text-xs flex items-center gap-2">
+                                        {status === 'typing' ? (
+                                            <>
+                                                <motion.span animate={{ opacity: [0,1,0] }} transition={{ repeat: Infinity, duration: 1 }}>•</motion.span>
+                                                <motion.span animate={{ opacity: [0,1,0] }} transition={{ repeat: Infinity, duration: 1, delay: 0.2 }}>•</motion.span>
+                                                <motion.span animate={{ opacity: [0,1,0] }} transition={{ repeat: Infinity, duration: 1, delay: 0.4 }}>•</motion.span>
+                                                typing
+                                            </>
+                                        ) : (
+                                            <>🎤 recording audio...</>
+                                        )}
                                     </div>
                                 </div>
-                            )}
+                            ))}
                             <div ref={messagesEndRef} />
                         </div>
 
                         <form onSubmit={handleSendMessage} className="chat-input-area">
-                            <button type="button" className="text-msger-primary hover:opacity-70 transition-opacity">
-                                <Plus size={24} />
+                            <button 
+                                type="button" 
+                                onClick={toggleRecording}
+                                className={`transition-colors ${isRecording ? 'text-red-500 animate-pulse' : 'text-msger-primary hover:opacity-70'}`}
+                            >
+                                {isRecording ? <div className="w-6 h-6 rounded-full bg-red-500" /> : <Plus size={24} />}
                             </button>
                             <div className="input-container">
                                 <input

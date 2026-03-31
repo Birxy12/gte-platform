@@ -11,6 +11,7 @@ import { Award, FileText, Zap, Coins, Shield, Star, Award as MedalIcon, Upload, 
 import { reelsService } from "../../../services/reelsService";
 import { socialService } from "../../../services/socialService";
 import { ARMY_RANKS, getArmyRank } from "../../../config/armyRanks";
+import TestimonyForm from "../../../components/social/TestimonyForm";
 import "./UserDashboard.css";
 
 export default function UserDashboard() {
@@ -243,6 +244,11 @@ export default function UserDashboard() {
                                     <div className="army-progress-bar"><div className="army-progress-fill" style={{ width: `${bioProgress}%` }}></div></div>
                                 </div>
                             </div>
+                        </div>
+
+                        {/* Leave a Testimony/Feedback */}
+                        <div style={{ marginTop: '2rem', marginBottom: '2rem' }}>
+                            <TestimonyForm />
                         </div>
 
                         {/* Stats */}

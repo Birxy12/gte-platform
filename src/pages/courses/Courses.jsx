@@ -204,6 +204,17 @@ export default function Courses() {
                           <Star size={14} fill="currentColor" /> 4.9
                         </div>
                       </div>
+                      
+                      <button 
+                        className="quick-quiz-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedCourse(course);
+                          setShowQuiz(true);
+                        }}
+                      >
+                        <CheckCircle size={14} /> Take Quiz
+                      </button>
                     </div>
                   </div>
                 ))
@@ -235,7 +246,8 @@ export default function Courses() {
                   src={getEmbedUrl(selectedCourse.videoUrl)}
                   title={selectedCourse.title}
                   frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
                   className="w-full h-full"
                 ></iframe>
               ) : (

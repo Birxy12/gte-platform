@@ -98,6 +98,22 @@ export const notificationService = {
     },
 
     /**
+     * Delete all notifications for a user
+     */
+    async clearAll(userId, notificationsList) {
+        if (!userId || !notificationsList?.length) return;
+        try {
+            const batch = writeBatch(db);
+            notificationsList.forEach(n => {
+                batch.delete(doc(db, "notifications", n.id));
+            });
+            await batch.commit();
+        } catch (error) {
+            console.error("Failed to clear notifications:", error);
+        }
+    },
+
+    /**
      * Show a native desktop notification
      */
     showNotification(title, options) {

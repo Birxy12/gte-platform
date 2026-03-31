@@ -29,30 +29,49 @@ export default function About() {
                     </p>
                 </div>
 
-                {/* Values Grid */}
-                <div style={{
-                    display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                    gap: '1.5rem', marginBottom: '3rem'
-                }}>
-                    {[
-                        { icon: '🎯', title: 'Our Mission', desc: 'To democratize quality tech education and make it accessible to everyone, everywhere.' },
-                        { icon: '🌍', title: 'Global Reach', desc: 'Connecting learners from around the world with expert instructors and curated content.' },
-                        { icon: '🚀', title: 'Innovation', desc: 'Leveraging modern technology to create interactive and engaging learning experiences.' },
-                        { icon: '🤝', title: 'Community', desc: 'Building a supportive network where learners collaborate, share insights, and grow together.' }
-                    ].map((item, i) => (
-                        <div key={i} style={{
-                            background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
-                            borderRadius: '20px', padding: '1.5rem', transition: 'all 0.3s'
-                        }}>
-                            <div style={{
-                                width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(255,255,255,0.1)',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', marginBottom: '1rem'
-                            }}>{item.icon}</div>
-                            <h3 style={{ color: 'white', fontSize: '1.1rem', margin: '0 0 0.5rem 0' }}>{item.title}</h3>
-                            <p style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: '1.6', margin: 0 }}>{item.desc}</p>
+                    {/* Values Grid */}
+                    {/* ... existing values grid ... */}
+
+                    {/* Strategic Leadership Section */}
+                    <div style={{ marginTop: '4rem', marginBottom: '4rem' }}>
+                        <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+                            <h2 style={{ fontSize: '1.8rem', color: 'white', fontWeight: '800' }}>Strategic <span style={{ color: '#60a5fa' }}>Leadership</span></h2>
+                            <p style={{ color: '#94a3b8', marginTop: '0.5rem' }}>The elite unit driving digital innovation at GTE Portal.</p>
                         </div>
-                    ))}
-                </div>
+                        <div style={{ 
+                            display: 'grid', 
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+                            gap: '2rem' 
+                        }}>
+                            {[
+                                { name: 'Cmdr. Birxy', role: 'Chief Intelligence Officer', bio: 'Strategic lead for architecture and data warfare.', initials: 'CB' },
+                                { name: 'Maj. Sarah J.', role: 'Head of Operations', bio: 'Mission control for curriculum and learning paths.', initials: 'MS' },
+                                { name: 'Lt. Adewale O.', role: 'Tactical Frontend Lead', bio: 'Expert in high-performance UI/UX deployment.', initials: 'LA' },
+                                { name: 'Sgt. Fatima K.', role: 'Community Liaison', bio: 'Lead for community engagement and student morale.', initials: 'SF' }
+                            ].map((member, i) => (
+                                <div key={i} style={{ 
+                                    background: 'rgba(255,255,255,0.02)', 
+                                    border: '1px solid rgba(255,255,255,0.05)', 
+                                    borderRadius: '16px', 
+                                    padding: '2rem', 
+                                    textAlign: 'center',
+                                    transition: 'transform 0.3s'
+                                }}>
+                                    <div style={{ 
+                                        width: '80px', height: '80px', borderRadius: '50%', 
+                                        background: 'linear-gradient(135deg, #1e293b, #334155)', 
+                                        margin: '0 auto 1rem', 
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                                        fontSize: '1.5rem', fontWeight: 'bold', color: '#60a5fa',
+                                        border: '2px solid rgba(96, 165, 250, 0.2)'
+                                    }}>{member.initials}</div>
+                                    <h3 style={{ color: 'white', fontSize: '1.1rem', margin: '0 0 0.25rem 0' }}>{member.name}</h3>
+                                    <p style={{ color: '#60a5fa', fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', marginBottom: '0.75rem' }}>{member.role}</p>
+                                    <p style={{ color: '#94a3b8', fontSize: '0.85rem', lineHeight: '1.5', margin: 0 }}>{member.bio}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
 
                 {/* What We Offer */}
                 <div style={{

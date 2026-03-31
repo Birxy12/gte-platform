@@ -13,12 +13,12 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch global settings once
-    getDoc(doc(db, "settings", "global"))
-      .then(snap => {
-        if (snap.exists()) setSiteSettings(prev => ({ ...prev, ...snap.data() }));
-      })
-      .catch(err => console.error("Error fetching settings:", err));
+    // Listen to global settings in real-time
+    const unsubscribeSettings = onSnapshot(doc(db, "settings", "global"), (snap) => {
+      if (snap.exists()) {
+        setSiteSettings(prev => ({ ...prev, ...snap.data() }));
+      }
+    }, (err) => console.error("Error fetching settings:", err));
 
     let unsubscribePresence = null;
 

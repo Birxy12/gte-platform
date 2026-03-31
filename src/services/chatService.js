@@ -127,24 +127,38 @@ export const chatService = {
         });
     },
 
-    // Set typing status
-    setTypingStatus: async (chatId, userId, isTyping) => {
+    // Set typing/recording status
+    setStatus: async (chatId, userId, status = "none") => {
         if (!chatId || !userId) return;
-        const typingRef = doc(db, "chats", chatId, "typing", userId);
-        if (isTyping) {
-            await setDoc(typingRef, { isTyping: true, lastTypedAt: serverTimestamp() });
+        const statusRef = doc(db, "chats", chatId, "status", userId);
+        if (status !== "none") {
+            await setDoc(statusRef, { status, updatedAt: serverTimestamp() });
         } else {
-            await deleteDoc(typingRef).catch(() => {});
+            await deleteDoc(statusRef).catch(() => {});
         }
     },
 
-    // Subscribe to others typing
-    subscribeToTyping: (chatId, callback) => {
+    // Subscribe to statuses (typing/recording)
+    subscribeToStatuses: (chatId, callback) => {
         if (!chatId) return () => {};
-        const q = query(collection(db, "chats", chatId, "typing"));
+        const q = query(collection(db, "chats", chatId, "status"));
         return onSnapshot(q, (snapshot) => {
-            const typingUsers = snapshot.docs.map(doc => doc.id);
-            callback(typingUsers);
+            const statuses = {};
+            snapshot.docs.forEach(doc => {
+                statuses[doc.id] = doc.data().status;
+            });
+            callback(statuses);
         });
+    },
+
+    // Delete message (Admins or sender)
+    deleteMessage: async (chatId, messageId) => {
+        try {
+            const messageRef = doc(db, "chats", chatId, "messages", messageId);
+            await deleteDoc(messageRef);
+        } catch (error) {
+            console.error("Delete message error:", error);
+            throw error;
+        }
     }
 };

@@ -7,7 +7,15 @@ export default defineConfig({
   server: {
     headers: {
       "Cross-Origin-Opener-Policy": "same-origin-allow-popups",
-      "Cross-Origin-Embedder-Policy": "unsafe-none"
+      "Cross-Origin-Embedder-Policy": "unsafe-none",
+      "Permissions-Policy": "picture-in-picture=*, fullscreen=*"
     },
+    proxy: {
+      '/api/openai': {
+        target: 'https://api.openai.com/v1',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/openai/, '')
+      }
+    }
   },
 })
