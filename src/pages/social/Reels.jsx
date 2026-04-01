@@ -110,11 +110,18 @@ function Reel({ data, isActive, onDeleted }) {
 
             <div className="reel-overlay">
                 <div className="reel-info">
-                    <div className="reel-author">
-                        <Link to={`/profile/${data.userId}`} className="hover:underline">
-                            {data.authorName}
-                        </Link>
-                        <span className="army-tag">Mission Creator</span>
+                    <div className="reel-author flex items-center gap-2 mb-2">
+                        <img 
+                            src={data.authorPhoto || `https://ui-avatars.com/api/?name=${data.authorName || 'U'}&background=random`} 
+                            className="w-8 h-8 rounded-full border border-white/20 object-cover" 
+                            alt="Author" 
+                        />
+                        <div className="flex flex-col">
+                            <Link to={`/profile/${data.userId}`} className="hover:underline font-bold text-sm">
+                                {data.authorName}
+                            </Link>
+                            <span className="army-tag text-[10px] opacity-80 uppercase tracking-tighter">Mission Creator</span>
+                        </div>
                     </div>
                     <p className="reel-description">{data.description}</p>
                     <div className="reel-music">

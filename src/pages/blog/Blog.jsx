@@ -216,8 +216,16 @@ export default function Blog() {
                         )}
 
                         <h2 className="post-title">{post.title}</h2>
-                        <div className="post-meta">
-                          <span className="author-badge">{post.author?.split('@')[0] || "Unknown"}</span>
+                        <div className="post-meta flex items-center gap-2 mb-3">
+                          <img 
+                            src={post.authorPhoto || `https://ui-avatars.com/api/?name=${post.author || 'U'}&background=random`} 
+                            className="w-10 h-10 rounded-full border border-slate-700 object-cover" 
+                            alt="Author" 
+                          />
+                          <div className="flex flex-col">
+                            <span className="text-white font-bold text-sm leading-tight">{post.author?.split('@')[0] || "Unknown"}</span>
+                            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Post Author</span>
+                          </div>
                         </div>
                         <p className="post-body">{post.content}</p>
 
@@ -249,9 +257,16 @@ export default function Blog() {
                                 <div style={{ color: "#64748b", fontSize: "0.85rem", textAlign: "center" }}>Be the first to comment!</div>
                               ) : (
                                 post.comments?.map((comment, index) => (
-                                  <div key={index} className="comment-item">
-                                    <span className="comment-author">{comment.author.split('@')[0]}</span>
-                                    <span className="comment-text">{comment.text}</span>
+                                  <div key={index} className="comment-item flex items-start gap-3 p-2 bg-slate-900/30 rounded-lg mb-2">
+                                    <img 
+                                        src={`https://ui-avatars.com/api/?name=${comment.author || 'U'}&background=random`} 
+                                        className="w-8 h-8 rounded-full flex-shrink-0 object-cover" 
+                                        alt="C" 
+                                    />
+                                    <div className="flex flex-col">
+                                        <span className="comment-author text-xs font-bold text-blue-400">{comment.author.split('@')[0]}</span>
+                                        <span className="comment-text text-sm text-slate-300">{comment.text}</span>
+                                    </div>
                                   </div>
                                 ))
                               )}
