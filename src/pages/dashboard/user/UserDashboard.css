@@ -689,6 +689,44 @@
     background: rgba(59, 130, 246, 0.2);
 }
 
+/* ─── Avatar Gallery ─── */
+.ud-avatar-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.ud-avatar-option {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ud-avatar-option:hover {
+    transform: scale(1.1);
+    border-color: rgba(96, 165, 250, 0.5);
+}
+
+.ud-avatar-option.selected {
+    border-color: #60a5fa;
+    box-shadow: 0 0 15px rgba(96, 165, 250, 0.3);
+}
+
+.ud-avatar-option img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
 /* ─── Success / Error Messages ─── */
 .ud-success {
     padding: 0.8rem 1rem;

@@ -14,14 +14,16 @@ export const openAiService = {
                 ? `\nRecent messages from this user:\n${userMessages.map(m => `- ${m}`).join("\n")}`
                 : "\n(No recent public messages provided)";
 
-            const response = await fetch("/api/openai/chat/completions", {
+            const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${apiKey}`
+                    "Authorization": `Bearer ${apiKey}`,
+                    "HTTP-Referer": window.location.origin,
+                    "X-Title": "GTE Platform"
                 },
                 body: JSON.stringify({
-                    model: "gpt-3.5-turbo",
+                    model: "openai/gpt-3.5-turbo",
                     messages: [
                         {
                             role: "system",
@@ -68,14 +70,16 @@ export const openAiService = {
                 }))
             ];
 
-            const response = await fetch("/api/openai/chat/completions", {
+            const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${apiKey}`
+                    "Authorization": `Bearer ${apiKey}`,
+                    "HTTP-Referer": window.location.origin,
+                    "X-Title": "GTE Platform"
                 },
                 body: JSON.stringify({
-                    model: "gpt-3.5-turbo",
+                    model: "openai/gpt-3.5-turbo",
                     messages: formattedMessages,
                     temperature: 0.7
                 })

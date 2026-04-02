@@ -5,6 +5,17 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { updatePassword } from "firebase/auth";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
+const PREDEFINED_AVATARS = [
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Jasper",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah",
+    "https://api.dicebear.com/7.x/bottts/svg?seed=Robot1",
+    "https://api.dicebear.com/7.x/bottts/svg?seed=Robot2",
+    "https://api.dicebear.com/7.x/bottts/svg?seed=Robot3",
+    "https://api.dicebear.com/7.x/bottts/svg?seed=Robot4"
+];
+
 export default function EditProfile() {
     const { user } = useAuth();
     const fileRef = useRef(null);
@@ -43,6 +54,11 @@ export default function EditProfile() {
         const file = e.target.files[0];
         if (!file) return;
         setPreviewURL(URL.createObjectURL(file));
+    };
+
+    const handleSelectAvatar = (url) => {
+        setPreviewURL(url);
+        setPhotoURL(url);
     };
 
     const handleSave = async (e) => {
@@ -144,6 +160,21 @@ export default function EditProfile() {
                             onChange={handleImageChange}
                             style={{ display: 'none' }}
                         />
+                    </div>
+                </div>
+
+                <div style={{ marginTop: '2rem' }}>
+                    <h4 style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: '1rem' }}>Or choose from our gallery:</h4>
+                    <div className="ud-avatar-grid">
+                        {PREDEFINED_AVATARS.map((url, idx) => (
+                            <div 
+                                key={idx} 
+                                className={`ud-avatar-option ${displayPhoto === url ? 'selected' : ''}`}
+                                onClick={() => handleSelectAvatar(url)}
+                            >
+                                <img src={url} alt={`Avatar option ${idx + 1}`} />
+                            </div>
+                        ))}
                     </div>
                 </div>
             </div>
