@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../../config/firebase';
+import { collection, getDocs, doc, updateDoc, arrayUnion } from 'firebase/firestore';
 
 const Quiz = ({ userId }) => {
   const [quizzes, setQuizzes] = useState([]);

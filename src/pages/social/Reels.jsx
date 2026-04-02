@@ -23,6 +23,17 @@ function Reel({ data, isActive, onDeleted }) {
         setComments(data.comments || []);
     }, [data, user]);
 
+    const togglePlay = () => {
+        if (!videoRef.current) return;
+        if (isPlaying) {
+            videoRef.current.pause();
+            setIsPlaying(false);
+        } else {
+            videoRef.current.play();
+            setIsPlaying(true);
+        }
+    };
+
     useEffect(() => {
         if (isActive) {
             videoRef.current.play().then(() => setIsPlaying(true)).catch(e => console.log('Autoplay prevented:', e));

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../firebase'; // Firebase setup
+import { db } from '../../config/firebase'; // Firebase setup
 import { doc, getDoc } from 'firebase/firestore';
 
 const ProgressBar = ({ userId }) => {

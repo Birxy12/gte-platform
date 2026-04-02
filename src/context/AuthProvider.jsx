@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "../config/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { presenceService } from "../services/presenceService";
 
 const AuthContext = createContext();
@@ -51,6 +51,7 @@ export function AuthProvider({ children }) {
 
     return () => {
       unsubscribe();
+      unsubscribeSettings();
       if (unsubscribePresence) {
         unsubscribePresence();
       }

@@ -1,5 +1,5 @@
 import React from 'react';
-import Certificate from '../components/layout/Certificate';  // Adjusted import
+import Certificate from '../../../components/layout/Certificate';
 
 const CertificatePage = ({ userId }) => {
   return (
