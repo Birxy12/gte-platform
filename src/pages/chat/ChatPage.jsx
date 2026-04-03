@@ -325,7 +325,7 @@ export default function ChatPage() {
                     </div>
                 </div>
 
-                <div className="chat-list no-scrollbar">
+                <div className="chat-list overflow-y-auto">
                     {/* Filtered Chats */}
                     {hydratedChats.filter(chat =>
                         (chat.groupName || chat.displayName || "").toLowerCase().includes(searchTerm.toLowerCase())
@@ -425,7 +425,7 @@ export default function ChatPage() {
                             </div>
                         </div>
 
-                        <div className="messages-container no-scrollbar" onClick={() => setActiveContextMenuMsgId(null)}>
+                        <div className="messages-container overflow-y-auto" onClick={() => setActiveContextMenuMsgId(null)}>
                             {messages.map((msg, idx) => (
                                 <div
                                     key={msg.id}
@@ -590,7 +590,7 @@ export default function ChatPage() {
                                         </div>
                                     </div>
 
-                                    <div className="flex-1 overflow-y-auto no-scrollbar">
+                                    <div className="flex-1 overflow-y-auto custom-scrollbar">
                                         {users.filter(u => (u.username || u.displayName || u.email || "").toLowerCase().includes(contactSearchTerm.toLowerCase())).map(u => (
                                             <div
                                                 key={u.id}
@@ -810,7 +810,7 @@ function GroupCreationView({ users, onCreate, onBack }) {
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto no-scrollbar pb-16 relative">
+            <div className="flex-1 overflow-y-auto custom-scrollbar pb-2 relative">
                 {users.filter(u => (u.username || u.displayName || u.email || "").toLowerCase().includes(groupSearchTerm.toLowerCase())).map(u => (
                     <div
                         key={u.id}
@@ -832,7 +832,7 @@ function GroupCreationView({ users, onCreate, onBack }) {
                     </div>
                 ))}
             </div>
-            <div className="p-4 bg-msger-header border-t border-msger-border mt-auto">
+            <div className="p-4 bg-msger-header border-t border-msger-border mt-auto flex-shrink-0">
                 <button
                     disabled={!groupName.trim() || selectedUsers.length === 0}
                     onClick={() => onCreate(groupName, selectedUsers)}
