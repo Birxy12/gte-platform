@@ -7,9 +7,9 @@ export default function ZegoCall({ callID, onEnd, type = "video" }) {
     const { user } = useAuth();
 
     const myMeeting = async (element) => {
-        // Generate Kit Token
-        const appID = Number(import.meta.env.VITE_ZEGO_APP_ID) || 1730644229;
-        const serverSecret = import.meta.env.VITE_ZEGO_SERVER_SECRET || "ffa07942558bc7052de9e2a7b4f1672cfa8cc4de58bd3788679cad123f78df92";
+        // Generate Kit Token (Force Hardcoded App ID & Secret to bypass Vite caching)
+        const appID = 1730644229;
+        const serverSecret = "ffa07942558bc7052de9e2a7b4f1672cfa8cc4de58bd3788679cad123f78df92";
 
         if (!appID) {
             alert("ZEGOCLOUD is not fully configured.");
