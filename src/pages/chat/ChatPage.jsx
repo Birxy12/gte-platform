@@ -593,7 +593,7 @@ export default function ChatPage() {
                                     <div className="flex-1 overflow-y-auto no-scrollbar">
                                         {users.filter(u => (u.username || u.displayName || u.email || "").toLowerCase().includes(contactSearchTerm.toLowerCase())).map(u => (
                                             <div
-                                                key={u.uid}
+                                                key={u.id}
                                                 onClick={() => startDirectChat(u)}
                                                 className="px-4 py-3 flex items-center gap-4 hover:bg-[#182229] cursor-pointer"
                                             >
@@ -813,8 +813,8 @@ function GroupCreationView({ users, onCreate, onBack }) {
             <div className="flex-1 overflow-y-auto no-scrollbar pb-16 relative">
                 {users.filter(u => (u.username || u.displayName || u.email || "").toLowerCase().includes(groupSearchTerm.toLowerCase())).map(u => (
                     <div
-                        key={u.uid}
-                        onClick={() => toggleUser(u.uid)}
+                        key={u.id}
+                        onClick={() => toggleUser(u.id)}
                         className={`px-4 py-3 flex items-center justify-between hover:bg-[#182229] cursor-pointer border-b border-msger-border`}
                     >
                         <div className="flex items-center gap-3">
@@ -826,19 +826,19 @@ function GroupCreationView({ users, onCreate, onBack }) {
                                 <p className="text-xs text-msger-text-dim">{u.email}</p>
                             </div>
                         </div>
-                        <div className={`w-5 h-5 rounded-sm border-2 flex items-center justify-center transition-all ${selectedUsers.includes(u.uid) ? 'bg-msger-primary border-msger-primary' : 'border-[#8696a0]'}`}>
-                            {selectedUsers.includes(u.uid) && <Check size={14} className="text-white" />}
+                        <div className={`w-5 h-5 rounded-sm border-2 flex items-center justify-center transition-all ${selectedUsers.includes(u.id) ? 'bg-msger-primary border-msger-primary' : 'border-[#8696a0]'}`}>
+                            {selectedUsers.includes(u.id) && <Check size={14} className="text-white" />}
                         </div>
                     </div>
                 ))}
             </div>
-            <div className="p-4 bg-[#202c33] flex justify-center">
+            <div className="p-4 bg-msger-header border-t border-msger-border mt-auto">
                 <button
                     disabled={!groupName.trim() || selectedUsers.length === 0}
                     onClick={() => onCreate(groupName, selectedUsers)}
-                    className="w-14 h-14 bg-msger-primary text-white rounded-full shadow-lg flex items-center justify-center disabled:opacity-50 transition-all hover:scale-105"
+                    className="w-full py-3.5 bg-msger-primary-gradient text-white font-bold rounded-lg shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:scale-[1.02] transform"
                 >
-                    <Check size={32} />
+                    Create Group <Check size={20} />
                 </button>
             </div>
         </div>
