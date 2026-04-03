@@ -163,6 +163,21 @@ export const chatService = {
         }
     },
 
+    // Edit message
+    editMessage: async (chatId, messageId, newText) => {
+        try {
+            const messageRef = doc(db, "chats", chatId, "messages", messageId);
+            await updateDoc(messageRef, {
+                text: newText,
+                isEdited: true,
+                editedAt: serverTimestamp()
+            });
+        } catch (error) {
+            console.error("Edit message error:", error);
+            throw error;
+        }
+    },
+
     // Clear all messages in a chat (for both users)
     clearChatMessages: async (chatId) => {
         try {

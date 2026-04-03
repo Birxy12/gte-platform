@@ -21,7 +21,8 @@ import {
     Image,
     X,
     Smile,
-    Mic
+    Mic,
+    Edit2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
@@ -35,6 +36,7 @@ export default function ChatPage() {
     const [activeChat, setActiveChat] = useState(null);
     const [messages, setMessages] = useState([]);
     const [inputText, setInputText] = useState("");
+    const [editingMessageId, setEditingMessageId] = useState(null);
     const [showNewChat, setShowNewChat] = useState(false);
     const [showNewGroup, setShowNewGroup] = useState(false);
     const [activeCall, setActiveCall] = useState(null);
@@ -201,7 +203,12 @@ export default function ChatPage() {
         e.preventDefault();
         if (!inputText.trim() || !activeChat) return;
         try {
-            await chatService.sendMessage(activeChat.id, user.uid, inputText);
+            if (editingMessageId) {
+                await chatService.editMessage(activeChat.id, editingMessageId, inputText);
+                setEditingMessageId(null);
+            } else {
+                await chatService.sendMessage(activeChat.id, user.uid, inputText);
+            }
             setInputText("");
             chatService.setStatus(activeChat.id, user.uid, "none");
             if (typingTimeout) clearTimeout(typingTimeout);
@@ -209,6 +216,11 @@ export default function ChatPage() {
             console.error("Send message error:", err);
             setError("Failed to send message.");
         }
+    };
+
+    const handleEditMessageClick = (msg) => {
+        setEditingMessageId(msg.id);
+        setInputText(msg.text);
     };
 
     const startDirectChat = async (targetUser) => {
@@ -239,15 +251,13 @@ export default function ChatPage() {
         if (chat.type === "direct") {
             const otherUserId = chat.participants?.find(p => p !== user?.uid);
             const otherUser = users.find(u => u.uid === otherUserId || u.id === otherUserId);
-            if (otherUser) {
-                return {
-                    ...chat,
-                    displayName: otherUser.displayName || "Unknown User",
-                    photoURL: otherUser.photoURL,
-                    rank: otherUser.rank || 0,
-                    otherUser
-                };
-            }
+            return {
+                ...chat,
+                displayName: otherUser?.displayName || "Birxy User",
+                photoURL: otherUser?.photoURL || null,
+                rank: otherUser?.rank || 0,
+                otherUser: otherUser || { uid: otherUserId, email: "Unknown" }
+            };
         }
         return chat;
     });
@@ -338,25 +348,27 @@ export default function ChatPage() {
                 {activeChat ? (
                     <>
                         <div className="chat-header">
-                            <div className="header-user" onClick={() => setActiveChat(null)}>
-                                <button className="md:hidden text-msger-text-dim pr-2">
+                            <div className="flex items-center gap-2">
+                                <button className="md:hidden text-msger-text-dim p-2 -ml-2" onClick={() => setActiveChat(null)}>
                                     <ArrowLeft size={24} />
                                 </button>
-                                <div className="chat-avatar !w-10 !h-10">
-                                    <img
-                                        src={activeChat.photoURL || "https://ui-avatars.com/api/?name=" + (activeChat.groupName || activeChat.displayName || "C")}
-                                        alt="Chat"
-                                    />
-                                </div>
-                                <div className="ml-1 flex-1 cursor-pointer" onClick={() => !activeChat.groupName && setShowUserInfo(true)}>
-                                    <h2 className="leading-tight">
-                                        {activeChat.groupName || activeChat.displayName || "Chat"}
-                                    </h2>
-                                    <span className="text-[11px]">
-                                        {Object.values(userStatuses).some(s => s === 'typing') ? "typing..." : 
-                                         Object.values(userStatuses).some(s => s === 'recording') ? "recording audio..." : 
-                                         (activeChat.type === "direct" && activeChat.otherUser && onlineUsers[activeChat.otherUser.uid] ? "Online" : "last seen recently")}
-                                    </span>
+                                <div className="header-user cursor-pointer" onClick={() => !activeChat.groupName && setShowUserInfo(true)}>
+                                    <div className="chat-avatar !w-10 !h-10 border-2 border-msger-primary rounded-full overflow-hidden">
+                                        <img
+                                            src={activeChat.photoURL || "https://ui-avatars.com/api/?name=" + (activeChat.groupName || activeChat.displayName || "C")}
+                                            alt="Chat"
+                                        />
+                                    </div>
+                                    <div className="ml-2 flex-1">
+                                        <h2 className="leading-tight font-semibold text-white">
+                                            {activeChat.groupName || activeChat.displayName || "Chat"}
+                                        </h2>
+                                        <span className="text-[12px] text-msger-primary font-medium tracking-wide">
+                                            {Object.values(userStatuses).some(s => s === 'typing') ? "typing..." : 
+                                            Object.values(userStatuses).some(s => s === 'recording') ? "recording audio..." : 
+                                            (activeChat.type === "direct" && activeChat.otherUser && onlineUsers[activeChat.otherUser?.uid] ? "Online" : "last seen recently")}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                             <div className="header-actions">
@@ -392,6 +404,7 @@ export default function ChatPage() {
                                 >
                                     <div className="message-bubble group/msg">
                                         {msg.text}
+                                        {msg.isEdited && <span className="text-[10px] ml-1 opacity-50 italic">(edited)</span>}
                                         <div className="message-meta">
                                             <span className="message-time">
                                                 {msg.timestamp && format(msg.timestamp.toDate(), "HH:mm")}
@@ -404,12 +417,22 @@ export default function ChatPage() {
                                         </div>
                                         
                                         {(msg.senderId === user.uid || isAdmin) && (
-                                            <button 
-                                                onClick={() => handleDeleteMessage(msg.id)}
-                                                className="absolute top-1 right-1 opacity-0 group-hover/msg:opacity-100 transition-opacity text-msger-text-dim hover:text-red-400"
-                                            >
-                                                <X size={12} />
-                                            </button>
+                                            <div className="absolute top-1 right-1 opacity-0 group-hover/msg:opacity-100 transition-opacity flex gap-2 bg-gradient-to-l from-msger-secondary to-transparent pl-4 rounded-r-lg">
+                                                {msg.senderId === user.uid && (
+                                                    <button 
+                                                        onClick={() => handleEditMessageClick(msg)}
+                                                        className="text-msger-text-dim hover:text-blue-400"
+                                                    >
+                                                        <Edit2 size={12} />
+                                                    </button>
+                                                )}
+                                                <button 
+                                                    onClick={() => handleDeleteMessage(msg.id)}
+                                                    className="text-msger-text-dim hover:text-red-400"
+                                                >
+                                                    <X size={12} />
+                                                </button>
+                                            </div>
                                         )}
                                     </div>
                                 </div>
@@ -419,13 +442,20 @@ export default function ChatPage() {
 
                         <form onSubmit={handleSendMessage} className="chat-input-area">
                             <Plus size={24} className="text-msger-text-dim cursor-pointer" />
-                            <div className="input-container">
-                                <Smile size={22} className="text-msger-text-dim mr-2" />
+                            <div className="input-container flex-1 bg-msger-header px-4 py-2 rounded-full border border-msger-border focus-within:border-msger-primary transition-colors flex items-center relative">
+                                {editingMessageId && (
+                                    <div className="absolute -top-8 left-4 text-[11px] bg-msger-secondary px-2 py-1 rounded-t-lg text-msger-text-dim border border-b-0 border-msger-border flex gap-2">
+                                        Editing message... 
+                                        <button type="button" onClick={() => { setEditingMessageId(null); setInputText(""); }} className="hover:text-red-400"><X size={12}/></button>
+                                    </div>
+                                )}
+                                <Smile size={22} className="text-msger-text-dim mr-3 hover:text-white cursor-pointer transition-colors" />
                                 <input
                                     type="text"
-                                    placeholder="Type a message"
+                                    placeholder={editingMessageId ? "Update your message..." : "Type a message"}
                                     value={inputText}
                                     onChange={handleInputChange}
+                                    className="w-full bg-transparent border-none outline-none text-white placeholder:text-msger-text-dim"
                                 />
                             </div>
                             <button

@@ -4,6 +4,7 @@ import {
     addDoc, 
     updateDoc, 
     doc, 
+    getDoc,
     deleteDoc, 
     getDocs, 
     query, 
@@ -62,8 +63,8 @@ export const reelsService = {
      */
     async toggleLike(reelId, userId) {
         const reelRef = doc(db, "reels", reelId);
-        const snapshot = await getDocs(query(collection(db, "reels"), where("__name__", "==", reelId)));
-        const data = snapshot.docs[0].data();
+        const snapshot = await getDoc(reelRef);
+        const data = snapshot.data();
         
         if (data.likes?.includes(userId)) {
             await updateDoc(reelRef, { likes: arrayRemove(userId) });
@@ -111,8 +112,8 @@ export const reelsService = {
      */
     async incrementShare(reelId) {
         const reelRef = doc(db, "reels", reelId);
-        const snapshot = await getDocs(query(collection(db, "reels"), where("__name__", "==", reelId)));
-        const currentShares = snapshot.docs[0].data().shares || 0;
+        const snapshot = await getDoc(reelRef);
+        const currentShares = snapshot.data()?.shares || 0;
         await updateDoc(reelRef, { shares: currentShares + 1 });
     }
 };
