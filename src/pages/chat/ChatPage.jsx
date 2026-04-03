@@ -48,7 +48,9 @@ export default function ChatPage() {
     const [typingTimeout, setTypingTimeout] = useState(null);
     const [isRecording, setIsRecording] = useState(false);
     const [wallpaper, setWallpaper] = useState(localStorage.getItem("chatWallpaper") || "wp-default");
-    const [showSettings, setShowSettings] = useState(false);
+    const [showProfileSettings, setShowProfileSettings] = useState(false);
+    const [showChatOptionsDropdown, setShowChatOptionsDropdown] = useState(false);
+    const [activeContextMenuMsgId, setActiveContextMenuMsgId] = useState(null);
     const [showUserInfo, setShowUserInfo] = useState(false);
     const [currentUserData, setCurrentUserData] = useState(null);
     const [editPhone, setEditPhone] = useState("");
@@ -253,7 +255,7 @@ export default function ChatPage() {
             const otherUser = users.find(u => u.uid === otherUserId || u.id === otherUserId);
             return {
                 ...chat,
-                displayName: otherUser?.displayName || "Birxy User",
+                displayName: otherUser?.username || otherUser?.displayName || "Unknown User",
                 photoURL: otherUser?.photoURL || null,
                 rank: otherUser?.rank || 0,
                 otherUser: otherUser || { uid: otherUserId, email: "Unknown" }
@@ -274,17 +276,33 @@ export default function ChatPage() {
     const changeWallpaper = (style) => {
       setWallpaper(style);
       localStorage.setItem("chatWallpaper", style);
-      setShowSettings(false);
+      setShowProfileSettings(false);
+      setShowChatOptionsDropdown(false);
+    };
+
+    const handleContextMenu = (e, msgId) => {
+        e.preventDefault();
+        setActiveContextMenuMsgId(activeContextMenuMsgId === msgId ? null : msgId);
+    };
+
+    const longPressTimerRef = useRef(null);
+    const handleTouchStart = (msgId) => {
+        longPressTimerRef.current = setTimeout(() => {
+            setActiveContextMenuMsgId(msgId);
+        }, 600);
+    };
+    const handleTouchEnd = () => {
+        if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
     };
 
     return (
-        <div className="messenger-wrapper">
+        <div className="messenger-wrapper" onClick={() => { if(showChatOptionsDropdown) setShowChatOptionsDropdown(false); }}>
             {/* Sidebar */}
             <div className={`messenger-sidebar ${activeChat ? 'hidden' : ''}`}>
                 <div className="sidebar-header">
                     <div className="sidebar-top">
                         <div className="flex items-center gap-3">
-                            <img src={user?.photoURL || "/GlobixTech-logo.png"} alt="User" className="sidebar-logo cursor-pointer" onClick={() => setShowSettings(true)} />
+                            <img src={user?.photoURL || "/GlobixTech-logo.png"} alt="User" className="sidebar-logo cursor-pointer" onClick={() => setShowProfileSettings(true)} />
                             <h1 className="text-xl font-bold">BirxyChat</h1>
                         </div>
                         <div className="flex gap-4 text-msger-text-dim">
@@ -375,20 +393,30 @@ export default function ChatPage() {
                                 <Video size={20} onClick={() => setActiveCall({ id: activeChat.id, type: 'video' })} />
                                 <Phone size={20} onClick={() => setActiveCall({ id: activeChat.id, type: 'voice' })} />
                                 <div className="relative">
-                                    <MoreVertical size={20} onClick={() => setShowSettings(!showSettings)} />
-                                    {showSettings && (
-                                        <div className="settings-menu">
-                                            <div className="px-4 py-2 text-[10px] uppercase font-bold text-msger-text-dim border-b border-msger-border mb-1">
+                                    <MoreVertical size={20} className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setShowChatOptionsDropdown(!showChatOptionsDropdown); }} />
+                                    {showChatOptionsDropdown && (
+                                        <div className="absolute right-0 top-full mt-2 w-56 bg-msger-header border border-msger-border rounded-lg shadow-xl overflow-hidden z-50 animate-in fade-in zoom-in-95">
+                                            <div onClick={(e) => { e.stopPropagation(); setShowUserInfo(true); setShowChatOptionsDropdown(false); }} className="px-4 py-3 hover:bg-white/5 cursor-pointer text-sm">
+                                                Contact Info
+                                            </div>
+                                            <div className="px-4 py-2 text-[10px] uppercase font-bold text-msger-text-dim border-y border-msger-border bg-black/20">
                                                 Wallpapers
                                             </div>
-                                            <div className="settings-item" onClick={() => changeWallpaper('wp-default')}>
-                                                <Image size={16} /> Default
+                                            <div className="px-4 py-3 hover:bg-white/5 cursor-pointer text-sm flex items-center gap-2" onClick={(e) => { e.stopPropagation(); changeWallpaper('wp-default'); }}>
+                                                <Image size={14} /> Default
                                             </div>
-                                            <div className="settings-item" onClick={() => changeWallpaper('wp-midnight')}>
-                                                <div className="w-4 h-4 bg-black rounded" /> Midnight
+                                            <div className="px-4 py-3 hover:bg-white/5 cursor-pointer text-sm flex items-center gap-2" onClick={(e) => { e.stopPropagation(); changeWallpaper('wp-midnight'); }}>
+                                                <div className="w-3 h-3 bg-black rounded" /> Midnight
                                             </div>
-                                            <div className="settings-item" onClick={() => changeWallpaper('wp-starry')}>
-                                                <Image size={16} /> Starry Night
+                                            <div className="px-4 py-3 hover:bg-white/5 cursor-pointer text-sm flex items-center gap-2" onClick={(e) => { e.stopPropagation(); changeWallpaper('wp-starry'); }}>
+                                                <Image size={14} /> Starry Night
+                                            </div>
+                                            <div className="border-t border-msger-border"></div>
+                                            <div onClick={(e) => { e.stopPropagation(); handleClearChat(); setShowChatOptionsDropdown(false); }} className="px-4 py-3 hover:bg-white/5 cursor-pointer text-sm">
+                                                Clear Chat
+                                            </div>
+                                            <div onClick={(e) => { e.stopPropagation(); handleBlockUser(); setShowChatOptionsDropdown(false); }} className="px-4 py-3 hover:bg-red-500/20 text-red-400 cursor-pointer text-sm">
+                                                Block
                                             </div>
                                         </div>
                                     )}
@@ -396,13 +424,19 @@ export default function ChatPage() {
                             </div>
                         </div>
 
-                        <div className="messages-container no-scrollbar">
+                        <div className="messages-container no-scrollbar" onClick={() => setActiveContextMenuMsgId(null)}>
                             {messages.map((msg, idx) => (
                                 <div
                                     key={msg.id}
                                     className={`message-wrapper ${msg.senderId === user.uid ? 'sent' : 'received'}`}
                                 >
-                                    <div className="message-bubble group/msg">
+                                    <div 
+                                        className="message-bubble relative"
+                                        onContextMenu={(e) => handleContextMenu(e, msg.id)}
+                                        onTouchStart={() => handleTouchStart(msg.id)}
+                                        onTouchEnd={handleTouchEnd}
+                                        onTouchMove={handleTouchEnd}
+                                    >
                                         {msg.text}
                                         {msg.isEdited && <span className="text-[10px] ml-1 opacity-50 italic">(edited)</span>}
                                         <div className="message-meta">
@@ -416,8 +450,8 @@ export default function ChatPage() {
                                             )}
                                         </div>
                                         
-                                        {(msg.senderId === user.uid || isAdmin) && (
-                                            <div className="absolute top-1 right-1 opacity-0 group-hover/msg:opacity-100 transition-opacity flex gap-2 bg-gradient-to-l from-msger-secondary to-transparent pl-4 rounded-r-lg">
+                                        {(msg.senderId === user.uid || isAdmin) && activeContextMenuMsgId === msg.id && (
+                                            <div className="absolute -top-3 -right-2 flex gap-2 bg-msger-secondary p-2 rounded-lg shadow-xl z-50 border border-msger-border animate-in fade-in zoom-in-95">
                                                 {msg.senderId === user.uid && (
                                                     <button 
                                                         onClick={() => handleEditMessageClick(msg)}
@@ -539,10 +573,10 @@ export default function ChatPage() {
                                                 className="px-4 py-3 flex items-center gap-4 hover:bg-[#182229] cursor-pointer"
                                             >
                                                 <div className="chat-avatar !w-10 !h-10">
-                                                    <img src={u.photoURL || "https://ui-avatars.com/api/?name=" + (u.displayName || "User")} alt="U" />
+                                                    <img src={u.photoURL || "https://ui-avatars.com/api/?name=" + (u.username || u.displayName || "User")} alt="U" />
                                                 </div>
                                                 <div className="flex-1 border-b border-msger-border pb-3">
-                                                    <h4 className="font-medium text-[#e9edef]">{u.displayName || "User"}</h4>
+                                                    <h4 className="font-medium text-[#e9edef]">{u.username || u.displayName || "User"}</h4>
                                                     <p className="text-xs text-msger-text-dim truncate">{u.bio || "Available"}</p>
                                                 </div>
                                             </div>
@@ -563,7 +597,7 @@ export default function ChatPage() {
 
                 {/* Settings Overlay */}
                 <AnimatePresence>
-                    {showSettings && (
+                    {showProfileSettings && (
                         <motion.div 
                           className="bc-drawer settings-drawer"
                           initial={{ x: "-100%" }}
@@ -571,7 +605,7 @@ export default function ChatPage() {
                           exit={{ x: "-100%" }}
                         >
                             <div className="drawer-header">
-                                <ArrowLeft onClick={() => setShowSettings(false)} className="cursor-pointer" />
+                                <ArrowLeft onClick={() => setShowProfileSettings(false)} className="cursor-pointer" />
                                 <h3>Settings</h3>
                             </div>
                             
@@ -742,10 +776,10 @@ function GroupCreationView({ users, onCreate, onBack }) {
                     >
                         <div className="flex items-center gap-3">
                             <div className="chat-avatar !w-10 !h-10">
-                                <img src={u.photoURL || "https://ui-avatars.com/api/?name=" + (u.displayName || "User")} alt="U" />
+                                <img src={u.photoURL || "https://ui-avatars.com/api/?name=" + (u.username || u.displayName || "User")} alt="U" />
                             </div>
                             <div>
-                                <h4 className="font-medium text-[#e9edef]">{u.displayName || "User"}</h4>
+                                <h4 className="font-medium text-[#e9edef]">{u.username || u.displayName || "User"}</h4>
                                 <p className="text-xs text-msger-text-dim">{u.email}</p>
                             </div>
                         </div>
