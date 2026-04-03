@@ -43,6 +43,7 @@ export default function ChatPage() {
     const [users, setUsers] = useState([]);
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
+    const [contactSearchTerm, setContactSearchTerm] = useState("");
     const [onlineUsers, setOnlineUsers] = useState({});
     const [userStatuses, setUserStatuses] = useState({}); // {uid: 'typing' | 'recording'}
     const [typingTimeout, setTypingTimeout] = useState(null);
@@ -471,6 +472,17 @@ export default function ChatPage() {
                                     </div>
                                 </div>
                             ))}
+                            {Object.values(userStatuses).some(s => s === 'typing') && (
+                                <div className="message-wrapper received">
+                                    <div className="message-bubble relative flex items-center justify-center gap-1 h-10 my-2 shadow-none bg-transparent border-none">
+                                        <div className="flex items-center gap-1.5 p-3 rounded-2xl bg-msger-bubble-received border border-white/5 shadow-xl">
+                                            <div className="w-2 h-2 bg-msger-text-dim/70 rounded-full animate-bounce" style={{ animationDelay: '0ms', animationDuration: '1s' }}></div>
+                                            <div className="w-2 h-2 bg-msger-text-dim/70 rounded-full animate-bounce" style={{ animationDelay: '150ms', animationDuration: '1s' }}></div>
+                                            <div className="w-2 h-2 bg-msger-text-dim/70 rounded-full animate-bounce" style={{ animationDelay: '300ms', animationDuration: '1s' }}></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                             <div ref={messagesEndRef} />
                         </div>
 
@@ -561,12 +573,25 @@ export default function ChatPage() {
                                        <span>New contact</span>
                                     </div>
 
-                                    <div className="px-4 py-4 text-msger-text-dim text-sm uppercase">
+                                    <div className="px-4 py-2 text-msger-text-dim text-xs font-bold uppercase tracking-wider">
                                         Contacts on BirxyChat
                                     </div>
 
+                                    <div className="px-4 pb-2 mt-1">
+                                        <div className="bg-black/30 border border-msger-border flex items-center px-3 py-2.5 rounded-xl text-msger-text outline-none focus-within:border-msger-primary transition-colors">
+                                            <Search size={16} className="text-msger-text-dim mr-3"/>
+                                            <input 
+                                                type="text" 
+                                                placeholder="Search contacts..." 
+                                                className="bg-transparent border-none outline-none w-full text-sm placeholder:text-msger-text-dim"
+                                                value={contactSearchTerm}
+                                                onChange={(e) => setContactSearchTerm(e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+
                                     <div className="flex-1 overflow-y-auto no-scrollbar">
-                                        {users.map(u => (
+                                        {users.filter(u => (u.username || u.displayName || u.email || "").toLowerCase().includes(contactSearchTerm.toLowerCase())).map(u => (
                                             <div
                                                 key={u.uid}
                                                 onClick={() => startDirectChat(u)}
@@ -744,6 +769,8 @@ function GroupCreationView({ users, onCreate, onBack }) {
     const [groupName, setGroupName] = useState("");
     const [selectedUsers, setSelectedUsers] = useState([]);
 
+    const [groupSearchTerm, setGroupSearchTerm] = useState("");
+
     const toggleUser = (userId) => {
         if (selectedUsers.includes(userId)) {
             setSelectedUsers(selectedUsers.filter(id => id !== userId));
@@ -754,21 +781,37 @@ function GroupCreationView({ users, onCreate, onBack }) {
 
     return (
         <div className="flex-1 flex flex-col overflow-hidden bg-[#111b21]">
-            <div className="p-4 bg-[#202c33] flex items-center gap-4">
+            <div className="p-4 bg-[var(--msger-header)] flex flex-col gap-4">
                 <input
                     type="text"
                     placeholder="Provide a group subject"
-                    className="w-full bg-transparent border-b border-msger-primary py-2 outline-none text-msger-text placeholder:text-msger-text-dim"
+                    className="w-full bg-black/20 border border-msger-border px-4 py-3 rounded-lg outline-none text-msger-text placeholder:text-msger-text-dim focus:border-msger-primary transition-colors font-medium"
                     value={groupName}
                     onChange={(e) => setGroupName(e.target.value)}
                     autoFocus
                 />
             </div>
-            <div className="px-4 py-3 text-xs font-bold text-msger-text-dim uppercase">
-                Select Participants ({selectedUsers.length})
+            
+            <div className="px-4 pt-3 pb-2 text-xs font-bold text-msger-primary uppercase flex justify-between">
+                <span>Select Participants</span>
+                <span className="bg-msger-primary/20 px-2 py-0.5 rounded text-msger-primary">{selectedUsers.length}</span>
             </div>
-            <div className="flex-1 overflow-y-auto no-scrollbar">
-                {users.map(u => (
+
+            <div className="px-4 pb-3">
+                <div className="bg-black/30 border border-msger-border flex items-center px-3 py-2 rounded-lg text-msger-text focus-within:border-msger-primary transition-colors">
+                    <Search size={16} className="text-msger-text-dim mr-2"/>
+                    <input 
+                        type="text" 
+                        placeholder="Search users..." 
+                        className="bg-transparent border-none outline-none w-full text-sm placeholder:text-msger-text-dim"
+                        value={groupSearchTerm}
+                        onChange={(e) => setGroupSearchTerm(e.target.value)}
+                    />
+                </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto no-scrollbar pb-16 relative">
+                {users.filter(u => (u.username || u.displayName || u.email || "").toLowerCase().includes(groupSearchTerm.toLowerCase())).map(u => (
                     <div
                         key={u.uid}
                         onClick={() => toggleUser(u.uid)}
