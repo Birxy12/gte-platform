@@ -5,39 +5,57 @@ import { X } from 'lucide-react';
 
 export default function ZegoCall({ callID, onEnd, type = "video" }) {
     const { user } = useAuth();
+    const containerRef = useRef(null);
+    const zpRef = useRef(null);
 
-    const myMeeting = async (element) => {
-        // Generate Kit Token (Force Hardcoded App ID & Secret to bypass Vite caching)
-        const appID = 1730644229;
-        const serverSecret = "ffa07942558bc7052de9e2a7b4f1672cfa8cc4de58bd3788679cad123f78df92";
+    useEffect(() => {
+        if (!containerRef.current || !user) return;
 
-        if (!appID) {
-            alert("ZEGOCLOUD is not fully configured.");
-            if (onEnd) onEnd();
-            return;
-        }
+        const initCall = async () => {
+            // Force Hardcoded App ID & Secret to bypass Vite caching
+            const appID = 1730644229;
+            const serverSecret = "ffa07942558bc7052de9e2a7b4f1672cfa8cc4de58bd3788679cad123f78df92";
 
-        const kitToken = ZegoUIKitPrebuilt.generateKitTokenForTest(
-            appID,
-            serverSecret,
-            callID,
-            user.uid,
-            user.displayName || user.email
-        );
+            try {
+                const kitToken = ZegoUIKitPrebuilt.generateKitTokenForTest(
+                    appID,
+                    serverSecret,
+                    callID,
+                    user.uid,
+                    user.displayName || user.email || user.uid
+                );
 
-        // Create instance object from Kit Token.
-        const zp = ZegoUIKitPrebuilt.create(kitToken);
+                // Create instance object from Kit Token.
+                const zp = ZegoUIKitPrebuilt.create(kitToken);
+                zpRef.current = zp;
 
-        // Start the call
-        zp.joinRoom({
-            container: element,
-            scenario: {
-                mode: type === "video" ? ZegoUIKitPrebuilt.OneONoneVideoCall : ZegoUIKitPrebuilt.GroupCall,
-            },
-            showPreJoinView: false,
-            onLeaveRoom: onEnd,
-        });
-    };
+                // Start the call
+                zp.joinRoom({
+                    container: containerRef.current,
+                    scenario: {
+                        mode: type === "video" ? ZegoUIKitPrebuilt.OneONoneVideoCall : ZegoUIKitPrebuilt.GroupCall,
+                    },
+                    showPreJoinView: false,
+                    onLeaveRoom: () => {
+                        if (onEnd) onEnd();
+                    },
+                });
+            } catch (err) {
+                console.error("Zego Initialization Error:", err);
+                alert("Failed to initialize call. Please check credentials.");
+                if (onEnd) onEnd();
+            }
+        };
+
+        initCall();
+
+        return () => {
+            if (zpRef.current) {
+                // Potential cleanup logic if needed by Zego SDK
+                // zpRef.current.destroy(); // Not always available in Prebuilt
+            }
+        };
+    }, [callID, user, type, onEnd]);
 
     return (
         <div className="fixed inset-0 z-[100] bg-black flex flex-col">
@@ -48,7 +66,7 @@ export default function ZegoCall({ callID, onEnd, type = "video" }) {
             </div>
             <div
                 className="flex-1 w-full"
-                ref={myMeeting}
+                ref={containerRef}
             />
         </div>
     );
