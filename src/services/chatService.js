@@ -12,7 +12,8 @@ import {
     getDocs,
     setDoc,
     getDoc,
-    deleteDoc
+    deleteDoc,
+    writeBatch
 } from "firebase/firestore";
 import { notificationService } from "./notificationService";
 
@@ -160,5 +161,59 @@ export const chatService = {
             console.error("Delete message error:", error);
             throw error;
         }
+    },
+
+    // Clear all messages in a chat (for both users)
+    clearChatMessages: async (chatId) => {
+        try {
+            const q = query(collection(db, "chats", chatId, "messages"));
+            const snap = await getDocs(q);
+            const batch = writeBatch(db);
+            snap.docs.forEach(doc => batch.delete(doc.ref));
+            await batch.commit();
+            
+            // Reset last message
+            await updateDoc(doc(db, "chats", chatId), {
+                lastMessage: "Messages cleared",
+                lastMessageAt: serverTimestamp()
+            });
+        } catch (error) {
+            console.error("Clear chat error:", error);
+            throw error;
+        }
+    },
+
+    // Block a user
+    blockUser: async (currentUserId, targetUserId) => {
+        const userRef = doc(db, "users", currentUserId);
+        try {
+            const userSnap = await getDoc(userRef);
+            const blockedUsers = userSnap.data()?.blockedUsers || [];
+            if (!blockedUsers.includes(targetUserId)) {
+                await updateDoc(userRef, {
+                    blockedUsers: [...blockedUsers, targetUserId]
+                });
+            }
+        } catch (error) {
+            console.error("Block user error:", error);
+            throw error;
+        }
+    },
+
+    // Suspend a user (Admin only)
+    suspendUser: async (targetUserId, days) => {
+        const userRef = doc(db, "users", targetUserId);
+        const suspendedUntil = new Date();
+        suspendedUntil.setDate(suspendedUntil.getDate() + days);
+        
+        try {
+            await updateDoc(userRef, {
+                suspendedUntil: suspendedUntil.toISOString()
+            });
+        } catch (error) {
+            console.error("Suspend user error:", error);
+            throw error;
+        }
     }
 };
+

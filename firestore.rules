@@ -24,7 +24,7 @@ service cloud.firestore {
     // --- User Progress ---
     // Modified to correctly match progressService.js and prevent list errors
     match /userProgress/{progressId} {
-      allow list: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      allow list: if isAuthenticated();
       allow get, update, delete: if isOwner(resource.data.userId);
       allow create: if isOwner(request.resource.data.userId);
     }
@@ -80,7 +80,7 @@ service cloud.firestore {
         allow delete: if isAdmin() || (isAuthenticated() && request.auth.uid == (resource.data.senderId));
       }
 
-      match /typing/{userId} {
+      match /status/{userId} {
         allow read, write: if isAuthenticated();
       }
 

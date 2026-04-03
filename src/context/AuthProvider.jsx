@@ -30,7 +30,15 @@ export function AuthProvider({ children }) {
           const docRef = doc(db, "users", currentUser.uid);
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
-            setRole(docSnap.data().role);
+            const data = docSnap.data();
+            setRole(data.role || "student");
+            // Check for suspension
+            if (data.suspendedUntil) {
+              const suspensionDate = new Date(data.suspendedUntil);
+              if (suspensionDate > new Date()) {
+                setRole("suspended"); // Temporary role change for restricted access
+              }
+            }
           } else {
             setRole("student"); // Initial default
           }
