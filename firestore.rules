@@ -72,20 +72,32 @@ service cloud.firestore {
 
     // --- Chats & Messages ---
     match /chats/{chatId} {
-      allow read, create, update: if isAuthenticated();
+      // Only participants can read or update the group metadata
+      allow read: if isAuthenticated() && request.auth.uid in resource.data.participants;
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && request.auth.uid in resource.data.participants;
       allow delete: if isAdmin();
 
       match /messages/{messageId} {
-        allow read, create: if isAuthenticated();
-        allow delete: if isAdmin() || (isAuthenticated() && request.auth.uid == (resource.data.senderId));
+        // Only participants of the parent chat can read or send messages
+        allow read: if isAuthenticated() && 
+          request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+        allow create: if isAuthenticated() && 
+          request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+        allow delete: if isAdmin() || (isAuthenticated() && request.auth.uid == resource.data.senderId);
+        allow update: if isAuthenticated() && request.auth.uid == resource.data.senderId;
       }
 
       match /status/{userId} {
-        allow read, write: if isAuthenticated();
+        // Only participants can see each other's typing/recording status
+        allow read, write: if isAuthenticated() && 
+          request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
       }
 
       match /reads/{messageId} {
-        allow read, write: if isAuthenticated();
+        // Track which user has read which message
+        allow read, write: if isAuthenticated() && 
+          request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
       }
     }
 

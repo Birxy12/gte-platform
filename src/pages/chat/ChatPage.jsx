@@ -57,7 +57,10 @@ export default function ChatPage() {
     const [editPhone, setEditPhone] = useState("");
     const [editBio, setEditBio] = useState("");
     const [editPrivacy, setEditPrivacy] = useState(true);
+    const [isSearchingMessages, setIsSearchingMessages] = useState(false);
+    const [msgSearchTerm, setMsgSearchTerm] = useState("");
     const messagesEndRef = useRef(null);
+    const fileInputRef = useRef(null);
 
     // Subscriptions
     useEffect(() => {
@@ -79,7 +82,12 @@ export default function ChatPage() {
         // 1. Subscribe to Messages
         const unsubMessages = chatService.subscribeToMessages(activeChat.id, (msgs) => {
             setMessages(msgs);
+            // Mark as read if receiving new messages while chat is open
+            chatService.markAllAsRead(activeChat.id, user.uid);
         });
+
+        // Initial mark as read
+        chatService.markAllAsRead(activeChat.id, user.uid);
 
         // 2. Subscribe to Statuses (Typing/Recording)
         const unsubStatuses = chatService.subscribeToStatuses(activeChat.id, (statuses) => {
@@ -207,6 +215,17 @@ export default function ChatPage() {
         }
     };
 
+    const handleFileSelect = async (e) => {
+        const file = e.target.files[0];
+        if (!file || !activeChat) return;
+        try {
+            await chatService.sendMessage(activeChat.id, user.uid, "", "image", file);
+        } catch (err) {
+            console.error("File upload error:", err);
+            setError("Failed to upload image.");
+        }
+    };
+
     const handleSendMessage = async (e) => {
         e.preventDefault();
         if (!inputText.trim() || !activeChat) return;
@@ -251,6 +270,18 @@ export default function ChatPage() {
         } catch (err) {
             console.error("Create group error:", err);
             setError("Failed to create group.");
+        }
+    };
+
+    const handleLeaveGroup = async () => {
+        if (!activeChat || !window.confirm("Leave this group?")) return;
+        try {
+            await chatService.leaveGroup(activeChat.id, user.uid);
+            setActiveChat(null);
+            setShowUserInfo(false);
+        } catch (err) {
+            console.error("Leave group error:", err);
+            setError("Failed to leave group.");
         }
     };
 
@@ -396,6 +427,7 @@ export default function ChatPage() {
                                 </div>
                             </div>
                             <div className="header-actions">
+                                <Search size={20} className={isSearchingMessages ? "text-msger-primary" : ""} onClick={() => setIsSearchingMessages(!isSearchingMessages)} />
                                 <Video size={20} onClick={() => setActiveCall({ id: activeChat.id, type: 'video' })} />
                                 <Phone size={20} onClick={() => setActiveCall({ id: activeChat.id, type: 'voice' })} />
                                 <div className="relative">
@@ -430,8 +462,27 @@ export default function ChatPage() {
                             </div>
                         </div>
 
+                        {isSearchingMessages && (
+                            <div className="px-6 py-2 bg-msger-header border-b border-msger-border flex items-center gap-3 animate-in slide-in-from-top duration-300">
+                                <Search size={16} className="text-msger-text-dim" />
+                                <input 
+                                    type="text" 
+                                    placeholder="Search messages..."
+                                    className="bg-transparent border-none outline-none text-sm w-full text-white"
+                                    value={msgSearchTerm}
+                                    onChange={(e) => setMsgSearchTerm(e.target.value)}
+                                    autoFocus
+                                />
+                                <button onClick={() => { setIsSearchingMessages(false); setMsgSearchTerm(""); }}>
+                                    <X size={16} className="text-msger-text-dim hover:text-white" />
+                                </button>
+                            </div>
+                        )}
+
                         <div className="messages-container overflow-y-auto" onClick={() => setActiveContextMenuMsgId(null)}>
-                            {messages.map((msg, idx) => (
+                            {messages.filter(msg => 
+                                !msgSearchTerm || (msg.text && msg.text.toLowerCase().includes(msgSearchTerm.toLowerCase()))
+                            ).map((msg, idx) => (
                                 <div
                                     key={msg.id}
                                     className={`message-wrapper ${msg.senderId === user.uid ? 'sent' : 'received'}`}
@@ -443,14 +494,24 @@ export default function ChatPage() {
                                         onTouchEnd={handleTouchEnd}
                                         onTouchMove={handleTouchEnd}
                                     >
-                                        {msg.text}
+                                        {msg.type === 'image' ? (
+                                            <div className="message-image max-w-sm rounded-lg overflow-hidden my-1">
+                                                <img src={msg.fileUrl || msg.text} alt="Shared" className="w-full h-auto cursor-pointer hover:opacity-90 transition-opacity" onClick={() => window.open(msg.fileUrl || msg.text, '_blank')} />
+                                            </div>
+                                        ) : msg.type === 'system' ? (
+                                            <div className="text-[11px] text-center opacity-70 italic w-full py-1">
+                                                {msg.text}
+                                            </div>
+                                        ) : (
+                                            msg.text
+                                        )}
                                         {msg.isEdited && <span className="text-[10px] ml-1 opacity-50 italic">(edited)</span>}
                                         <div className="message-meta">
                                             <span className="message-time">
                                                 {msg.timestamp && format(msg.timestamp.toDate(), "HH:mm")}
                                             </span>
                                             {msg.senderId === user.uid && (
-                                                <div className="message-status">
+                                                <div className={`message-status ${msg.isRead ? 'text-blue-400' : 'text-msger-text-dim opacity-50'}`}>
                                                     <CheckCheck size={14} />
                                                 </div>
                                             )}
@@ -492,7 +553,14 @@ export default function ChatPage() {
                         </div>
 
                         <form onSubmit={handleSendMessage} className="chat-input-area">
-                            <Plus size={24} className="text-msger-text-dim cursor-pointer" />
+                            <input 
+                                type="file" 
+                                ref={fileInputRef} 
+                                className="hidden" 
+                                accept="image/*"
+                                onChange={handleFileSelect}
+                            />
+                            <Plus size={24} className="text-msger-text-dim cursor-pointer hover:text-white" onClick={() => fileInputRef.current?.click()} />
                             <div className="input-container flex-1 bg-msger-header px-4 py-2 rounded-full border border-msger-border focus-within:border-msger-primary transition-colors flex items-center relative">
                                 {editingMessageId && (
                                     <div className="absolute -top-8 left-4 text-[11px] bg-msger-secondary px-2 py-1 rounded-t-lg text-msger-text-dim border border-b-0 border-msger-border flex gap-2">
@@ -726,11 +794,18 @@ export default function ChatPage() {
                                     <button className="moderation-btn clear" onClick={handleClearChat}>
                                         Clear Chat History
                                     </button>
-                                    <button className="moderation-btn block" onClick={handleBlockUser}>
-                                        Block {activeChat.displayName}
-                                    </button>
                                     
-                                    {isAdmin && (
+                                    {activeChat.type === "group" ? (
+                                        <button className="moderation-btn block" onClick={handleLeaveGroup}>
+                                            Leave Group
+                                        </button>
+                                    ) : (
+                                        <button className="moderation-btn block" onClick={handleBlockUser}>
+                                            Block {activeChat.displayName}
+                                        </button>
+                                    )}
+                                    
+                                    {isAdmin && !activeChat.groupName && (
                                         <div className="admin-actions mt-4 p-3 bg-red-900/20 rounded">
                                             <h5 className="text-[10px] uppercase font-bold text-red-400 mb-2">Admin: Suspend User</h5>
                                             <div className="flex gap-2">

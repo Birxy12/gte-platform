@@ -1,4 +1,4 @@
-import { db, auth } from "../config/firebase";
+import { db, storage, auth } from "../config/firebase";
 import {
     collection,
     addDoc,
@@ -13,8 +13,10 @@ import {
     setDoc,
     getDoc,
     deleteDoc,
-    writeBatch
+    writeBatch,
+    arrayRemove
 } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { notificationService } from "./notificationService";
 
 export const chatService = {
@@ -51,21 +53,32 @@ export const chatService = {
         return docRef.id;
     },
 
-    // Send message
-    sendMessage: async (chatId, senderId, text, type = "text") => {
+    // Send message (now supports images/files)
+    sendMessage: async (chatId, senderId, text, type = "text", file = null) => {
+        let fileUrl = null;
+        if (file) {
+            const storageRef = ref(storage, `chat_attachments/${chatId}/${Date.now()}_${file.name}`);
+            const uploadResult = await uploadBytes(storageRef, file);
+            fileUrl = await getDownloadURL(uploadResult.ref);
+            type = "image"; // Default to image if file is provided
+        }
+
         const messageData = {
             chatId,
             senderId,
-            text,
+            text: fileUrl || text,
             type,
-            timestamp: serverTimestamp()
+            timestamp: serverTimestamp(),
+            isRead: false
         };
 
-        await addDoc(collection(db, "chats", chatId, "messages"), messageData);
+        if (fileUrl) messageData.fileUrl = fileUrl;
+
+        const msgRef = await addDoc(collection(db, "chats", chatId, "messages"), messageData);
 
         // Update last message in chat document
         await updateDoc(doc(db, "chats", chatId), {
-            lastMessage: text,
+            lastMessage: type === "image" ? "📷 Image" : text,
             lastMessageAt: serverTimestamp()
         });
 
@@ -86,6 +99,35 @@ export const chatService = {
                     });
                 }
             });
+        }
+        return msgRef.id;
+    },
+
+    // Mark message as read
+    markAsRead: async (chatId, messageId) => {
+        if (!chatId || !messageId) return;
+        try {
+            const msgRef = doc(db, "chats", chatId, "messages", messageId);
+            await updateDoc(msgRef, { isRead: true });
+        } catch (error) {
+            console.error("Mark read error:", error);
+        }
+    },
+
+    // Mark all messages as read in a chat
+    markAllAsRead: async (chatId, currentUserId) => {
+        try {
+            const q = query(
+                collection(db, "chats", chatId, "messages"),
+                where("senderId", "!=", currentUserId),
+                where("isRead", "==", false)
+            );
+            const snap = await getDocs(q);
+            const batch = writeBatch(db);
+            snap.docs.forEach(doc => batch.update(doc.ref, { isRead: true }));
+            await batch.commit();
+        } catch (error) {
+            console.error("Mark all read error:", error);
         }
     },
 
@@ -194,6 +236,21 @@ export const chatService = {
             });
         } catch (error) {
             console.error("Clear chat error:", error);
+            throw error;
+        }
+    },
+
+    // Leave group
+    leaveGroup: async (chatId, userId) => {
+        try {
+            const chatRef = doc(db, "chats", chatId);
+            await updateDoc(chatRef, {
+                participants: arrayRemove(userId)
+            });
+            // Send system message
+            await chatService.sendMessage(chatId, "system", "A user has left the group.", "system");
+        } catch (error) {
+            console.error("Leave group error:", error);
             throw error;
         }
     },
