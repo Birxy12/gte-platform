@@ -8,11 +8,11 @@ export default function ZegoCall({ callID, onEnd, type = "video" }) {
 
     const myMeeting = async (element) => {
         // Generate Kit Token
-        const appID = Number(import.meta.env.VITE_ZEGO_APP_ID) || 123456789;
-        const serverSecret = import.meta.env.VITE_ZEGO_SERVER_SECRET || "xxxxxxxxxxxx";
+        const appID = Number(import.meta.env.VITE_ZEGO_APP_ID) || 1730644229;
+        const serverSecret = import.meta.env.VITE_ZEGO_SERVER_SECRET || "ffa07942558bc7052de9e2a7b4f1672cfa8cc4de58bd3788679cad123f78df92";
 
-        if (appID === 123456789) {
-            alert("ZEGOCLOUD is not fully configured. Please provide a valid VITE_ZEGO_APP_ID in your .env file to enable Voice/Video calling.");
+        if (!appID) {
+            alert("ZEGOCLOUD is not fully configured.");
             if (onEnd) onEnd();
             return;
         }
