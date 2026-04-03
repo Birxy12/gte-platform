@@ -90,9 +90,19 @@ export default function ChatPage() {
             setUserStatuses(others);
         });
 
+        // 3. Subscribe to Presence (if direct)
+        let unsubPresence;
+        if (activeChat.type === "direct" && activeChat.otherUser) {
+            const targetId = activeChat.otherUser.uid || activeChat.otherUser.id;
+            unsubPresence = presenceService.subscribeToPresence(targetId, (presence) => {
+                setOnlineUsers(prev => ({ ...prev, [targetId]: presence?.isOnline || false }));
+            });
+        }
+
         return () => {
             unsubMessages();
             unsubStatuses();
+            if (unsubPresence) unsubPresence();
         };
     }, [activeChat, user]);
 
@@ -120,12 +130,7 @@ export default function ChatPage() {
                     setEditPrivacy(me.isPublic !== false);
                 }
 
-                // Listen to presence for all these users
-                userList.forEach(u => {
-                    presenceService.subscribeToPresence(u.uid, (presence) => {
-                        setOnlineUsers(prev => ({ ...prev, [u.uid]: presence?.isOnline || false }));
-                    });
-                });
+                // Notice: Presence tracking shifted exclusively to the activeChat monitor to save connections.
             } catch (err) {
                 console.error("Error fetching users:", err);
             }
@@ -385,7 +390,7 @@ export default function ChatPage() {
                                         <span className="text-[12px] text-msger-primary font-medium tracking-wide">
                                             {Object.values(userStatuses).some(s => s === 'typing') ? "typing..." : 
                                             Object.values(userStatuses).some(s => s === 'recording') ? "recording audio..." : 
-                                            (activeChat.type === "direct" && activeChat.otherUser && onlineUsers[activeChat.otherUser?.uid] ? "Online" : "last seen recently")}
+                                            (activeChat.type === "direct" && activeChat.otherUser && onlineUsers[activeChat.otherUser.uid || activeChat.otherUser.id] ? "Online" : "last seen recently")}
                                         </span>
                                     </div>
                                 </div>
