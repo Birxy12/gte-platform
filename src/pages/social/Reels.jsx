@@ -6,24 +6,64 @@ import { useAuth } from '../../context/AuthProvider';
 import CreateReelModal from '../../components/social/CreateReelModal';
 import '../../styles/reels.css';
 
+/**
+ * Enhanced TikTok-style Reel Component
+ */
 function Reel({ data, isActive, onDeleted, onRepost }) {
     const { user } = useAuth();
     const videoRef = useRef(null);
+    
+    // UI States
     const [isPlaying, setIsPlaying] = useState(false);
     const [isLiked, setIsLiked] = useState(data.likes?.includes(user?.uid));
     const [likesCount, setLikesCount] = useState(data.likes?.length || 0);
     const [showComments, setShowComments] = useState(false);
     const [newComment, setNewComment] = useState("");
     const [comments, setComments] = useState(data.comments || []);
+    
+    // Action States
     const [isDeleting, setIsDeleting] = useState(false);
     const [isLiking, setIsLiking] = useState(false);
     const [isReposting, setIsReposting] = useState(false);
+    
+    // Animation States
+    const [showHeartPop, setShowHeartPop] = useState(false);
+    const [videoProgress, setVideoProgress] = useState(0);
+    const lastTap = useRef(0);
 
     useEffect(() => {
         setIsLiked(data.likes?.includes(user?.uid));
         setLikesCount(data.likes?.length || 0);
         setComments(data.comments || []);
     }, [data, user]);
+
+    // Autoplay / Pause logic based on active reel
+    useEffect(() => {
+        if (!videoRef.current) return;
+        if (isActive) {
+            videoRef.current.play()
+                .then(() => setIsPlaying(true))
+                .catch(e => console.log('Autoplay prevented:', e));
+        } else {
+            videoRef.current.pause();
+            videoRef.current.currentTime = 0;
+            setIsPlaying(false);
+        }
+    }, [isActive]);
+
+    const handleVideoClick = (e) => {
+        const now = Date.now();
+        const DOUBLE_TAP_DELAY = 300;
+        
+        if (now - lastTap.current < DOUBLE_TAP_DELAY) {
+            // Double Tap Detected
+            handleDoubleTap(e);
+        } else {
+            // Single Tap
+            togglePlay();
+        }
+        lastTap.current = now;
+    };
 
     const togglePlay = () => {
         if (!videoRef.current) return;
@@ -36,20 +76,18 @@ function Reel({ data, isActive, onDeleted, onRepost }) {
         }
     };
 
-    useEffect(() => {
-        if (isActive) {
-            videoRef.current.play().then(() => setIsPlaying(true)).catch(e => console.log('Autoplay prevented:', e));
-        } else {
-            videoRef.current.pause();
-            videoRef.current.currentTime = 0;
-            setIsPlaying(false);
+    const handleDoubleTap = (e) => {
+        if (!isLiked) {
+            toggleLike(e);
         }
-    }, [isActive]);
+        setShowHeartPop(true);
+        setTimeout(() => setShowHeartPop(false), 800);
+    };
 
     const toggleLike = async (e) => {
-        e.stopPropagation();
+        if (e) e.stopPropagation();
         if (!user) return alert("Please log in to salute this mission!");
-        if (isLiking) return; // Debounce multiple clicks
+        if (isLiking) return;
 
         setIsLiking(true);
         try {
@@ -61,6 +99,12 @@ function Reel({ data, isActive, onDeleted, onRepost }) {
         } finally {
             setIsLiking(false);
         }
+    };
+
+    const handleTimeUpdate = () => {
+        if (!videoRef.current) return;
+        const progress = (videoRef.current.currentTime / videoRef.current.duration) * 100;
+        setVideoProgress(progress);
     };
 
     const handleComment = async (e) => {
@@ -99,7 +143,6 @@ function Reel({ data, isActive, onDeleted, onRepost }) {
             a.click();
             window.URL.revokeObjectURL(url);
         } catch (e) {
-            alert("Download failed. Opening in new tab instead.");
             window.open(data.videoUrl, '_blank');
         }
     };
@@ -107,12 +150,11 @@ function Reel({ data, isActive, onDeleted, onRepost }) {
     const handleShare = () => {
         const shareUrl = `${window.location.origin}/reels?id=${data.id}`;
         navigator.clipboard.writeText(shareUrl);
-        alert("Reel intelligence copied to clipboard! 📋");
+        alert("Mission intelligence copied to clipboard! 📋");
         reelsService.incrementShare(data.id);
     };
 
-    const handleRepost = async (e) => {
-        e.stopPropagation();
+    const handleRepost = async () => {
         if (!user) return;
         if (isReposting) return;
         if (!window.confirm("Broadcast this intel to your network?")) return;
@@ -129,7 +171,7 @@ function Reel({ data, isActive, onDeleted, onRepost }) {
                 stickers: data.stickers
             });
             alert("Intel successfully broadcasted!");
-            onRepost(); // refresh
+            onRepost();
         } catch (error) {
             console.error(error);
             alert("Broadcast failed.");
@@ -139,129 +181,173 @@ function Reel({ data, isActive, onDeleted, onRepost }) {
     };
 
     return (
-        <div className={`reel-wrapper ${!isPlaying ? 'paused' : ''}`}>
-            {/* Visual Overlays & Video */}
-            <div className="absolute inset-0 z-0 overflow-hidden" onClick={togglePlay}>
+        <div className="reel-wrapper">
+            {/* Main Interactive Video Layer */}
+            <div className="reel-interact-layer" onClick={handleVideoClick}>
                 <video
                     ref={videoRef}
                     src={data.videoUrl}
-                    className="reel-video w-full h-full object-cover"
+                    className="reel-video"
                     style={{ filter: data.filter || 'none' }}
                     loop
                     playsInline
+                    onTimeUpdate={handleTimeUpdate}
                 />
                 
-                {/* Advanced Metadata Rendering */}
-                {data.textOverlays?.map((t, i) => (
-                    <div key={i} className="absolute text-white font-bold text-2xl drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] pointer-events-none" style={{ top: t.top, left: t.left, transform: 'translate(-50%, -50%)' }}>
-                        {t.text}
-                    </div>
-                ))}
-
-                {data.stickers?.map((s, i) => (
-                    <div key={i} className="absolute text-4xl pointer-events-none drop-shadow-md" style={{ top: s.top, left: s.left, transform: 'translate(-50%, -50%)' }}>
-                        {s.emoji}
-                    </div>
-                ))}
-            </div>
-
-            <div className="play-indicator z-10 pointer-events-none">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M8 5v14l11-7z" />
-                </svg>
-            </div>
-
-            <div className="reel-overlay z-20 pointer-events-none">
-                <div className="reel-info pointer-events-auto">
-                    {data.isRepost && (
-                        <div className="flex items-center gap-1 text-slate-300 text-xs mb-2 font-bold uppercase tracking-widest bg-black/40 w-fit px-2 py-1 rounded-full backdrop-blur-sm border border-white/10">
-                            <Repeat size={12} /> Broadcast Transmission
+                {/* Advanced Metadata Rendering (Text/Stickers) */}
+                <div className="absolute inset-0 pointer-events-none">
+                    {data.textOverlays?.map((t, i) => (
+                        <div key={i} className="absolute text-white font-bold text-2xl drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" style={{ top: t.top, left: t.left, transform: 'translate(-50%, -50%)' }}>
+                            {t.text}
                         </div>
-                    )}
-                    <div className="reel-author flex items-center gap-2 mb-2">
+                    ))}
+                    {data.stickers?.map((s, i) => (
+                        <div key={i} className="absolute text-4xl" style={{ top: s.top, left: s.left, transform: 'translate(-50%, -50%)' }}>
+                            {s.emoji}
+                        </div>
+                    ))}
+                </div>
+
+                {/* Double-tap Heart Animation */}
+                {showHeartPop && (
+                    <div className="heart-pop-animation">
+                        <Heart size={100} fill="#ef4444" />
+                    </div>
+                )}
+            </div>
+
+            {/* Play/Pause Central Indicator */}
+            {!isPlaying && (
+                <div className="play-indicator" style={{ opacity: 0.8 }}>
+                    <Plus size={48} style={{ transform: 'rotate(45deg)' }} />
+                </div>
+            )}
+
+            {/* Information Overlay (Bottom Left) */}
+            <div className="reel-info-overlay">
+                <div className="author-name">
+                    <Link to={`/profile/${data.userId}`} className="hover:underline">
+                        @{data.authorName}
+                    </Link>
+                    <span className="army-tag">HQ Creator</span>
+                </div>
+                
+                {data.isRepost && (
+                    <div className="text-xs text-slate-400 mb-2 flex items-center gap-1 font-bold">
+                        <Repeat size={12} /> BROADCASTED INTEL
+                    </div>
+                )}
+
+                <p className="reels-description">{data.description}</p>
+
+                <div className="music-info-container">
+                    <Music size={14} className="music-icon-spinning" />
+                    <div className="music-marquee-container">
+                        <div className="music-marquee-text">
+                            {data.music || "Original Audio - Mission Soundtrack"}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Sidebar Actions (Bottom Right) */}
+            <div className="reels-sidebar">
+                <div className="sidebar-profile">
+                    <Link to={`/profile/${data.userId}`}>
                         <img 
-                            src={data.authorPhoto || `https://ui-avatars.com/api/?name=${data.authorName || 'U'}&background=random`} 
-                            className="w-8 h-8 rounded-full border border-white/20 object-cover" 
+                            src={data.authorPhoto || `https://ui-avatars.com/api/?name=${data.authorName}&background=random`} 
                             alt="Author" 
+                            className="sidebar-profile-img"
                         />
-                        <div className="flex flex-col">
-                            <Link to={`/profile/${data.userId}`} className="hover:underline font-bold text-sm text-white drop-shadow-md">
-                                @{data.authorName}
-                            </Link>
-                            <span className="army-tag text-[10px] opacity-80 uppercase tracking-tighter drop-shadow-md">Mission Creator</span>
-                        </div>
-                    </div>
-                    <p className="reel-description text-white drop-shadow-md">{data.description}</p>
-                    <div className="reel-music drop-shadow-md">
-                        <Music size={16} className="text-white" />
-                        <div className="music-marquee text-white outline-black">
-                            <span>{data.music || "Original Audio - Mission Soundtrack"}</span>
-                        </div>
-                    </div>
+                    </Link>
+                    <button className="plus-follow">+</button>
                 </div>
 
-                <div className="reel-actions pointer-events-auto">
-                    <button className={`action-btn ${isLiking ? 'opacity-50' : ''}`} onClick={toggleLike} disabled={isLiking}>
-                        <Heart size={32} fill={isLiked ? "#ef4444" : "rgba(0,0,0,0.4)"} color={isLiked ? "#ef4444" : "white"} className="drop-shadow-lg" />
-                        <span className="action-text drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">{likesCount}</span>
+                <div className="sidebar-action">
+                    <button className="sidebar-icon-btn" onClick={toggleLike}>
+                        <Heart size={38} fill={isLiked ? "#ef4444" : "rgba(0,0,0,0.5)"} color={isLiked ? "#ef4444" : "#fff"} />
                     </button>
-                    
-                    <button className="action-btn" onClick={() => setShowComments(!showComments)}>
-                        <MessageCircle size={32} className="drop-shadow-lg" fill="rgba(0,0,0,0.4)" color="white" />
-                        <span className="action-text drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">{comments.length}</span>
-                    </button>
-                    
-                    <button className="action-btn" onClick={handleShare}>
-                        <Share2 size={32} className="drop-shadow-lg" fill="rgba(0,0,0,0.4)" color="white" />
-                        <span className="action-text drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">{data.shares || 0}</span>
-                    </button>
+                    <span className="sidebar-count">{likesCount}</span>
+                </div>
 
-                    <button className={`action-btn ${isReposting ? 'opacity-50' : ''}`} onClick={handleRepost} disabled={isReposting}>
-                        <Repeat size={32} className="drop-shadow-lg" fill="rgba(0,0,0,0.4)" color="white" />
-                        <span className="action-text drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">Broadcast</span>
+                <div className="sidebar-action">
+                    <button className="sidebar-icon-btn" onClick={() => setShowComments(true)}>
+                        <MessageCircle size={38} fill="rgba(0,0,0,0.5)" />
                     </button>
+                    <span className="sidebar-count">{comments.length}</span>
+                </div>
 
-                    <button className="action-btn" onClick={handleDownload}>
-                        <Download size={32} className="drop-shadow-lg" fill="rgba(0,0,0,0.4)" color="white" />
-                        <span className="action-text drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">Save</span>
+                <div className="sidebar-action">
+                    <button className="sidebar-icon-btn" onClick={handleRepost}>
+                        <Repeat size={38} color={isReposting ? "#eab308" : "#fff"} />
                     </button>
+                    <span className="sidebar-count">Repost</span>
+                </div>
 
-                    {user?.uid === data.userId && (
-                        <button className="action-btn text-red-500" onClick={handleDelete} disabled={isDeleting}>
-                            <Trash2 size={32} fill="rgba(0,0,0,0.4)" />
-                            <span className="action-text drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">Abort</span>
+                <div className="sidebar-action">
+                    <button className="sidebar-icon-btn" onClick={handleShare}>
+                        <Share2 size={38} fill="rgba(0,0,0,0.5)" />
+                    </button>
+                    <span className="sidebar-count">{data.shares || 0}</span>
+                </div>
+
+                <div className="sidebar-action">
+                    <button className="sidebar-icon-btn" onClick={handleDownload}>
+                        <Download size={32} />
+                    </button>
+                </div>
+
+                {user?.uid === data.userId && (
+                    <div className="sidebar-action">
+                        <button className="sidebar-icon-btn text-red-500" onClick={handleDelete}>
+                            <Trash2 size={32} />
                         </button>
-                    )}
+                    </div>
+                )}
+
+                {/* Spinning Record Icon */}
+                <div className="music-record-wrapper">
+                    <div className="music-record-icon">
+                        <Music size={20} color="#fff" />
+                    </div>
                 </div>
             </div>
 
-            {/* Comments Sidebar Overlay */}
+            {/* Progress Bar */}
+            <div className="reel-progress-bar">
+                <div className="reel-progress-fill" style={{ width: `${videoProgress}%` }}></div>
+            </div>
+
+            {/* Comments Overlay */}
             {showComments && (
-                <div className="reel-comments-overlay animate-in slide-in-from-right z-30 pointer-events-auto">
-                    <div className="comments-header bg-slate-900 border-b border-slate-800">
-                        <h3 className="font-bold text-white tracking-widest text-sm uppercase">Intelligence Feed ({comments.length})</h3>
-                        <button onClick={() => setShowComments(false)} className="text-slate-400 hover:text-white"><X size={20} /></button>
+                <div className="reel-comments-overlay">
+                    <div className="comments-header">
+                        <h3>Briefing Room ({comments.length})</h3>
+                        <button onClick={() => setShowComments(false)} className="text-white hover:opacity-70">
+                            <X size={24} />
+                        </button>
                     </div>
                     <div className="comments-list">
                         {comments.length === 0 ? (
-                            <div className="text-center py-10 opacity-50 text-white font-bold">No mission feedback yet.</div>
+                            <div className="text-center py-10 opacity-50 text-white font-bold">No tactical feedback yet.</div>
                         ) : (
                             comments.map(c => (
-                                <div key={c.id} className="comment-bubble-army bg-slate-800/80 border border-slate-700/50 backdrop-blur-md">
-                                    <div className="comment-user text-blue-400">@{c.userName}</div>
-                                    <div className="comment-text text-slate-200">{c.text}</div>
+                                <div key={c.id} className="comment-bubble-army">
+                                    <div className="comment-user">@{c.userName}</div>
+                                    <div className="comment-text">{c.text}</div>
                                 </div>
                             ))
                         )}
                     </div>
-                    <form className="comment-input-army bg-slate-900 border-t border-slate-800" onSubmit={handleComment}>
+                    <form className="comment-input-army" onSubmit={handleComment}>
                         <input 
                             placeholder="Add mission briefing..." 
                             value={newComment}
                             onChange={(e) => setNewComment(e.target.value)}
-                            className="bg-slate-800 border-slate-700 text-white focus:border-blue-500 rounded-lg outline-none"
                         />
-                        <button type="submit" className="bg-blue-600 hover:bg-blue-500 transition-colors rounded-lg"><Send size={18} /></button>
+                        <button type="submit">
+                            <Send size={18} />
+                        </button>
                     </form>
                 </div>
             )}
@@ -269,6 +355,9 @@ function Reel({ data, isActive, onDeleted, onRepost }) {
     );
 }
 
+/**
+ * Main Reels Page
+ */
 export default function Reels() {
     const [reels, setReels] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -281,25 +370,22 @@ export default function Reels() {
         try {
             const data = await reelsService.getAllReels();
             setReels(data);
-        } catch (e) { console.error(e); }
-        finally { setLoading(false); }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoading(false);
+        }
     };
 
     useEffect(() => {
         fetchReels();
     }, []);
 
-    const onDeleted = (id) => {
-        setReels(prev => prev.filter(r => r.id !== id));
-    };
-
     const handleScroll = () => {
         if (!containerRef.current) return;
-        
         const scrollPosition = containerRef.current.scrollTop;
         const windowHeight = containerRef.current.clientHeight;
         const newIndex = Math.round(scrollPosition / windowHeight);
-        
         if (newIndex !== activeReelIndex) {
             setActiveReelIndex(newIndex);
         }
@@ -307,30 +393,50 @@ export default function Reels() {
 
     const handleCreateSuccess = () => {
         setShowCreateModal(false);
-        fetchReels(); // Pull new intelligence
-        setActiveReelIndex(0); // Go to top where it should appear
+        fetchReels();
+        containerRef.current?.scrollTo(0, 0);
     };
 
-    if (loading && reels.length === 0) return <div className="reels-loading font-bold uppercase tracking-widest text-slate-400 text-sm">Awaiting Mission Intel...</div>;
+    if (loading && reels.length === 0) {
+        return (
+            <div className="reels-loading">
+                <div className="loading-spinner-army"></div>
+                <div className="text-army-gold font-bold tracking-widest text-sm uppercase">Loading Mission Intel...</div>
+            </div>
+        );
+    }
 
     return (
-        <div className="reels-page-wrapper relative bg-black">
-            {/* Create Overlay Button */}
+        <div className="reels-page-wrapper">
+            {/* Deploy Mission Action Button (Top Right) */}
             <button 
                 onClick={() => setShowCreateModal(true)}
-                className="absolute top-6 right-6 z-50 bg-blue-600 hover:bg-blue-500 hover:scale-105 active:scale-95 transition-all text-white p-3 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(37,99,235,0.4)]"
+                className="deploy-reel-btn"
                 title="Deploy Mission"
             >
                 <Plus size={24} />
             </button>
 
+            {/* Back to Portal (Top Left) */}
+            <Link to="/home" className="absolute top-6 left-6 z-[100] text-white opacity-60 hover:opacity-100 transition-opacity flex items-center gap-2 font-bold text-sm uppercase tracking-wider">
+                <X size={20} /> Portal
+            </Link>
+
             <div className="reels-container" ref={containerRef} onScroll={handleScroll}>
                 {reels.length === 0 ? (
-                    <div className="no-reels font-bold uppercase tracking-widest text-slate-400 text-sm flex flex-col items-center justify-center gap-4">
-                        <div className="w-16 h-16 rounded-full border border-slate-700/50 bg-slate-800/30 flex items-center justify-center">
-                            <Plus size={32} className="text-slate-500" />
+                    <div className="no-reels flex flex-col items-center justify-center gap-6">
+                        <div className="w-20 h-20 rounded-2xl border-2 border-dashed border-slate-700 flex items-center justify-center">
+                            <Plus size={32} className="text-slate-600" />
                         </div>
-                        No missions active. Be the first to deploy!
+                        <div className="text-center">
+                            <p className="text-slate-400 mb-2">No active missions found in this sector.</p>
+                            <button 
+                                onClick={() => setShowCreateModal(true)}
+                                className="text-army-gold underline font-bold"
+                            >
+                                Deploy First Intel
+                            </button>
+                        </div>
                     </div>
                 ) : (
                     reels.map((reel, index) => (
@@ -338,14 +444,14 @@ export default function Reels() {
                             key={reel.id} 
                             data={reel} 
                             isActive={index === activeReelIndex} 
-                            onDeleted={onDeleted}
+                            onDeleted={(id) => setReels(prev => prev.filter(r => r.id !== id))}
                             onRepost={fetchReels}
                         />
                     ))
                 )}
             </div>
 
-            {/* Creation Modal */}
+            {/* Creation Modal Overlay */}
             {showCreateModal && (
                 <CreateReelModal 
                     onClose={() => setShowCreateModal(false)} 

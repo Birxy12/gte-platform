@@ -78,8 +78,8 @@ export default function Navbar() {
         }
     };
 
-    // Hide navbar on auth pages, Chat, and Dashboards
-    const hiddenPaths = ["/login", "/register", "/forgot-password", "/chat"];
+    // Hide navbar on auth pages, Chat, Reels, and Dashboards
+    const hiddenPaths = ["/login", "/register", "/forgot-password", "/chat", "/reels"];
     if (hiddenPaths.includes(location.pathname) || location.pathname.startsWith("/dashboard") || location.pathname.startsWith("/admin")) return null;
 
     const handleLogout = async () => {

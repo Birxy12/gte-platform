@@ -1,4 +1,4 @@
-import { db, storage, auth } from "../config/firebase";
+import { db, auth } from "../config/firebase";
 import { 
     collection, 
     addDoc, 
@@ -14,7 +14,7 @@ import {
     arrayRemove, 
     serverTimestamp 
 } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { supabase } from "../config/supabase";
 
 export const reelsService = {
     /**
@@ -27,15 +27,25 @@ export const reelsService = {
         let videoUrl = options.isRepost ? options.originalVideoUrl : null;
         let storagePath = null;
 
-        // 1. Upload to Storage if a file is provided
+        // 1. Upload to Supabase Storage if a file is provided
         if (file) {
             const fileExtension = file.name.split('.').pop();
-            storagePath = `reels/${user.uid}_${Date.now()}.${fileExtension}`;
-            const storageRef = ref(storage, storagePath);
+            storagePath = `${user.uid}_${Date.now()}.${fileExtension}`;
             
-            const metadata = { contentType: file.type };
-            const uploadTask = await uploadBytes(storageRef, file, metadata);
-            videoUrl = await getDownloadURL(uploadTask.ref);
+            const { data, error } = await supabase.storage
+                .from('reels')
+                .upload(storagePath, file, {
+                    contentType: file.type,
+                    upsert: false
+                });
+
+            if (error) throw new Error(`Supabase upload failed: ${error.message}`);
+            
+            const { data: { publicUrl } } = supabase.storage
+                .from('reels')
+                .getPublicUrl(storagePath);
+                
+            videoUrl = publicUrl;
         }
         
         // 2. Save to Firestore
@@ -118,10 +128,15 @@ export const reelsService = {
         // 1. Delete from Firestore
         await deleteDoc(doc(db, "reels", reelId));
         
-        // 2. Delete from Storage
+        // 2. Delete from Supabase Storage
         if (storagePath) {
-            const storageRef = ref(storage, storagePath);
-            await deleteObject(storageRef);
+            const { error } = await supabase.storage
+                .from('reels')
+                .remove([storagePath]);
+            
+            if (error) {
+                console.error("Error deleting from Supabase storage:", error);
+            }
         }
     },
 

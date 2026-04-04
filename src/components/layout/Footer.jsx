@@ -13,8 +13,8 @@ import "./Footer.css";
 export default function Footer() {
   const location = useLocation();
 
-  // Hide footer on auth, chat, admin, dashboard
-  const hiddenPaths = ["/login", "/register", "/forgot-password", "/chat"];
+  // Hide footer on auth, chat, reels, admin, dashboard
+  const hiddenPaths = ["/login", "/register", "/forgot-password", "/chat", "/reels"];
   if (
     hiddenPaths.includes(location.pathname) ||
     location.pathname.startsWith("/dashboard") ||
