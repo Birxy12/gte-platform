@@ -109,7 +109,8 @@ service cloud.firestore {
     match /posts/{postId} {
       allow read: if true; // Public posts
       allow create: if isAuthenticated();
-      allow update, delete: if isAdmin() || (isAuthenticated() && request.auth.token.email == resource.data.authorEmail);
+      allow update: if isAuthenticated(); // Allow users to toggle likes/reactions
+      allow delete: if isAdmin() || (isAuthenticated() && request.auth.token.email == resource.data.authorEmail);
     }
     match /statuses/{statusId} {
       allow read: if isAuthenticated();
