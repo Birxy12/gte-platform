@@ -60,7 +60,7 @@ export default function AiChatBot() {
     };
 
     // Hide widget on certain pages
-    if (location.pathname === "/chat") return null;
+    if (location.pathname.startsWith("/chat")) return null;
 
     return (
         <div className="ai-bot-container">

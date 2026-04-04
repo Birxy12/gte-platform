@@ -94,10 +94,23 @@ export default function Blog() {
 
     try {
       const postRef = doc(db, "posts", postId);
-      const newCount = (currentReactions[type] || 0) + 1;
+      // Fallback if reactions object doesn't exist
+      const reactions = currentReactions || { like: [], love: [], laugh: [] };
+      
+      // Ensure the reaction type is an array to support user tracking
+      const reactionArray = Array.isArray(reactions[type]) ? reactions[type] : Array(reactions[type] || 0).fill('legacy_user');
+      
+      let newReactionArray = [...reactionArray];
+      
+      // Toggle logic: If user already reacted, remove them. Otherwise, add them.
+      if (newReactionArray.includes(user.uid)) {
+         newReactionArray = newReactionArray.filter(id => id !== user.uid);
+      } else {
+         newReactionArray.push(user.uid);
+      }
 
       await updateDoc(postRef, {
-        [`reactions.${type}`]: newCount
+        [`reactions.${type}`]: newReactionArray
       });
 
       setPosts(posts.map(p => {
@@ -105,15 +118,15 @@ export default function Blog() {
           return {
             ...p,
             reactions: {
-              ...p.reactions,
-              [type]: newCount
+              ...(p.reactions || {}),
+              [type]: newReactionArray
             }
           };
         }
         return p;
       }));
     } catch (error) {
-      console.error("Error adding reaction:", error);
+      console.error("Error toggling reaction:", error);
     }
   };
 
@@ -231,14 +244,14 @@ export default function Blog() {
 
                         <div className="post-actions">
                           <div className="reaction-group">
-                            <button className="btn-reaction" onClick={() => handleReaction(post.id, post.reactions, 'like')}>
-                              👍 {post.reactions?.like || 0}
+                            <button className={`btn-reaction ${Array.isArray(post.reactions?.like) && post.reactions.like.includes(user?.uid) ? 'text-blue-400' : ''}`} onClick={() => handleReaction(post.id, post.reactions, 'like')}>
+                              👍 {Array.isArray(post.reactions?.like) ? post.reactions.like.length : (post.reactions?.like || 0)}
                             </button>
-                            <button className="btn-reaction" onClick={() => handleReaction(post.id, post.reactions, 'love')}>
-                              ❤️ {post.reactions?.love || 0}
+                            <button className={`btn-reaction ${Array.isArray(post.reactions?.love) && post.reactions.love.includes(user?.uid) ? 'text-red-400' : ''}`} onClick={() => handleReaction(post.id, post.reactions, 'love')}>
+                              ❤️ {Array.isArray(post.reactions?.love) ? post.reactions.love.length : (post.reactions?.love || 0)}
                             </button>
-                            <button className="btn-reaction" onClick={() => handleReaction(post.id, post.reactions, 'laugh')}>
-                              😂 {post.reactions?.laugh || 0}
+                            <button className={`btn-reaction ${Array.isArray(post.reactions?.laugh) && post.reactions.laugh.includes(user?.uid) ? 'text-yellow-400' : ''}`} onClick={() => handleReaction(post.id, post.reactions, 'laugh')}>
+                              😂 {Array.isArray(post.reactions?.laugh) ? post.reactions.laugh.length : (post.reactions?.laugh || 0)}
                             </button>
                           </div>
                           <button

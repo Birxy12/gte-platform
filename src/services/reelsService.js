@@ -20,17 +20,23 @@ export const reelsService = {
     /**
      * Upload a new reel
      */
-    async uploadReel(file, description, user) {
-        if (!file || !user) throw new Error("Missing file or user");
+    async uploadReel(file, description, user, options = {}) {
+        if (!file && !options.isRepost) throw new Error("Missing file for original reel");
+        if (!user) throw new Error("Missing user");
         
-        // 1. Upload to Storage
-        const fileExtension = file.name.split('.').pop();
-        const fileName = `reels/${user.uid}_${Date.now()}.${fileExtension}`;
-        const storageRef = ref(storage, fileName);
-        
-        const metadata = { contentType: file.type };
-        const uploadTask = await uploadBytes(storageRef, file, metadata);
-        const videoUrl = await getDownloadURL(uploadTask.ref);
+        let videoUrl = options.isRepost ? options.originalVideoUrl : null;
+        let storagePath = null;
+
+        // 1. Upload to Storage if a file is provided
+        if (file) {
+            const fileExtension = file.name.split('.').pop();
+            storagePath = `reels/${user.uid}_${Date.now()}.${fileExtension}`;
+            const storageRef = ref(storage, storagePath);
+            
+            const metadata = { contentType: file.type };
+            const uploadTask = await uploadBytes(storageRef, file, metadata);
+            videoUrl = await getDownloadURL(uploadTask.ref);
+        }
         
         // 2. Save to Firestore
         const reelDoc = await addDoc(collection(db, "reels"), {
@@ -39,10 +45,22 @@ export const reelsService = {
             authorPhoto: user.photoURL || "",
             videoUrl,
             description,
-            storagePath: fileName,
+            storagePath,
             likes: [],
             comments: [],
             shares: 0,
+            
+            // New Advanced Meta
+            music: options.music || "Original Audio",
+            filter: options.filter || "none",
+            textOverlays: options.textOverlays || [],
+            stickers: options.stickers || [],
+            // Repost / Duet Meta
+            isRepost: options.isRepost || false,
+            originalReelId: options.originalReelId || null,
+            isDuet: options.isDuet || false,
+            duetVideoUrl: options.duetVideoUrl || null,
+            
             createdAt: serverTimestamp()
         });
         
