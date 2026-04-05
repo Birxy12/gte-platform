@@ -80,12 +80,17 @@ service cloud.firestore {
 
       match /messages/{messageId} {
         // Only participants of the parent chat can read or send messages
-        allow read: if isAuthenticated() && 
+        allow read, create: if isAuthenticated() && 
           request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
-        allow create: if isAuthenticated() && 
-          request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+        
         allow delete: if isAdmin() || (isAuthenticated() && request.auth.uid == resource.data.senderId);
-        allow update: if isAuthenticated() && request.auth.uid == resource.data.senderId;
+        
+        // Allow sender to update everything, or receiver to update only isRead
+        allow update: if isAuthenticated() && (
+          request.auth.uid == resource.data.senderId ||
+          (request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants &&
+           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead']))
+        );
       }
 
       match /status/{userId} {
