@@ -246,8 +246,9 @@ export default function Courses() {
                   src={getEmbedUrl(selectedCourse.videoUrl)}
                   title={selectedCourse.title}
                   frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
                   allowFullScreen
+                  referrerPolicy="strict-origin-when-cross-origin"
                   className="w-full h-full"
                 ></iframe>
               ) : (
