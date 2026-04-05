@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { X, ArrowLeft, Check, Users, Search } from 'lucide-react';
 import { collection, getDocs, query, where, updateDoc, doc } from 'firebase/firestore';
 import { format } from 'date-fns';
+import Avatar from '../common/Avatar';
 
 import ChatSidebar from '../common/ChatSidebar';
 import ChatWindow from '../common/ChatWindow';
@@ -443,10 +444,10 @@ const NewChatModal = ({
               onClick={() => onStartDirectChat(u)}
               className="px-4 py-3 flex items-center gap-4 hover:bg-[#182229] cursor-pointer"
             >
-              <img 
-                src={u.photoURL || `https://ui-avatars.com/api/?name=${u.username || 'User'}`} 
-                alt="" 
-                className="w-10 h-10 rounded-full"
+              <Avatar 
+                src={u.photoURL} 
+                name={u.username || u.displayName} 
+                size="medium"
               />
               <div className="flex-1 border-b border-[#2a3942] pb-3">
                 <h4 className="font-medium text-white">{u.username || u.displayName || "User"}</h4>
@@ -488,10 +489,11 @@ const SettingsDrawer = ({
     
     <div className="p-4 overflow-y-auto h-full pb-20 custom-scrollbar">
       <div className="flex flex-col items-center mb-6">
-        <img 
+        <Avatar 
           src={user?.photoURL || "/GlobixTech-logo.png"} 
-          alt="me" 
-          className="w-24 h-24 rounded-full mb-2 object-cover"
+          name={user?.displayName || "Me"} 
+          size="large" 
+          className="mb-2"
         />
         <p className="text-sm text-[#8696a0]">{user?.email}</p>
       </div>
@@ -579,10 +581,11 @@ const UserInfoDrawer = ({
     
     <div className="p-4 overflow-y-auto h-full pb-20 custom-scrollbar">
       <div className="flex flex-col items-center mb-6">
-        <img 
-          src={activeChat.photoURL || `https://ui-avatars.com/api/?name=${activeChat.displayName}`} 
-          alt="contact" 
-          className="w-32 h-32 rounded-full mb-3 object-cover"
+        <Avatar 
+          src={activeChat.photoURL} 
+          name={activeChat.displayName} 
+          size="large" 
+          className="mb-3"
         />
         <h2 className="text-xl font-bold text-white">{activeChat.displayName}</h2>
         <p className="text-sm text-[#8696a0]">

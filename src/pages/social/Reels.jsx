@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, MessageCircle, Share2, Music, Download, Trash2, X, Send, Plus, Repeat, Sparkles } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Music, Download, Trash2, X, Send, Plus, Repeat, Sparkles, Play } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { reelsService } from '../../services/reelsService';
 import { useAuth } from '../../context/AuthProvider';
 import CreateReelModal from '../../components/social/CreateReelModal';
@@ -38,7 +39,7 @@ function Reel({ data, isActive, onDeleted, onRepost }) {
         setComments(data.comments || []);
     }, [data, user]);
 
-    // Autoplay / Pause logic based on active reel
+    // Autoplay / Pause logic
     useEffect(() => {
         if (!videoRef.current) return;
         if (isActive) {
@@ -57,10 +58,8 @@ function Reel({ data, isActive, onDeleted, onRepost }) {
         const DOUBLE_TAP_DELAY = 300;
         
         if (now - lastTap.current < DOUBLE_TAP_DELAY) {
-            // Double Tap Detected
             handleDoubleTap(e);
         } else {
-            // Single Tap
             togglePlay();
         }
         lastTap.current = now;
@@ -210,19 +209,36 @@ function Reel({ data, isActive, onDeleted, onRepost }) {
                 </div>
 
                 {/* Double-tap Heart Animation */}
-                {showHeartPop && (
-                    <div className="heart-pop-animation">
-                        <Heart size={100} fill="#ef4444" />
-                    </div>
-                )}
+                <div className="heart-animations-container">
+                    <AnimatePresence>
+                        {showHeartPop && (
+                            <motion.div 
+                                initial={{ scale: 0, opacity: 0 }}
+                                animate={{ scale: [1, 1.5, 1], opacity: [1, 1, 0], y: [0, -50, -100] }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.8 }}
+                                className="heart-pop-animation"
+                            >
+                                <Heart size={80} fill="#ef4444" stroke="none" />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
             </div>
 
-            {/* Play/Pause Central Indicator */}
-            {!isPlaying && (
-                <div className="play-indicator" style={{ opacity: 0.8 }}>
-                    <Plus size={48} style={{ transform: 'rotate(45deg)' }} />
-                </div>
-            )}
+            {/* Play/Pause Indicator Overlay */}
+            <AnimatePresence>
+                {!isPlaying && (
+                    <motion.div 
+                        initial={{ opacity: 0, scale: 0.5 }}
+                        animate={{ opacity: 0.6, scale: 1 }}
+                        exit={{ opacity: 0, scale: 1.5 }}
+                        className="play-indicator"
+                    >
+                        <Play size={48} fill="white" />
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Information Overlay (Bottom Left) */}
             <div className="reel-info-overlay">
@@ -320,38 +336,47 @@ function Reel({ data, isActive, onDeleted, onRepost }) {
             </div>
 
             {/* Comments Overlay */}
-            {showComments && (
-                <div className="reel-comments-overlay">
-                    <div className="comments-header">
-                        <h3>Briefing Room ({comments.length})</h3>
-                        <button onClick={() => setShowComments(false)} className="text-white hover:opacity-70">
-                            <X size={24} />
-                        </button>
-                    </div>
-                    <div className="comments-list">
-                        {comments.length === 0 ? (
-                            <div className="text-center py-10 opacity-50 text-white font-bold">No tactical feedback yet.</div>
-                        ) : (
-                            comments.map(c => (
-                                <div key={c.id} className="comment-bubble-army">
-                                    <div className="comment-user">@{c.userName}</div>
-                                    <div className="comment-text">{c.text}</div>
-                                </div>
-                            ))
-                        )}
-                    </div>
-                    <form className="comment-input-army" onSubmit={handleComment}>
-                        <input 
-                            placeholder="Add mission briefing..." 
-                            value={newComment}
-                            onChange={(e) => setNewComment(e.target.value)}
-                        />
-                        <button type="submit">
-                            <Send size={18} />
-                        </button>
-                    </form>
-                </div>
-            )}
+            <AnimatePresence>
+                {showComments && (
+                    <motion.div 
+                        initial={{ y: "100%" }}
+                        animate={{ y: 0 }}
+                        exit={{ y: "100%" }}
+                        transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                        className="reel-comments-overlay"
+                    >
+                        <div className="comments-header">
+                            <h3>Briefing Room ({comments.length})</h3>
+                            <button onClick={() => setShowComments(false)} className="text-white hover:opacity-70">
+                                <X size={24} />
+                            </button>
+                        </div>
+                        <div className="comments-list overflow-y-auto max-h-[60vh] p-4">
+                            {comments.length === 0 ? (
+                                <div className="text-center py-10 opacity-50 text-white font-bold">No tactical feedback yet.</div>
+                            ) : (
+                                comments.map(c => (
+                                    <div key={c.id} className="mb-4 bg-white/5 p-3 rounded-xl">
+                                        <div className="text-xs text-army-gold font-bold mb-1">@{c.userName}</div>
+                                        <div className="text-white text-sm">{c.text}</div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                        <form className="p-4 border-t border-white/10 flex gap-2" onSubmit={handleComment}>
+                            <input 
+                                className="flex-1 bg-white/10 border-none rounded-full px-4 py-2 text-white outline-none focus:ring-1 focus:ring-army-gold"
+                                placeholder="Add mission briefing..." 
+                                value={newComment}
+                                onChange={(e) => setNewComment(e.target.value)}
+                            />
+                            <button type="submit" className="bg-army-gold p-2 rounded-full text-black">
+                                <Send size={18} />
+                            </button>
+                        </form>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
@@ -393,12 +418,6 @@ export default function Reels() {
         }
     };
 
-    const handleCreateSuccess = () => {
-        setShowCreateModal(false);
-        fetchReels();
-        containerRef.current?.scrollTo(0, 0);
-    };
-
     if (loading && reels.length === 0) {
         return (
             <div className="reels-loading">
@@ -410,50 +429,61 @@ export default function Reels() {
 
     return (
         <div className="reels-page-wrapper">
-            {/* Mission Briefing Button (Top Right) */}
-            <div className="absolute top-6 right-6 z-[100] flex flex-col gap-3">
-                <button 
-                    onClick={() => setShowCreateModal(true)}
+            {/* Deployment Mission Hub (Top Right) */}
+            <div className="mission-hub-controls">
+                <motion.button 
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="mission-briefing-btn"
+                    onClick={() => setShowPrompt(true)}
+                >
+                    <Sparkles size={20} />
+                    <span>Mission Briefing</span>
+                </motion.button>
+                
+                <motion.button 
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                     className="deploy-reel-btn"
-                    title="Deploy Mission"
+                    onClick={() => setShowCreateModal(true)}
                 >
                     <Plus size={24} />
-                </button>
-                <button 
-                    onClick={() => setShowPrompt(true)}
-                    className="mission-briefing-btn bg-slate-900/80 backdrop-blur border border-white/10 p-3 rounded-full text-blue-400 hover:scale-110 transition-all shadow-xl"
-                    title="Mission Briefing"
-                >
-                    <Sparkles size={24} />
-                </button>
+                </motion.button>
             </div>
 
             {/* Mission Briefing Overlay */}
-            {showPrompt && (
-                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                    <div className="w-full max-w-2xl relative">
-                        <button 
-                            onClick={() => setShowPrompt(false)}
-                            className="absolute -top-12 right-0 text-white/50 hover:text-white"
-                        >
-                            <X size={32} />
-                        </button>
-                        <ReelPrompt onDeployMission={() => {
-                            setShowPrompt(false);
-                            setShowCreateModal(true);
-                        }} />
-                    </div>
-                </div>
-            )}
+            <AnimatePresence>
+                {showPrompt && (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+                    >
+                        <div className="w-full max-w-2xl relative">
+                            <button 
+                                onClick={() => setShowPrompt(false)}
+                                className="absolute -top-12 right-0 text-white/50 hover:text-white"
+                            >
+                                <X size={32} />
+                            </button>
+                            <ReelPrompt onDeployMission={() => {
+                                setShowPrompt(false);
+                                setShowCreateModal(true);
+                            }} />
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Back to Portal (Top Left) */}
             <Link to="/home" className="absolute top-6 left-6 z-[100] text-white opacity-60 hover:opacity-100 transition-opacity flex items-center gap-2 font-bold text-sm uppercase tracking-wider">
                 <X size={20} /> Portal
             </Link>
 
-            <div className="reels-container" ref={containerRef} onScroll={handleScroll}>
+            <div className="reels-container overflow-y-scroll snap-y snap-mandatory" ref={containerRef} onScroll={handleScroll}>
                 {reels.length === 0 ? (
-                    <div className="no-reels flex flex-col items-center justify-center gap-6">
+                    <div className="h-full flex flex-col items-center justify-center gap-6">
                         <div className="w-20 h-20 rounded-2xl border-2 border-dashed border-slate-700 flex items-center justify-center">
                             <Plus size={32} className="text-slate-600" />
                         </div>
@@ -480,11 +510,33 @@ export default function Reels() {
                 )}
             </div>
 
-            {/* Creation Modal Overlay */}
+            {/* Bottom Navigation Bar (Mobile-style) */}
+            <div className="reels-bottom-nav">
+                <Link to="/reels" className="nav-item active">
+                    <Repeat size={24} />
+                    <span>Reels</span>
+                </Link>
+                <button onClick={() => setShowCreateModal(true)} className="nav-item create-btn">
+                    <Plus size={28} />
+                </button>
+                <Link to="/chat" className="nav-item">
+                    <MessageCircle size={24} />
+                    <span>Chat</span>
+                </Link>
+                <Link to={`/profile/${user?.uid}`} className="nav-item">
+                    <Avatar src={user?.photoURL} name={user?.displayName} size="small" className="nav-avatar" />
+                    <span>Profile</span>
+                </Link>
+            </div>
+
+            {/* Creation Modal */}
             {showCreateModal && (
                 <CreateReelModal 
                     onClose={() => setShowCreateModal(false)} 
-                    onSuccess={handleCreateSuccess} 
+                    onSuccess={() => {
+                        setShowCreateModal(false);
+                        fetchReels();
+                    }} 
                 />
             )}
         </div>

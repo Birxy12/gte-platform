@@ -3,6 +3,7 @@ import { Users, MessageCircle, MoreVertical, Search, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { useAuth } from '../../context/AuthProvider';
+import Avatar from './Avatar';
 
 const ChatSidebar = ({
   selectedChat,
@@ -29,11 +30,11 @@ const ChatSidebar = ({
       <div className="sidebar-header">
         <div className="sidebar-top">
           <div className="flex items-center gap-3">
-            <img
+            <Avatar 
               src={user?.photoURL || "/GlobixTech-logo.png"}
-              alt="User"
-              className="sidebar-logo cursor-pointer w-10 h-10 rounded-full object-cover"
-              onClick={() => { }}
+              name={user?.displayName || "Me"}
+              size="small"
+              className="sidebar-logo cursor-pointer"
             />
             <h1 className="text-xl font-bold text-white">BirxyChat</h1>
           </div>
@@ -75,13 +76,11 @@ const ChatSidebar = ({
             className={`chat-item ${selectedChat?.id === chat.id ? 'active' : ''}`}
           >
             <div className="chat-avatar">
-              {chat.photoURL ? (
-                <img src={chat.photoURL} alt="User" />
-              ) : (
-                <div className="w-full h-full rounded-full flex items-center justify-center bg-msger-primary-gradient text-white text-lg">
-                  {chat.groupName ? <Users size={24} /> : (chat.displayName || "U")[0]}
-                </div>
-              )}
+              <Avatar 
+                src={chat.photoURL} 
+                name={chat.groupName || chat.displayName} 
+                size="medium"
+              />
             </div>
             <div className="chat-info">
               <div className="chat-info-top">

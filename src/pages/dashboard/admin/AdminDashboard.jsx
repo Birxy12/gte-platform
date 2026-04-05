@@ -113,6 +113,10 @@ export default function AdminDashboard() {
             <span className="ad-nav-icon">🛡️</span>
             <span>Moderation</span>
           </Link>
+          <Link to="/admin/testimonies" className={isActive("/admin/testimonies")}>
+            <span className="ad-nav-icon">🌟</span>
+            <span>Testimonies</span>
+          </Link>
           <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', margin: '1rem 0' }} />
           <Link to="/admin/create-course" className={isActive("/admin/create-course")}>
             <span className="ad-nav-icon">✨</span>

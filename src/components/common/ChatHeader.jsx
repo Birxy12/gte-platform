@@ -57,7 +57,6 @@ const ChatHeader = ({
             name={displayName} 
             size="small"
             isOnline={isOnline && chat.type === 'direct'}
-            className="!w-10 !h-10 border-2 border-msger-primary"
           />
           <div className="flex-1">
             <h2 className="leading-tight font-semibold text-white text-base">

@@ -7,6 +7,8 @@ import Pricing from "../pages/landing/Pricing";
 import LoginAccount from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
 import ForgotPassword from "../pages/auth/ForgotPassword";
+import PrivacyPolicy from "../pages/PrivacyPolicy";
+import TermsOfService from "../pages/TermsOfService";
 
 import AdminDashboard from "../pages/dashboard/admin/AdminDashboard";
 import CreatePost from "../pages/dashboard/admin/CreatePost";
@@ -17,6 +19,7 @@ import ManagePosts from "../pages/dashboard/admin/ManagePosts";
 import EditCourse from "../pages/dashboard/admin/EditCourse";
 import AdminSettings from "../pages/dashboard/admin/AdminSettings";
 import ManageReports from "../pages/dashboard/admin/ManageReports";
+import ManageTestimonies from "../pages/dashboard/admin/ManageTestimonies";
 
 import EnrolledCourses from "../pages/dashboard/student/EnrolledCourses";
 import UserDashboard from "../pages/dashboard/user/UserDashboard";
@@ -62,6 +65,8 @@ export default function Router() {
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/courses" element={<Courses />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<TermsOfService />} />
 
         {/* User Dashboard (nested routes) */}
         <Route path="/dashboard" element={<UserDashboard />}>
@@ -111,6 +116,7 @@ export default function Router() {
           <Route path="create-course" element={<CreateCourse />} />
           <Route path="settings" element={<AdminSettings />} />
           <Route path="reports" element={<ManageReports />} />
+          <Route path="testimonies" element={<ManageTestimonies />} />
         </Route>
 
         {/* 404 fallback */}
