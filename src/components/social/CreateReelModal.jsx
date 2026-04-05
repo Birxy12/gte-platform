@@ -381,4 +381,6 @@ export default function CreateReelModal({ onClose, onSuccess }) {
                     </div>
                 </div>
             </div>
-        </div
+        </div>
+    );
+}
