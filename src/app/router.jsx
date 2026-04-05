@@ -20,6 +20,11 @@ import EditCourse from "../pages/dashboard/admin/EditCourse";
 import AdminSettings from "../pages/dashboard/admin/AdminSettings";
 import ManageReports from "../pages/dashboard/admin/ManageReports";
 import ManageTestimonies from "../pages/dashboard/admin/ManageTestimonies";
+import ManageReels from "../pages/dashboard/admin/ManageReels";
+import ManageTasks from "../pages/dashboard/admin/ManageTasks";
+import ManageQuizzes from "../pages/dashboard/admin/ManageQuizzes";
+import ManageCertificates from "../pages/dashboard/admin/ManageCertificates";
+import ManageLeadership from "../pages/dashboard/admin/ManageLeadership";
 
 import EnrolledCourses from "../pages/dashboard/student/EnrolledCourses";
 import UserDashboard from "../pages/dashboard/user/UserDashboard";
@@ -117,6 +122,11 @@ export default function Router() {
           <Route path="settings" element={<AdminSettings />} />
           <Route path="reports" element={<ManageReports />} />
           <Route path="testimonies" element={<ManageTestimonies />} />
+          <Route path="manage-reels" element={<ManageReels />} />
+          <Route path="manage-tasks" element={<ManageTasks />} />
+          <Route path="manage-quizzes" element={<ManageQuizzes />} />
+          <Route path="certificates" element={<ManageCertificates />} />
+          <Route path="manage-leadership" element={<ManageLeadership />} />
         </Route>
 
         {/* 404 fallback */}

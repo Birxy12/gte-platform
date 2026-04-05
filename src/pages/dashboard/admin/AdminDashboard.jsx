@@ -13,6 +13,9 @@ export default function AdminDashboard() {
   const [usersCount, setUsersCount] = useState(0);
   const [coursesCount, setCoursesCount] = useState(0);
   const [postsCount, setPostsCount] = useState(0);
+  const [reelsCount, setReelsCount] = useState(0);
+  const [tasksCount, setTasksCount] = useState(0);
+  const [leadershipCount, setLeadershipCount] = useState(0);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -53,14 +56,20 @@ export default function AdminDashboard() {
     // 2. Fetch Analytics
     const fetchAnalytics = async () => {
       try {
-        const [uSnap, cSnap, pSnap] = await Promise.all([
+        const [uSnap, cSnap, pSnap, rSnap, tSnap, lSnap] = await Promise.all([
           getDocs(collection(db, "users")),
           getDocs(collection(db, "courses")),
-          getDocs(collection(db, "posts"))
+          getDocs(collection(db, "posts")),
+          getDocs(collection(db, "reels")),
+          getDocs(collection(db, "tasks")),
+          getDocs(collection(db, "leadership"))
         ]);
         setUsersCount(uSnap.size);
         setCoursesCount(cSnap.size);
         setPostsCount(pSnap.size);
+        setReelsCount(rSnap.size);
+        setTasksCount(tSnap.size);
+        setLeadershipCount(lSnap.size);
       } catch (err) {
         console.error("Error fetching analytics:", err);
         if (err.code === "permission-denied") {
@@ -111,6 +120,26 @@ export default function AdminDashboard() {
           <Link to="/admin/manage-posts" className={isActive("/admin/manage-posts")}>
             <span className="ad-nav-icon">📰</span>
             <span>Manage Posts</span>
+          </Link>
+          <Link to="/admin/manage-reels" className={isActive("/admin/manage-reels")}>
+            <span className="ad-nav-icon">🎬</span>
+            <span>Manage Reels</span>
+          </Link>
+          <Link to="/admin/manage-tasks" className={isActive("/admin/manage-tasks")}>
+            <span className="ad-nav-icon">📋</span>
+            <span>Manage Tasks</span>
+          </Link>
+          <Link to="/admin/manage-quizzes" className={isActive("/admin/manage-quizzes")}>
+            <span className="ad-nav-icon">❓</span>
+            <span>Manage Quizzes</span>
+          </Link>
+          <Link to="/admin/certificates" className={isActive("/admin/certificates")}>
+            <span className="ad-nav-icon">📜</span>
+            <span>Certificates</span>
+          </Link>
+          <Link to="/admin/manage-leadership" className={isActive("/admin/manage-leadership")}>
+            <span className="ad-nav-icon">⭐</span>
+            <span>Strategic Leadership</span>
           </Link>
           <Link to="/admin/reports" className={isActive("/admin/reports")}>
             <span className="ad-nav-icon">🛡️</span>
@@ -168,6 +197,18 @@ export default function AdminDashboard() {
               <div className="ad-stat">
                 <div className="ad-stat-icon">📰</div>
                 <div><p className="ad-stat-value">{postsCount}</p><p className="ad-stat-label">Blog Posts</p></div>
+              </div>
+              <div className="ad-stat">
+                <div className="ad-stat-icon">🎬</div>
+                <div><p className="ad-stat-value">{reelsCount}</p><p className="ad-stat-label">Total Reels</p></div>
+              </div>
+              <div className="ad-stat">
+                <div className="ad-stat-icon">📋</div>
+                <div><p className="ad-stat-value">{tasksCount}</p><p className="ad-stat-label">Active Tasks</p></div>
+              </div>
+              <div className="ad-stat">
+                <div className="ad-stat-icon">⭐</div>
+                <div><p className="ad-stat-value">{leadershipCount}</p><p className="ad-stat-label">Commanders</p></div>
               </div>
             </div>
             <div className="ad-card">

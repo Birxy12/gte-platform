@@ -26,8 +26,8 @@
     max-width: 1300px;
     margin: 0 auto;
     display: grid;
-    grid-template-columns: 1.2fr 2fr 1fr;
-    gap: 60px;
+    grid-template-columns: 1.2fr 0.8fr 0.8fr 0.8fr 1.2fr;
+    gap: 40px;
     padding-bottom: 60px;
 }
 
@@ -106,12 +106,6 @@
 }
 
 /* 🔗 NAVIGATION LINKS */
-.footer-links-container {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 30px;
-}
-
 .links-group h5 {
     font-size: 0.95rem;
     font-weight: 700;
@@ -135,72 +129,62 @@
     transform: translateX(5px);
 }
 
-/* 📧 NEWSLETTER SECTION */
-.footer-newsletter-section h5 {
+/* 📧 CONTACT & MINI NEWSLETTER */
+.footer-contact h4 {
     font-size: 1rem;
     font-weight: 700;
     color: #f1f5f9;
-    margin-bottom: 12px;
+    margin-bottom: 18px;
     text-transform: uppercase;
     letter-spacing: 1px;
 }
 
-.footer-newsletter-section p {
-    font-size: 0.88rem;
-    color: #94a3b8;
-    margin-bottom: 16px;
-    line-height: 1.5;
-}
-
-.newsletter-form {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.input-group {
-    position: relative;
+.contact-item {
     display: flex;
     align-items: center;
+    gap: 10px;
+    color: #94a3b8;
+    font-size: 0.88rem;
+    margin-bottom: 12px;
 }
 
-.input-icon {
-    position: absolute;
-    left: 12px;
-    color: #64748b;
+.contact-item svg {
+    color: #3b82f6;
 }
 
-.newsletter-form input {
+.newsletter-mini {
+    margin-top: 25px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.newsletter-mini input {
     width: 100%;
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    padding: 12px 12px 12px 40px;
-    border-radius: 12px;
+    padding: 10px 15px;
+    border-radius: 8px;
     color: white;
-    font-size: 0.88rem;
+    font-size: 0.85rem;
     outline: none;
-    transition: border 0.3s ease;
 }
 
-.newsletter-form input:focus {
-    border-color: #3b82f6;
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.newsletter-form button {
+.newsletter-mini button {
     background: #3b82f6;
     color: white;
     border: none;
-    padding: 12px;
-    border-radius: 12px;
+    padding: 10px;
+    border-radius: 8px;
     font-weight: 700;
+    font-size: 0.85rem;
     cursor: pointer;
     transition: all 0.3s ease;
 }
 
-.newsletter-form button:hover {
+.newsletter-mini button:hover {
     background: #2563eb;
-    transform: scale(1.02);
+    transform: translateY(-2px);
 }
 
 /* 🔻 BOTTOM BAR */

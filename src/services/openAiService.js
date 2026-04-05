@@ -39,8 +39,11 @@ export const openAiService = {
             });
 
             const data = await response.json();
+            if (response.status === 401) {
+                throw new Error("OpenRouter Authorization Failed: The API key provided in .env is invalid or expired. Please verify VITE_OPENAI_API_KEY.");
+            }
             if (!response.ok) {
-                throw new Error(data.error?.message || "Failed to query OpenAI");
+                throw new Error(data.error?.message || "Failed to query OpenAI via OpenRouter");
             }
 
             const content = data.choices[0].message.content;
