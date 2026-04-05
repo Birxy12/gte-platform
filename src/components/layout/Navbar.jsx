@@ -7,6 +7,7 @@ import { signOut } from "firebase/auth";
 import { notificationService } from "../../services/notificationService";
 import { Bell, Check, Users, MessageCircle, FileText, Heart, X } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { presenceService } from "../../services/presenceService";
 import { motion, AnimatePresence } from "framer-motion";
 import "./Navbar.css";
 
@@ -84,7 +85,9 @@ export default function Navbar() {
 
     const handleLogout = async () => {
         try {
+            if (user) await presenceService.setOffline(user.uid);
             await signOut(auth);
+            navigate("/login");
         } catch (error) {
             console.error("Error logging out:", error);
         }

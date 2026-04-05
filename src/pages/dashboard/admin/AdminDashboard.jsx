@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { db, auth } from "../../../config/firebase";
 import { collection, getDocs, writeBatch, query, where } from "firebase/firestore";
 import { signOut } from "firebase/auth";
+import { presenceService } from "../../../services/presenceService";
 import "./AdminDashboard.css";
 
 export default function AdminDashboard() {
@@ -74,6 +75,8 @@ export default function AdminDashboard() {
 
   const handleLogout = async () => {
     try {
+      const currentUser = auth.currentUser;
+      if (currentUser) await presenceService.setOffline(currentUser.uid);
       await signOut(auth);
       navigate("/login");
     } catch (error) {

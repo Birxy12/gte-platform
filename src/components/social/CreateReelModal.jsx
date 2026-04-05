@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { X, Image as ImageIcon, Music, Upload, Type, Smile, Video } from "lucide-react";
 import { reelsService } from "../../services/reelsService";
 import { useAuth } from "../../context/AuthProvider";
@@ -21,6 +21,16 @@ export default function CreateReelModal({ onClose, onSuccess }) {
     const [description, setDescription] = useState("");
     const [music, setMusic] = useState("");
     
+    // Recording States
+    const [isCameraActive, setIsCameraActive] = useState(false);
+    const [isRecording, setIsRecording] = useState(false);
+    const [recordingTime, setRecordingTime] = useState(0);
+    const videoPreviewRef = useRef(null);
+    const mediaRecorderRef = useRef(null);
+    const chunksRef = useRef([]);
+    const timerRef = useRef(null);
+    const streamRef = useRef(null);
+
     // Advanced Meta
     const [activeFilter, setActiveFilter] = useState("none");
     const [textOverlays, setTextOverlays] = useState([]);
@@ -39,6 +49,67 @@ export default function CreateReelModal({ onClose, onSuccess }) {
         setIsVideo(isVid);
         setFile(file);
         setPreviewUrl(URL.createObjectURL(file));
+    };
+
+    // --- Recording Logic ---
+    const startCamera = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: "user", width: 720, height: 1280 }, 
+                audio: true 
+            });
+            streamRef.current = stream;
+            if (videoPreviewRef.current) {
+                videoPreviewRef.current.srcObject = stream;
+            }
+            setIsCameraActive(true);
+        } catch (err) {
+            console.error("Camera access denied:", err);
+            alert("Mission failed: Camera and Microphone access required for live capture.");
+        }
+    };
+
+    const stopCamera = () => {
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
+        }
+        setIsCameraActive(false);
+        setIsRecording(false);
+        clearInterval(timerRef.current);
+    };
+
+    const startRecording = () => {
+        if (!streamRef.current) return;
+        
+        chunksRef.current = [];
+        const recorder = new MediaRecorder(streamRef.current, { mimeType: 'video/webm;codecs=vp9,opus' });
+        mediaRecorderRef.current = recorder;
+
+        recorder.ondataavailable = (e) => {
+            if (e.data.size > 0) chunksRef.current.push(e.data);
+        };
+
+        recorder.onstop = () => {
+            const blob = new Blob(chunksRef.current, { type: 'video/webm' });
+            const fileObj = new File([blob], `GTE_RECORD_${Date.now()}.webm`, { type: 'video/webm' });
+            setFile(fileObj);
+            setPreviewUrl(URL.createObjectURL(blob));
+            setIsVideo(true);
+            stopCamera();
+        };
+
+        recorder.start();
+        setIsRecording(true);
+        setRecordingTime(0);
+        timerRef.current = setInterval(() => {
+            setRecordingTime(prev => prev + 1);
+        }, 1000);
+    };
+
+    const stopRecording = () => {
+        if (mediaRecorderRef.current && isRecording) {
+            mediaRecorderRef.current.stop();
+        }
     };
 
     const addTextOverlay = () => {
@@ -78,6 +149,10 @@ export default function CreateReelModal({ onClose, onSuccess }) {
         }
     };
 
+    useEffect(() => {
+        return () => stopCamera();
+    }, []);
+
     return (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/95 backdrop-blur-xl p-0 md:p-4 overflow-y-auto">
             <div className="bg-slate-900 border-0 md:border md:border-slate-800 rounded-0 md:rounded-3xl w-full max-w-5xl flex flex-col md:flex-row overflow-hidden shadow-2xl relative min-h-screen md:min-h-0">
@@ -92,19 +167,30 @@ export default function CreateReelModal({ onClose, onSuccess }) {
 
                 {/* Preview Panel - Immersive 9:16 focus */}
                 <div className="w-full md:w-[450px] bg-black relative flex items-center justify-center aspect-[9/16] md:aspect-auto md:min-h-[700px] border-r border-slate-800">
-                    {!previewUrl ? (
+                    {!previewUrl && !isCameraActive ? (
                         <div className="text-center p-8">
                             <div className="w-20 h-20 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
                                 <Upload size={40} className="text-blue-500" />
                             </div>
                             <h3 className="text-2xl font-bold text-white mb-2">Deploy New Intel</h3>
-                            <p className="text-slate-400 text-sm mb-8 px-10">Upload a vertical video or photo to transmit to the global network.</p>
-                            <button 
-                                onClick={() => fileInputRef.current?.click()}
-                                className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-10 rounded-2xl transition-all shadow-lg shadow-blue-600/20 active:scale-95"
-                            >
-                                Select Media Asset
-                            </button>
+                            <p className="text-slate-400 text-sm mb-8 px-10">Select a vertical file or record a mission live from your hardware.</p>
+                            
+                            <div className="flex flex-col gap-3 px-10">
+                                <button 
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-10 rounded-2xl transition-all shadow-lg shadow-blue-600/20 active:scale-95 flex items-center justify-center gap-2"
+                                >
+                                    <Upload size={20} /> Select Media Asset
+                                </button>
+                                
+                                <button 
+                                    onClick={startCamera}
+                                    className="bg-slate-800 hover:bg-slate-700 text-white font-bold py-4 px-10 rounded-2xl transition-all border border-slate-700 flex items-center justify-center gap-2"
+                                >
+                                    <Video size={20} /> Record Live Intel
+                                </button>
+                            </div>
+
                             <input 
                                 type="file" 
                                 accept="video/*,image/*" 
@@ -112,6 +198,43 @@ export default function CreateReelModal({ onClose, onSuccess }) {
                                 ref={fileInputRef} 
                                 onChange={handleFileSelect}
                             />
+                        </div>
+                    ) : isCameraActive ? (
+                        <div className="relative w-full h-full flex items-center justify-center overflow-hidden bg-black">
+                            <video 
+                                ref={videoPreviewRef}
+                                className="w-full h-full object-cover scale-x-[-1]" 
+                                autoPlay 
+                                muted 
+                                playsInline
+                            />
+                            
+                            {/* Recording HUD */}
+                            <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-6">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex items-center gap-2 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
+                                        <div className={`w-2.5 h-2.5 rounded-full ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-slate-500'}`}></div>
+                                        <span className="text-xs font-mono text-white tracking-widest">{isRecording ? `REC ${new Date(recordingTime * 1000).toISOString().substr(14, 5)}` : 'STANDBY'}</span>
+                                    </div>
+                                    <button onClick={stopCamera} className="pointer-events-auto bg-white/10 hover:bg-white/20 p-2 rounded-full text-white transition-all">
+                                        <X size={20} />
+                                    </button>
+                                </div>
+                                
+                                <div className="flex flex-col items-center gap-6 pb-4">
+                                    <button 
+                                        onClick={isRecording ? stopRecording : startRecording}
+                                        className="pointer-events-auto group relative transition-transform active:scale-90"
+                                    >
+                                        <div className={`w-20 h-20 rounded-full border-4 ${isRecording ? 'border-red-500' : 'border-white'} flex items-center justify-center transition-all`}>
+                                            <div className={`${isRecording ? 'w-8 h-8 rounded-md bg-red-500' : 'w-14 h-14 rounded-full bg-white'} transition-all group-hover:scale-110`}></div>
+                                        </div>
+                                    </button>
+                                    <span className="text-[10px] font-bold text-white uppercase tracking-[0.3em] drop-shadow-md">
+                                        {isRecording ? 'Terminate Capture' : 'Initiate Intel Capture'}
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                     ) : (
                         <div className="relative w-full h-full flex items-center justify-center overflow-hidden bg-slate-900">
@@ -147,18 +270,13 @@ export default function CreateReelModal({ onClose, onSuccess }) {
                                         {s.emoji}
                                     </div>
                                 ))}
-                                
-                                <div className="absolute bottom-8 left-6 right-16">
-                                    <div className="w-24 h-4 bg-white/20 rounded-full mb-2"></div>
-                                    <div className="w-48 h-3 bg-white/10 rounded-full"></div>
-                                </div>
                             </div>
                             
                             <button 
                                 onClick={() => { setFile(null); setPreviewUrl(null); }}
-                                className="absolute top-6 right-6 bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-lg"
+                                className="absolute top-6 right-6 bg-red-500/80 hover:bg-red-500 text-white text-[10px] font-bold px-4 py-2 rounded-xl backdrop-blur-md shadow-lg transition-all"
                             >
-                                REMOVE
+                                DISCARD ASSET
                             </button>
                         </div>
                     )}
@@ -263,6 +381,4 @@ export default function CreateReelModal({ onClose, onSuccess }) {
                     </div>
                 </div>
             </div>
-        </div>
-    );
-}
+        </div

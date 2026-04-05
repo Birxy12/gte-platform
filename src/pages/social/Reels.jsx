@@ -6,6 +6,7 @@ import { reelsService } from '../../services/reelsService';
 import { useAuth } from '../../context/AuthProvider';
 import CreateReelModal from '../../components/social/CreateReelModal';
 import ReelPrompt from '../../components/social/ReelPrompt';
+import Avatar from '../../components/common/Avatar';
 import '../../styles/reels.css';
 
 /**
@@ -385,6 +386,7 @@ function Reel({ data, isActive, onDeleted, onRepost }) {
  * Main Reels Page
  */
 export default function Reels() {
+    const { user } = useAuth();
     const [reels, setReels] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeReelIndex, setActiveReelIndex] = useState(0);

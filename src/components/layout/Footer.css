@@ -137,17 +137,19 @@
 
 /* 📧 NEWSLETTER SECTION */
 .footer-newsletter-section h5 {
-    font-size: 0.95rem;
+    font-size: 1rem;
     font-weight: 700;
     color: #f1f5f9;
-    margin-bottom: 18px;
+    margin-bottom: 12px;
     text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 .footer-newsletter-section p {
     font-size: 0.88rem;
     color: #94a3b8;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
+    line-height: 1.5;
 }
 
 .newsletter-form {
