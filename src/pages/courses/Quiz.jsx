@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
-import { X, CheckCircle, AlertCircle, Award, Clock, ChevronLeft, ChevronRight, Flag } from "lucide-react";
+import { X, CheckCircle, AlertCircle, Award, Clock, ChevronLeft, ChevronRight, Flag, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { db } from "../../config/firebase";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import "./Quiz.css";
 
 export default function Quiz({ course, onComplete, onClose }) {
@@ -11,35 +13,59 @@ export default function Quiz({ course, onComplete, onClose }) {
   const [score, setScore] = useState(0);
   const [showResult, setShowResult] = useState(false);
   const [quizStarted, setQuizStarted] = useState(false);
+  const [questions, setQuestions] = useState([]);
+  const [loadingQuiz, setLoadingQuiz] = useState(true);
 
-  // Mock 30 questions for CBT demonstration
-  const [questions] = useState(() => {
-    const baseQuestions = [
-      {
-        question: `What is the primary goal of "${course.title}"?`,
-        options: ["Master theory", "Practical experience", "Graduation", "Both A and B"],
-        correct: 3
-      },
-      {
-        question: "Which component is most critical in this mission?",
-        options: ["Encryption", "UI Principles", "State Management", "Infrastructure"],
-        correct: 1
-      },
-      {
-        question: "How should you approach the final project?",
-        options: ["Work alone", "Collaborate", "Templates only", "Skip planning"],
-        correct: 1
-      }
-    ];
-
-    const extraQuestions = Array.from({ length: 27 }, (_, i) => ({
+  // Fallback mock questions
+  const mockQuestions = [
+    {
+      question: `What is the primary goal of "${course.title}"?`,
+      options: ["Master theory", "Practical experience", "Graduation", "Both A and B"],
+      correct: 3
+    },
+    {
+      question: "Which component is most critical in this mission?",
+      options: ["Encryption", "UI Principles", "State Management", "Infrastructure"],
+      correct: 1
+    },
+    {
+      question: "How should you approach the final project?",
+      options: ["Work alone", "Collaborate", "Templates only", "Skip planning"],
+      correct: 1
+    },
+    ...Array.from({ length: 27 }, (_, i) => ({
       question: `CBT Proficiency Question ${i + 4}: How does indexing affect query performance in this environment?`,
       options: ["Slows it down", "Optimizes retrieval", "No effect", "Increases storage costs"],
       correct: 1
-    }));
+    }))
+  ];
 
-    return [...baseQuestions, ...extraQuestions];
-  });
+  // Fetch quiz from Firestore by courseId
+  useEffect(() => {
+    const fetchQuiz = async () => {
+      setLoadingQuiz(true);
+      try {
+        const q = query(collection(db, "quizzes"), where("courseId", "==", course.id));
+        const snapshot = await getDocs(q);
+        if (!snapshot.empty) {
+          const quizData = snapshot.docs[0].data();
+          if (quizData.questions && quizData.questions.length > 0) {
+            setQuestions(quizData.questions);
+            setLoadingQuiz(false);
+            return;
+          }
+        }
+        // No quiz found — use fallback
+        setQuestions(mockQuestions);
+      } catch (err) {
+        console.error("Error fetching quiz:", err);
+        setQuestions(mockQuestions);
+      } finally {
+        setLoadingQuiz(false);
+      }
+    };
+    fetchQuiz();
+  }, [course.id]);
 
   const calculateScore = useCallback(() => {
     let finalScore = 0;
@@ -93,7 +119,12 @@ export default function Quiz({ course, onComplete, onClose }) {
           <X size={24} />
         </button>
 
-        {!quizStarted ? (
+      {loadingQuiz ? (
+          <div className="flex flex-col items-center justify-center gap-6 p-20">
+            <Loader2 size={48} className="text-blue-500 animate-spin" />
+            <p className="text-slate-400 text-sm uppercase tracking-widest font-bold">Loading Mission Intel...</p>
+          </div>
+        ) : !quizStarted ? (
           <div className="quiz-start-screen p-8 text-center bg-slate-900/50 rounded-2xl">
             <Clock size={64} className="mx-auto text-blue-500 mb-6 animate-pulse" />
             <h2 className="text-3xl font-black text-white mb-4 uppercase">CBT Mission Initialized</h2>

@@ -2,13 +2,13 @@ import { useEffect, useState, useCallback } from "react";
 import { db } from "../../../config/firebase";
 import { collection, getDocs, deleteDoc, doc, addDoc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { CheckCircle, Clock, Plus, Trash2, Edit3, X, Save } from "lucide-react";
-import { format } from "date-fns";
 import { motion } from "framer-motion";
 
 export default function ManageTasks() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [newTask, setNewTask] = useState({ title: "", description: "", priority: "medium", status: "pending" });
 
   const fetchTasks = useCallback(async () => {
@@ -24,20 +24,43 @@ export default function ManageTasks() {
 
   useEffect(() => { fetchTasks(); }, [fetchTasks]);
 
-  const handleAddTask = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!newTask.title.trim()) return;
     try {
-      await addDoc(collection(db, "tasks"), {
-        ...newTask,
-        createdAt: serverTimestamp(),
-      });
+      if (editingId) {
+        await updateDoc(doc(db, "tasks", editingId), {
+          title: newTask.title,
+          description: newTask.description,
+          priority: newTask.priority,
+          status: newTask.status,
+        });
+      } else {
+        await addDoc(collection(db, "tasks"), {
+          ...newTask,
+          createdAt: serverTimestamp(),
+        });
+      }
       setNewTask({ title: "", description: "", priority: "medium", status: "pending" });
       setShowAdd(false);
+      setEditingId(null);
       fetchTasks();
     } catch (err) {
-      console.error("Error adding task:", err);
+      console.error("Error saving task:", err);
     }
+  };
+
+  const handleEdit = (task) => {
+    setNewTask({ title: task.title, description: task.description, priority: task.priority, status: task.status });
+    setEditingId(task.id);
+    setShowAdd(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleCancel = () => {
+    setShowAdd(false);
+    setEditingId(null);
+    setNewTask({ title: "", description: "", priority: "medium", status: "pending" });
   };
 
   const toggleStatus = async (task) => {
@@ -74,7 +97,7 @@ export default function ManageTasks() {
           <h1>Mission Objectives</h1>
           <p>Assign and track platform-wide operational tasks</p>
         </div>
-        <button onClick={() => setShowAdd(true)} className="ad-btn-primary">
+        <button onClick={() => { setEditingId(null); setNewTask({ title: "", description: "", priority: "medium", status: "pending" }); setShowAdd(true); }} className="ad-btn-primary">
           <Plus size={18} /> New Objective
         </button>
       </div>
@@ -82,12 +105,12 @@ export default function ManageTasks() {
       {showAdd && (
         <div className="ad-form-card mb-8 border border-blue-500/20">
           <div className="flex justify-between items-center mb-6">
-             <h3>Assign New Task</h3>
-             <button onClick={() => setShowAdd(false)} className="text-slate-500 hover:text-white">
+             <h3>{editingId ? "Edit Mission Objective" : "Assign New Task"}</h3>
+             <button onClick={handleCancel} className="text-slate-500 hover:text-white">
                 <X size={20} />
              </button>
           </div>
-          <form onSubmit={handleAddTask} className="grid grid-cols-2 gap-6">
+          <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-6">
             <div className="col-span-2">
                <label className="ad-label">Objective Title</label>
                <input 
@@ -120,9 +143,20 @@ export default function ManageTasks() {
                  <option value="high">High Priority (CRITICAL)</option>
                </select>
             </div>
-            <div className="flex items-end">
-               <button type="submit" className="ad-btn-primary w-full p-3 h-[46px]">
-                  <Save size={18} /> Deploy Task
+            <div>
+               <label className="ad-label">Status</label>
+               <select
+                value={newTask.status}
+                onChange={e => setNewTask({...newTask, status: e.target.value})}
+                className="ad-select"
+               >
+                 <option value="pending">In Progress</option>
+                 <option value="completed">Completed</option>
+               </select>
+            </div>
+            <div className="col-span-2">
+               <button type="submit" className="ad-btn-primary w-full p-4">
+                  <Save size={18} /> {editingId ? "Update Objective" : "Deploy Task"}
                </button>
             </div>
           </form>
@@ -176,9 +210,14 @@ export default function ManageTasks() {
                       </button>
                     </td>
                     <td>
-                      <button onClick={() => handleDelete(task.id)} className="ad-btn-danger">
-                        <Trash2 size={16} />
-                      </button>
+                      <div className="flex gap-2">
+                        <button onClick={() => handleEdit(task)} className="ad-btn-secondary !p-2" title="Edit task">
+                          <Edit3 size={16} />
+                        </button>
+                        <button onClick={() => handleDelete(task.id)} className="ad-btn-danger !p-2" title="Delete task">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -190,4 +229,3 @@ export default function ManageTasks() {
     </motion.div>
   );
 }
-
