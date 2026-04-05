@@ -4,6 +4,13 @@ import { db, auth } from "../../../config/firebase";
 import { collection, getDocs, writeBatch, query, where } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { presenceService } from "../../../services/presenceService";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  Users, BookOpen, Newspaper, Film, Layout, 
+  Settings, LogOut, PlusCircle, PenTool, 
+  CheckCircle, Shield, Star, HelpCircle, 
+  MessageSquare, Award, Clock
+} from "lucide-react";
 import "./AdminDashboard.css";
 
 export default function AdminDashboard() {
@@ -19,7 +26,6 @@ export default function AdminDashboard() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // 1. Auto-approve testimonies older than 1 hour (Admin Only)
     const autoApproveTestimonies = async () => {
       try {
         const testimoniesRef = collection(db, "testimonies");
@@ -46,14 +52,12 @@ export default function AdminDashboard() {
             batch.update(item.ref, { published: true });
           });
           await batch.commit();
-          console.log(`Mission Success: Auto-approved ${toApprove.length} testimonies.`);
         }
       } catch (err) {
         console.error("Auto-approval error:", err);
       }
     };
 
-    // 2. Fetch Analytics
     const fetchAnalytics = async () => {
       try {
         const [uSnap, cSnap, pSnap, rSnap, tSnap, lSnap] = await Promise.all([
@@ -73,7 +77,7 @@ export default function AdminDashboard() {
       } catch (err) {
         console.error("Error fetching analytics:", err);
         if (err.code === "permission-denied") {
-          setError("Permission denied. Ensure Firestore rules allow access.");
+          setError("Access restricted. Operational clearance required.");
         }
       }
     };
@@ -101,145 +105,215 @@ export default function AdminDashboard() {
       {/* Sidebar */}
       <aside className="ad-sidebar">
         <Link to="/home" className="ad-brand">
-          <span className="ad-nav-icon">🛡️</span>
+          <Shield className="text-blue-500" size={24} />
           <span>Admin <b>Panel</b></span>
         </Link>
         <nav className="ad-nav">
           <Link to="/admin" className={isActive("/admin")}>
-            <span className="ad-nav-icon">📊</span>
-            <span>Analytics</span>
+            <Layout size={18} className="ad-nav-icon" />
+            <span>Overview</span>
           </Link>
           <Link to="/admin/users" className={isActive("/admin/users")}>
-            <span className="ad-nav-icon">👥</span>
-            <span>Manage Users</span>
+            <Users size={18} className="ad-nav-icon" />
+            <span>Users</span>
           </Link>
           <Link to="/admin/manage-courses" className={isActive("/admin/manage-courses")}>
-            <span className="ad-nav-icon">📚</span>
-            <span>Manage Courses</span>
+            <BookOpen size={18} className="ad-nav-icon" />
+            <span>Courses</span>
           </Link>
           <Link to="/admin/manage-posts" className={isActive("/admin/manage-posts")}>
-            <span className="ad-nav-icon">📰</span>
-            <span>Manage Posts</span>
+            <Newspaper size={18} className="ad-nav-icon" />
+            <span>Posts</span>
           </Link>
           <Link to="/admin/manage-reels" className={isActive("/admin/manage-reels")}>
-            <span className="ad-nav-icon">🎬</span>
-            <span>Manage Reels</span>
+            <Film size={18} className="ad-nav-icon" />
+            <span>Reels</span>
           </Link>
           <Link to="/admin/manage-tasks" className={isActive("/admin/manage-tasks")}>
-            <span className="ad-nav-icon">📋</span>
-            <span>Manage Tasks</span>
+            <Clock size={18} className="ad-nav-icon" />
+            <span>Tasks</span>
           </Link>
           <Link to="/admin/manage-quizzes" className={isActive("/admin/manage-quizzes")}>
-            <span className="ad-nav-icon">❓</span>
-            <span>Manage Quizzes</span>
+            <HelpCircle size={18} className="ad-nav-icon" />
+            <span>Quizzes</span>
           </Link>
           <Link to="/admin/certificates" className={isActive("/admin/certificates")}>
-            <span className="ad-nav-icon">📜</span>
+             <Award size={18} className="ad-nav-icon" />
             <span>Certificates</span>
           </Link>
           <Link to="/admin/manage-leadership" className={isActive("/admin/manage-leadership")}>
-            <span className="ad-nav-icon">⭐</span>
-            <span>Strategic Leadership</span>
+            <Star size={18} className="ad-nav-icon" />
+            <span>Leadership</span>
           </Link>
           <Link to="/admin/reports" className={isActive("/admin/reports")}>
-            <span className="ad-nav-icon">🛡️</span>
+            <Shield size={18} className="ad-nav-icon" />
             <span>Moderation</span>
           </Link>
           <Link to="/admin/testimonies" className={isActive("/admin/testimonies")}>
-            <span className="ad-nav-icon">🌟</span>
+            <Star size={18} className="ad-nav-icon" />
             <span>Testimonies</span>
           </Link>
-          <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', margin: '1rem 0' }} />
-          <Link to="/admin/create-course" className={isActive("/admin/create-course")}>
-            <span className="ad-nav-icon">✨</span>
-            <span>New Course</span>
-          </Link>
-          <Link to="/admin/create-post" className={isActive("/admin/create-post")}>
-            <span className="ad-nav-icon">🖋️</span>
-            <span>New Post</span>
-          </Link>
-          <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', margin: '1rem 0' }} />
+          
+          <div className="mx-4 my-6 h-px bg-slate-800/50" />
+          
           <Link to="/admin/settings" className={isActive("/admin/settings")}>
-            <span className="ad-nav-icon">⚙️</span>
+            <Settings size={18} className="ad-nav-icon" />
             <span>Settings</span>
           </Link>
         </nav>
+
         <button onClick={handleLogout} className="ad-logout">
-          <span className="ad-nav-icon">🚪</span>
+          <LogOut size={18} className="ad-nav-icon" />
           <span>Sign Out</span>
         </button>
       </aside>
 
       {/* Main Area */}
       <main className="ad-main">
-        {isOverview ? (
-          <>
-            <div className="ad-page-header">
-              <div className="ad-header-title">
-                <h1>Dashboard Overview</h1>
-                <p>Real-time analytics and mission status</p>
-              </div>
-            </div>
-            {error && (
-              <div className="ad-card" style={{ border: '1px solid #ef4444', background: 'rgba(239, 68, 68, 0.05)' }}>
-                <p style={{ color: '#fca5a5', margin: 0 }}>⚠️ {error}</p>
-              </div>
-            )}
-            <div className="ad-stats">
-              <div className="ad-stat">
-                <div className="ad-stat-icon">👥</div>
-                <div><p className="ad-stat-value">{usersCount}</p><p className="ad-stat-label">Total Users</p></div>
-              </div>
-              <div className="ad-stat">
-                <div className="ad-stat-icon">📚</div>
-                <div><p className="ad-stat-value">{coursesCount}</p><p className="ad-stat-label">Total Courses</p></div>
-              </div>
-              <div className="ad-stat">
-                <div className="ad-stat-icon">📰</div>
-                <div><p className="ad-stat-value">{postsCount}</p><p className="ad-stat-label">Blog Posts</p></div>
-              </div>
-              <div className="ad-stat">
-                <div className="ad-stat-icon">🎬</div>
-                <div><p className="ad-stat-value">{reelsCount}</p><p className="ad-stat-label">Total Reels</p></div>
-              </div>
-              <div className="ad-stat">
-                <div className="ad-stat-icon">📋</div>
-                <div><p className="ad-stat-value">{tasksCount}</p><p className="ad-stat-label">Active Tasks</p></div>
-              </div>
-              <div className="ad-stat">
-                <div className="ad-stat-icon">⭐</div>
-                <div><p className="ad-stat-value">{leadershipCount}</p><p className="ad-stat-label">Commanders</p></div>
-              </div>
-            </div>
-            <div className="ad-card">
-              <h3>Quick Actions</h3>
-              <div className="ad-btn-row">
-                <Link to="/admin/create-course" className="ad-btn-primary" style={{ textDecoration: 'none' }}>➕ Create Course</Link>
-                <Link to="/admin/create-post" className="ad-btn-primary" style={{ textDecoration: 'none' }}>✍ Write Post</Link>
-                <Link to="/admin/users" className="ad-btn-secondary" style={{ textDecoration: 'none' }}>👥 Manage Roles</Link>
-              </div>
-            </div>
-            <div className="ad-card">
-              <h3>System Status</h3>
-              <div style={{ display: 'flex', gap: '2rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <div style={{ width: '10px', height: '10px', background: '#10b981', borderRadius: '50%' }} />
-                  <span style={{ color: '#94a3b8' }}>Database: Online</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <div style={{ width: '10px', height: '10px', background: '#10b981', borderRadius: '50%' }} />
-                  <span style={{ color: '#94a3b8' }}>Storage: Online</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <div style={{ width: '10px', height: '10px', background: '#10b981', borderRadius: '50%' }} />
-                  <span style={{ color: '#94a3b8' }}>Auto-Approve: Active</span>
+        <AnimatePresence mode="wait">
+          {isOverview ? (
+            <motion.div 
+              key="overview"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="ad-page-header">
+                <div className="ad-header-title">
+                  <h1>Strategic Intelligence</h1>
+                  <p>Real-time analytics and platform mission status</p>
                 </div>
               </div>
-            </div>
-          </>
-        ) : (
-          <Outlet />
-        )}
+
+              {error && (
+                <div className="ad-card border border-red-500/30 bg-red-500/5">
+                  <p className="text-red-400 font-bold flex items-center gap-2">
+                    <Shield size={18} /> {error}
+                  </p>
+                </div>
+              )}
+
+              <div className="ad-stats">
+                <div className="ad-stat group">
+                  <div className="ad-stat-icon group-hover:bg-blue-500/20 group-hover:text-blue-400 transition-colors">
+                    <Users size={24} />
+                  </div>
+                  <div>
+                    <p className="ad-stat-value">{usersCount}</p>
+                    <p className="ad-stat-label">Total Users</p>
+                  </div>
+                </div>
+                <div className="ad-stat group">
+                  <div className="ad-stat-icon group-hover:bg-blue-500/20 group-hover:text-blue-400 transition-colors">
+                    <BookOpen size={24} />
+                  </div>
+                  <div>
+                    <p className="ad-stat-value">{coursesCount}</p>
+                    <p className="ad-stat-label">Tactical Modules</p>
+                  </div>
+                </div>
+                <div className="ad-stat group">
+                  <div className="ad-stat-icon group-hover:bg-blue-500/20 group-hover:text-blue-400 transition-colors">
+                    <Newspaper size={24} />
+                  </div>
+                  <div>
+                    <p className="ad-stat-value">{postsCount}</p>
+                    <p className="ad-stat-label">Intel Briefings</p>
+                  </div>
+                </div>
+                <div className="ad-stat group">
+                  <div className="ad-stat-icon group-hover:bg-blue-500/20 group-hover:text-blue-400 transition-colors">
+                    <Film size={24} />
+                  </div>
+                  <div>
+                    <p className="ad-stat-value">{reelsCount}</p>
+                    <p className="ad-stat-label">Reel Assets</p>
+                  </div>
+                </div>
+                <div className="ad-stat group">
+                  <div className="ad-stat-icon group-hover:bg-blue-500/20 group-hover:text-blue-400 transition-colors">
+                    <Clock size={24} />
+                  </div>
+                  <div>
+                    <p className="ad-stat-value">{tasksCount}</p>
+                    <p className="ad-stat-label">Active Missions</p>
+                  </div>
+                </div>
+                <div className="ad-stat group">
+                  <div className="ad-stat-icon group-hover:bg-blue-500/20 group-hover:text-blue-400 transition-colors">
+                    <Star size={24} />
+                  </div>
+                  <div>
+                    <p className="ad-stat-value">{leadershipCount}</p>
+                    <p className="ad-stat-label">Commanders</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="ad-card">
+                  <h3 className="uppercase tracking-widest text-sm text-slate-500 mb-8 border-b border-slate-800 pb-4">
+                    Fast Deployment
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Link to="/admin/create-course" className="ad-btn-primary flex items-center justify-center gap-2 no-underline">
+                      <PlusCircle size={16} /> New Module
+                    </Link>
+                    <Link to="/admin/create-post" className="ad-btn-primary flex items-center justify-center gap-2 no-underline">
+                      <PenTool size={16} /> New Briefing
+                    </Link>
+                    <Link to="/admin/users" className="ad-btn-secondary flex items-center justify-center gap-2 no-underline">
+                      <Users size={16} /> Manage Units
+                    </Link>
+                    <Link to="/admin/manage-tasks" className="ad-btn-secondary flex items-center justify-center gap-2 no-underline">
+                      <Clock size={16} /> Mission Log
+                    </Link>
+                  </div>
+                </div>
+
+                <div className="ad-card">
+                  <h3 className="uppercase tracking-widest text-sm text-slate-500 mb-8 border-b border-slate-800 pb-4">
+                    Operational Status
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-3 bg-slate-900/50 rounded-xl border border-slate-800">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                        <span className="text-sm font-bold text-slate-300">Firestore Master Node</span>
+                      </div>
+                      <span className="badge badge-completed">Online</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-slate-900/50 rounded-xl border border-slate-800">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                        <span className="text-sm font-bold text-slate-300">Intelligence Services</span>
+                      </div>
+                      <span className="badge badge-completed">Secure</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-slate-900/50 rounded-xl border border-slate-800">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                        <span className="text-sm font-bold text-slate-300">Automated Protocols</span>
+                      </div>
+                      <span className="badge badge-medium">Active</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="content"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Outlet />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
     </div>
   );

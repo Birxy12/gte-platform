@@ -25,6 +25,7 @@ import ManageTasks from "../pages/dashboard/admin/ManageTasks";
 import ManageQuizzes from "../pages/dashboard/admin/ManageQuizzes";
 import ManageCertificates from "../pages/dashboard/admin/ManageCertificates";
 import ManageLeadership from "../pages/dashboard/admin/ManageLeadership";
+import CreateQuiz from "../pages/dashboard/admin/CreateQuiz";
 
 import EnrolledCourses from "../pages/dashboard/student/EnrolledCourses";
 import UserDashboard from "../pages/dashboard/user/UserDashboard";
@@ -127,6 +128,7 @@ export default function Router() {
           <Route path="manage-quizzes" element={<ManageQuizzes />} />
           <Route path="certificates" element={<ManageCertificates />} />
           <Route path="manage-leadership" element={<ManageLeadership />} />
+          <Route path="create-quiz" element={<CreateQuiz />} />
         </Route>
 
         {/* 404 fallback */}

@@ -69,6 +69,9 @@ export default function ManageCourses() {
                   <tr key={course.id}>
                     <td>
                       <div style={{ fontWeight: '700', color: 'white' }}>{course.title}</div>
+                      <div className="font-mono text-[10px] text-blue-400 my-1 bg-blue-500/10 inline-block px-2 py-0.5 rounded border border-blue-500/20">
+                        ID: {course.id}
+                      </div>
                       <div style={{ fontSize: '0.8rem', color: '#64748b', maxWidth: '300px' }}>
                         {course.description.substring(0, 80)}...
                       </div>

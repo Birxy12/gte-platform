@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { db } from "../../../config/firebase";
 import { collection, getDocs, deleteDoc, doc, addDoc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { Users, Plus, Trash2, Edit3, X, Save, Star } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function ManageLeadership() {
   const [members, setMembers] = useState([]);
@@ -65,7 +66,11 @@ export default function ManageLeadership() {
   if (loading) return <div className="ad-card">Initializing leadership protocols...</div>;
 
   return (
-    <>
+    <motion.div 
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.4 }}
+    >
       <div className="ad-page-header">
         <div className="ad-header-title">
           <h1>Strategic Leadership</h1>
@@ -77,68 +82,68 @@ export default function ManageLeadership() {
       </div>
 
       {showAdd && (
-        <div className="ad-card" style={{ marginBottom: '2rem', border: '1px solid rgba(139, 92, 246, 0.3)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+        <div className="ad-form-card mb-8 border border-purple-500/20">
+          <div className="flex justify-between items-center mb-6">
              <h3>{editingId ? "Edit Briefing" : "Commission New Leader"}</h3>
-             <button onClick={() => setShowAdd(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
+             <button onClick={() => setShowAdd(false)} className="text-slate-500 hover:text-white">
                 <X size={20} />
              </button>
           </div>
-          <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+          <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-6">
             <div>
-               <label style={{ display: 'block', fontSize: '0.75rem', color: '#64748b', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Full Name</label>
+               <label className="ad-label">Full Name</label>
                <input 
                 type="text" 
                 value={newMember.name} 
                 onChange={e => setNewMember({...newMember, name: e.target.value})}
                 placeholder="Full Name/Callsign..."
-                style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: '#0f172a', border: '1px solid #1e293b', color: 'white' }}
+                className="ad-input"
                 required
                />
             </div>
             <div>
-               <label style={{ display: 'block', fontSize: '0.75rem', color: '#64748b', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Duty/Role</label>
+               <label className="ad-label">Duty/Role</label>
                <input 
                 type="text" 
                 value={newMember.role} 
                 onChange={e => setNewMember({...newMember, role: e.target.value})}
                 placeholder="Role (e.g. Chief Intelligence Officer)..."
-                style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: '#0f172a', border: '1px solid #1e293b', color: 'white' }}
+                className="ad-input"
                 required
                />
             </div>
             <div>
-               <label style={{ display: 'block', fontSize: '0.75rem', color: '#64748b', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Initials</label>
+               <label className="ad-label">Initials</label>
                <input 
                 type="text" 
                 value={newMember.initials} 
                 onChange={e => setNewMember({...newMember, initials: e.target.value})}
                 placeholder="CB"
                 maxLength={2}
-                style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: '#0f172a', border: '1px solid #1e293b', color: 'white' }}
+                className="ad-input"
                 required
                />
             </div>
             <div>
-               <label style={{ display: 'block', fontSize: '0.75rem', color: '#64748b', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Priority Order</label>
+               <label className="ad-label">Priority Order</label>
                <input 
                 type="number" 
                 value={newMember.order} 
                 onChange={e => setNewMember({...newMember, order: parseInt(e.target.value)})}
-                style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: '#0f172a', border: '1px solid #1e293b', color: 'white' }}
+                className="ad-input"
                />
             </div>
-            <div style={{ gridColumn: 'span 2' }}>
-               <label style={{ display: 'block', fontSize: '0.75rem', color: '#64748b', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Operational Bio</label>
+            <div className="col-span-2">
+               <label className="ad-label">Operational Bio</label>
                <textarea 
                 value={newMember.bio} 
                 onChange={e => setNewMember({...newMember, bio: e.target.value})}
                 placeholder="Brief biography/mission focus..."
-                style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: '#0f172a', border: '1px solid #1e293b', color: 'white', minHeight: '80px' }}
+                className="ad-textarea min-h-[80px]"
                />
             </div>
-            <div style={{ gridColumn: 'span 2', display: 'flex', gap: '1rem' }}>
-               <button type="submit" className="ad-btn-primary" style={{ flex: 1, padding: '1rem' }}>
+            <div className="col-span-2">
+               <button type="submit" className="ad-btn-primary w-full p-4">
                   <Save size={18} /> {editingId ? "Update Intel" : "Deploy Leader"}
                </button>
             </div>
@@ -146,7 +151,7 @@ export default function ManageLeadership() {
         </div>
       )}
 
-      <div className="ad-card" style={{ padding: '0' }}>
+      <div className="ad-card !p-0">
         <div className="ad-table-wrapper">
           <table className="ad-table">
             <thead>
@@ -160,7 +165,7 @@ export default function ManageLeadership() {
             <tbody>
               {members.length === 0 ? (
                 <tr>
-                  <td colSpan="4" style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>
+                  <td colSpan="4" className="text-center p-12 text-slate-500">
                     No leadership deployed in the current sector.
                   </td>
                 </tr>
@@ -168,33 +173,30 @@ export default function ManageLeadership() {
                 members.map(m => (
                   <tr key={m.id}>
                     <td>
-                      <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                        <div style={{ 
-                          width: '40px', height: '40px', borderRadius: '50%', 
-                          background: 'linear-gradient(135deg, #1e293b, #334155)', 
-                          display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                          fontWeight: 'bold', color: '#60a5fa', border: '1px solid rgba(96, 165, 250, 0.2)'
-                        }}>{m.initials}</div>
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center font-bold text-blue-400 border border-blue-500/20">
+                          {m.initials}
+                        </div>
                         <div>
-                          <div style={{ fontWeight: '700', color: 'white' }}>{m.name}</div>
-                          <div style={{ fontSize: '0.8rem', color: '#60a5fa', textTransform: 'uppercase', fontWeight: 700 }}>{m.role}</div>
+                          <div className="font-bold text-white leading-tight">{m.name}</div>
+                          <div className="text-[10px] text-blue-500 uppercase font-black tracking-widest mt-0.5">{m.role}</div>
                         </div>
                       </div>
                     </td>
                     <td>
-                       <span style={{ color: '#94a3b8' }}>#{m.order || 0}</span>
+                       <span className="text-slate-500 font-mono">#{m.order || 0}</span>
                     </td>
                     <td>
-                      <div style={{ fontSize: '0.8rem', color: '#64748b', maxWidth: '300px' }} className="line-clamp-2">
+                      <div className="text-xs text-slate-500 max-w-[300px] line-clamp-2">
                         {m.bio}
                       </div>
                     </td>
                     <td>
-                      <div style={{ display: 'flex', gap: '0.6rem' }}>
-                        <button onClick={() => handleEdit(m)} className="ad-btn-secondary" style={{ padding: '0.4rem' }}>
+                      <div className="flex gap-2">
+                        <button onClick={() => handleEdit(m)} className="ad-btn-secondary !p-2">
                           <Edit3 size={16} />
                         </button>
-                        <button onClick={() => handleDelete(m.id)} className="ad-btn-danger" style={{ padding: '0.4rem' }}>
+                        <button onClick={() => handleDelete(m.id)} className="ad-btn-danger !p-2">
                           <Trash2 size={16} />
                         </button>
                       </div>
@@ -206,6 +208,6 @@ export default function ManageLeadership() {
           </table>
         </div>
       </div>
-    </>
+    </motion.div>
   );
 }

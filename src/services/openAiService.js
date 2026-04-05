@@ -98,5 +98,44 @@ export const openAiService = {
             console.error("AI Assistant Error:", error);
             throw error;
         }
+    },
+
+    async parseQuizFromText(text) {
+        const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+        if (!apiKey) throw new Error("OpenAI API Key is missing.");
+
+        try {
+            const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${apiKey}`,
+                    "HTTP-Referer": window.location.origin,
+                    "X-Title": "GTE Platform"
+                },
+                body: JSON.stringify({
+                    model: "openai/gpt-3.5-turbo",
+                    messages: [
+                        {
+                            role: "system",
+                            content: "You are a professional quiz generator. Convert the following unstructured text into a valid JSON array of quiz questions. Each object must have: 'question' (string), 'options' (array of 4 strings), and 'correct' (integer 0-3). Respond ONLY with the JSON array."
+                        },
+                        {
+                            role: "user",
+                            content: `Convert this text into a quiz JSON array:\n\n${text}`
+                        }
+                    ],
+                    temperature: 0.2
+                })
+            });
+
+            if (!response.ok) throw new Error("AI Parsing Failed");
+            const data = await response.json();
+            const content = data.choices[0].message.content;
+            return JSON.parse(content.replace(/```json|```/g, "").trim());
+        } catch (error) {
+            console.error("AI Quiz Parsing Error:", error);
+            throw error;
+        }
     }
 };

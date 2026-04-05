@@ -1,0 +1,21 @@
+Question,Option A,Option B,Option C,Option D,Correct Index
+What is the primary purpose of Microsoft Excel?,Word processing,Spreadsheet management,Presentation design,Database management,1
+Which symbol must be used to start a formula in Excel?,@,=,#,&,1
+What is the intersection of a row and a column called?,Box,Grid,Cell,Block,2
+How are columns identified in an Excel worksheet?,By Numbers,By Letters,By Symbols,By Colors,1
+What does the SUM function do?,Multiplies numbers,Finds the average,Adds all numbers in a range,Subtracts numbers,2
+Which key is used to edit the contents of a selected cell?,F2,F4,F5,F12,0
+How do you select an entire column in Excel?,Click the row number,Click the column letter,Press Ctrl+A,Double-click any cell,1
+What feature allows you to copy a formula down a column?,Format Painter,AutoFill,Copy/Paste,Wrap Text,1
+Which of these is a correct cell reference?,1A,A1,A-1,1-A,1
+What does the MAX function find?,The lowest value,The average value,The total sum,The highest value,3
+Where is the formula bar located?,At the bottom of the window,Below the ribbon,Inside the cell,On the status bar,1
+What happens when you press Enter after typing in a cell?,The cursor moves up,The cursor moves right,The cursor moves down,The text is deleted,2
+What feature merges multiple cells and centers the text?,Wrap Text,Merge & Center,Format Painter,Align Center,1
+Which chart type is best for showing percentages of a whole?,Line Chart,Bar Chart,Pie Chart,Scatter Plot,2
+How can you quickly save an Excel workbook?,Ctrl + P,Ctrl + C,Ctrl + S,Ctrl + V,2
+What does freezing panes do?,Locks rows or columns in place,Prevents saving,Stops all macros,Encrypts the file,0
+Which tab on the ribbon contains the command to insert a chart?,Home,Insert,Data,Formulas,1
+What does the IF function do?,Adds numbers,Performs a logical test,Counts cells,Finds a specific word,1
+How do you wrap text within a single cell?,Alt + Enter,Ctrl + Enter,Shift + Enter,Tab + Enter,0
+Which extension is typically used for modern Excel workbooks?,.txt,.docx,.xlsx,.pptx,2

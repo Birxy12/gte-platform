@@ -1,9 +1,11 @@
 import { useEffect, useState, useCallback } from "react";
 import { db } from "../../../config/firebase";
 import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
-import { HelpCircle, Trash2, Edit3, BookOpen, Clock } from "lucide-react";
+import { HelpCircle, Trash2, Edit3, BookOpen, Clock, Plus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function ManageQuizzes() {
+  const navigate = useNavigate();
   const [quizzes, setQuizzes] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -40,6 +42,9 @@ export default function ManageQuizzes() {
           <h1>Quiz Management</h1>
           <p>Configure course assessments and knowledge checks</p>
         </div>
+        <button onClick={() => navigate("/admin/create-quiz")} className="ad-btn-primary">
+           <Plus size={18} /> Create Mission Quiz
+        </button>
       </div>
 
       <div className="ad-card" style={{ padding: '0' }}>
