@@ -89,7 +89,11 @@ const ChatSidebar = ({
                   {chat.groupName || chat.displayName || "Direct Chat"}
                 </span>
                 <span className="chat-time text-xs text-msger-text-dim">
-                  {chat.lastMessageAt && format(chat.lastMessageAt.toDate(), "HH:mm")}
+                  {chat.lastMessageAt && (
+                    typeof chat.lastMessageAt.toDate === 'function' 
+                      ? format(chat.lastMessageAt.toDate(), "HH:mm")
+                      : format(new Date(chat.lastMessageAt), "HH:mm")
+                  )}
                 </span>
               </div>
               <div className="chat-preview truncate text-sm text-msger-text-dim">

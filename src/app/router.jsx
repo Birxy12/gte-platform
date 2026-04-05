@@ -71,11 +71,7 @@ export default function Router() {
           <Route path="enrolled" element={<EnrolledCourses />} />
         </Route>
 
-        <Route path="/chat" element={
-          <ProtectedRoute>
-            <ChatPage />
-          </ProtectedRoute>
-        } />
+        <Route path="/chat" element={<ChatPage />} />
 
         <Route path="/discover" element={
           <ProtectedRoute>

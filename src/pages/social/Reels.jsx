@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, MessageCircle, Share2, Music, Download, Trash2, X, Send, Plus, Repeat } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Music, Download, Trash2, X, Send, Plus, Repeat, Sparkles } from 'lucide-react';
 import { reelsService } from '../../services/reelsService';
 import { useAuth } from '../../context/AuthProvider';
 import CreateReelModal from '../../components/social/CreateReelModal';

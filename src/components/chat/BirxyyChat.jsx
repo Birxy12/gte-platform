@@ -202,7 +202,7 @@ const BirxyyChat = () => {
         wallpaper={wallpaper}
         isAdmin={isAdmin}
         onlineUsers={onlineUsers}
-        onShowUserInfo={() => !activeChat?.groupName && setShowUserInfo(true)}
+        onShowUserInfo={() => activeChat && setShowUserInfo(true)}
       />
 
       <AnimatePresence>
