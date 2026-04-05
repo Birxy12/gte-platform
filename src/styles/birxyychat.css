@@ -1,92 +1,105 @@
-/**
- * BirxyyChat Layout Styles
- */
-.messenger-container {
-    display: flex;
-    height: calc(100vh - 80px); /* Adjust based on navbar height if needed */
+/* BirxyyChat - Complete WhatsApp Clone Styles */
+
+:root {
+  --msger-bg: #0b141a;
+  --msger-header: #202c33;
+  --msger-secondary: #111b21;
+  --msger-bubble-sent: #005c4b;
+  --msger-bubble-received: #202c33;
+  --msger-text: #e9edef;
+  --msger-text-dim: #8696a0;
+  --msger-primary: #00a884;
+  --msger-border: #2a3942;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.birxyychat-container {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #374045;
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #4a5560;
+}
+
+/* Animations */
+.animate-in {
+  animation-duration: 0.2s;
+  animation-fill-mode: both;
+}
+
+.fade-in {
+  animation-name: fadeIn;
+}
+
+.zoom-in-95 {
+  animation-name: zoomIn95;
+}
+
+.slide-in-from-top {
+  animation-name: slideInFromTop;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes zoomIn95 {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideInFromTop {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .messenger-sidebar {
+    width: 100% !important;
+    min-width: unset !important;
+  }
+  
+  .messenger-sidebar.hidden {
+    display: none;
+  }
+  
+  .messenger-main {
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 100%;
-    background: #0f172a;
-    color: #fff;
-    overflow: hidden;
-    position: relative;
-    border-radius: 24px;
-    margin: 0 auto;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    height: 100%;
+    z-index: 100;
+  }
 }
 
-.messenger-content-wrapper {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    transition: all 0.3s ease;
-}
-
-/* Empty State Styling */
-.messenger-empty-state {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: radial-gradient(circle at center, #1e293b, #0f172a);
-    padding: 2rem;
-    text-align: center;
-}
-
-.empty-state-icon {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    background: rgba(245, 158, 11, 0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #f59e0b;
-    margin-bottom: 2rem;
-    position: relative;
-}
-
-.empty-state-icon-shadow {
-    position: absolute;
-    width: 150%;
-    height: 150%;
-    background: radial-gradient(circle, rgba(245, 158, 11, 0.05) 0%, transparent 70%);
-    z-index: -1;
-}
-
-.empty-state-title {
-    font-size: 1.5rem;
-    font-weight: 800;
-    margin-bottom: 0.5rem;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-}
-
-.empty-state-subtitle {
-    font-size: 0.9rem;
-    color: #94a3b8;
-    max-width: 320px;
-}
-
-/* Mobile Sidebar Overlays */
-@media (max-width: 768px) {
-    .messenger-container {
-        height: 100vh;
-        border-radius: 0;
-        border: none;
-    }
-
-    .messenger-sidebar-mobile {
-        position: absolute;
-        inset: 0;
-        z-index: 100;
-        transform: translateX(-100%);
-        transition: transform 0.3s ease;
-    }
-
-    .messenger-sidebar-mobile.open {
-        transform: translateX(0);
-    }
-}
+/* Utility classes */
+.bg-msger-header { background-color: #202c33; }
+.bg-msger-secondary { background-color: #111b21; }
+.bg-msger-primary { background-color: #00a884; }
+.text-msger-text { color: #e9edef; }
+.text-msger-text-dim { color: #8696a0; }
+.text-msger-primary { color: #00a884; }
+.border-msger-border { border-color: #2a3942; }

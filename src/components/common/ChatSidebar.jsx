@@ -1,70 +1,114 @@
-import React, { useState } from 'react';
-import Avatar from './Avatar';
-import { Search, Plus } from 'lucide-react';
-import './ChatComponents.css';
+import React, { useState, useEffect } from 'react';
+import { Users, MessageCircle, MoreVertical, Search, X } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { format } from 'date-fns';
+import { useAuth } from '../../context/AuthProvider';
 
-/**
- * ChatSidebar Component
- * @param {Array} conversations - List of active chats
- * @param {string} activeConversationId - The current ID
- * @param {function} onSelect - Select conversation
- * @param {function} onNewChat - Create new chat
- */
-const ChatSidebar = ({ conversations = [], activeConversationId = '', onSelect, onNewChat }) => {
-  const [searchTerm, setSearchTerm] = useState('');
+const ChatSidebar = ({
+  selectedChat,
+  onSelectChat,
+  onShowNewChat,
+  searchTerm,
+  setSearchTerm,
+  hydratedChats
+}) => {
+  const { user } = useAuth();
+  const [localSearch, setLocalSearch] = useState(searchTerm);
 
-  const filteredConversations = conversations.filter(c => 
-    c.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  useEffect(() => {
+    const timeout = setTimeout(() => setSearchTerm(localSearch), 300);
+    return () => clearTimeout(timeout);
+  }, [localSearch, setSearchTerm]);
+
+  const filteredChats = hydratedChats.filter(chat =>
+    (chat.groupName || chat.displayName || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <div className="chat-sidebar">
-      <div className="sidebar-header p-4 border-b border-white/5 bg-slate-900/50">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-white font-bold tracking-widest text-sm uppercase">Secure Channel</h2>
-          <button 
-            onClick={onNewChat}
-            className="p-2 bg-orange-500 rounded-lg text-white hover:bg-orange-400 transition-all shadow-lg shadow-orange-500/10"
-          >
-            <Plus size={16} />
-          </button>
+    <div className={`messenger-sidebar ${selectedChat ? 'hidden' : ''}`}>
+      <div className="sidebar-header">
+        <div className="sidebar-top">
+          <div className="flex items-center gap-3">
+            <img
+              src={user?.photoURL || "/GlobixTech-logo.png"}
+              alt="User"
+              className="sidebar-logo cursor-pointer w-10 h-10 rounded-full object-cover"
+              onClick={() => { }}
+            />
+            <h1 className="text-xl font-bold text-white">BirxyChat</h1>
+          </div>
+          <div className="flex gap-4 text-msger-text-dim">
+            <Users size={20} className="cursor-pointer hover:text-white transition-colors" onClick={onShowNewChat} />
+            <MessageCircle size={20} className="cursor-pointer hover:text-white transition-colors" onClick={onShowNewChat} />
+            <MoreVertical size={20} className="cursor-pointer hover:text-white transition-colors" />
+          </div>
         </div>
-        
-        <div className="search-bar relative">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-          <input 
-            type="text" 
-            placeholder="Identify contact..." 
-            className="w-full bg-slate-800 border border-white/5 rounded-lg pl-10 pr-4 py-2 text-xs text-white focus:border-orange-500/50 outline-none transition-all"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+
+        <div className="sidebar-search">
+          <div className="search-container relative">
+            <Search size={18} className="search-icon absolute left-3 top-1/2 transform -translate-y-1/2 text-msger-text-dim" />
+            <input
+              type="text"
+              placeholder="Search or start new chat"
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
+              className="w-full pl-10 pr-10 py-2 bg-transparent text-white placeholder:text-msger-text-dim outline-none"
+            />
+            {localSearch && (
+              <X
+                size={16}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-msger-text-dim hover:text-white"
+                onClick={() => setLocalSearch('')}
+              />
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="conversation-list overflow-y-auto no-scrollbar flex-1">
-        {filteredConversations.length === 0 ? (
-            <div className="p-10 text-center opacity-30 text-[10px] font-bold uppercase tracking-tighter">No tactical links found</div>
-        ) : (
-            filteredConversations.map(c => (
-                <div 
-                  key={c.id} 
-                  className={`conversation-item ${activeConversationId === c.id ? 'active' : ''}`}
-                  onClick={() => onSelect(c.id)}
-                >
-                  <Avatar src={c.photoURL} name={c.name} status={c.status} size={44} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="font-bold text-sm text-white truncate">@{c.name}</span>
-                      <span className="text-[10px] opacity-40">{c.lastMessageDate}</span>
-                    </div>
-                    <p className="text-xs opacity-50 truncate transition-all group-hover:opacity-100">{c.lastMessage}</p>
-                  </div>
-                  {c.unreadCount > 0 && (
-                    <div className="unread-badge w-2 h-2 bg-orange-500 rounded-full"></div>
-                  )}
+      <div className="chat-list overflow-y-auto custom-scrollbar">
+        {filteredChats.map((chat) => (
+          <motion.div
+            key={chat.id}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            onClick={() => onSelectChat(chat)}
+            className={`chat-item ${selectedChat?.id === chat.id ? 'active' : ''}`}
+          >
+            <div className="chat-avatar">
+              {chat.photoURL ? (
+                <img src={chat.photoURL} alt="User" />
+              ) : (
+                <div className="w-full h-full rounded-full flex items-center justify-center bg-msger-primary-gradient text-white text-lg">
+                  {chat.groupName ? <Users size={24} /> : (chat.displayName || "U")[0]}
                 </div>
-              ))
+              )}
+            </div>
+            <div className="chat-info">
+              <div className="chat-info-top">
+                <span className="chat-name block truncate text-white font-medium">
+                  {chat.groupName || chat.displayName || "Direct Chat"}
+                </span>
+                <span className="chat-time text-xs text-msger-text-dim">
+                  {chat.lastMessageAt && format(chat.lastMessageAt.toDate(), "HH:mm")}
+                </span>
+              </div>
+              <div className="chat-preview truncate text-sm text-msger-text-dim">
+                {chat.lastMessage || "No messages yet"}
+              </div>
+            </div>
+          </motion.div>
+        ))}
+
+        {filteredChats.length === 0 && (
+          <div className="p-8 text-center text-msger-text-dim">
+            <p>No chats found</p>
+            <button
+              onClick={onShowNewChat}
+              className="mt-4 text-msger-primary hover:underline"
+            >
+              Start a new chat
+            </button>
+          </div>
         )}
       </div>
     </div>

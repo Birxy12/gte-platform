@@ -1,17 +1,23 @@
 import React from 'react';
-import './ChatComponents.css';
 
-/**
- * StatusIndicator Component
- * @param {string} status - 'online', 'offline', 'busy', 'away'
- * @param {string} className - Optional additional classes
- */
-const StatusIndicator = ({ status = 'offline', className = '' }) => {
+const StatusIndicator = ({ status, userName }) => {
+  if (!status || status === 'none') return null;
+
+  const statusText = {
+    typing: `${userName} is typing...`,
+    recording: `${userName} is recording...`,
+    online: 'online'
+  };
+
   return (
-    <div 
-      className={`chat-status-indicator chat-status-${status} ${className}`}
-      title={status.charAt(0).toUpperCase() + status.slice(1)}
-    />
+    <div className="status-indicator">
+      {status === 'typing' && (
+        <span className="typing-animation">
+          <span></span><span></span><span></span>
+        </span>
+      )}
+      <span className="status-text">{statusText[status]}</span>
+    </div>
   );
 };
 

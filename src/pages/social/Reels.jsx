@@ -4,6 +4,7 @@ import { Heart, MessageCircle, Share2, Music, Download, Trash2, X, Send, Plus, R
 import { reelsService } from '../../services/reelsService';
 import { useAuth } from '../../context/AuthProvider';
 import CreateReelModal from '../../components/social/CreateReelModal';
+import ReelPrompt from '../../components/social/ReelPrompt';
 import '../../styles/reels.css';
 
 /**
@@ -363,6 +364,7 @@ export default function Reels() {
     const [loading, setLoading] = useState(true);
     const [activeReelIndex, setActiveReelIndex] = useState(0);
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [showPrompt, setShowPrompt] = useState(false);
     const containerRef = useRef(null);
 
     const fetchReels = async () => {
@@ -408,14 +410,41 @@ export default function Reels() {
 
     return (
         <div className="reels-page-wrapper">
-            {/* Deploy Mission Action Button (Top Right) */}
-            <button 
-                onClick={() => setShowCreateModal(true)}
-                className="deploy-reel-btn"
-                title="Deploy Mission"
-            >
-                <Plus size={24} />
-            </button>
+            {/* Mission Briefing Button (Top Right) */}
+            <div className="absolute top-6 right-6 z-[100] flex flex-col gap-3">
+                <button 
+                    onClick={() => setShowCreateModal(true)}
+                    className="deploy-reel-btn"
+                    title="Deploy Mission"
+                >
+                    <Plus size={24} />
+                </button>
+                <button 
+                    onClick={() => setShowPrompt(true)}
+                    className="mission-briefing-btn bg-slate-900/80 backdrop-blur border border-white/10 p-3 rounded-full text-blue-400 hover:scale-110 transition-all shadow-xl"
+                    title="Mission Briefing"
+                >
+                    <Sparkles size={24} />
+                </button>
+            </div>
+
+            {/* Mission Briefing Overlay */}
+            {showPrompt && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                    <div className="w-full max-w-2xl relative">
+                        <button 
+                            onClick={() => setShowPrompt(false)}
+                            className="absolute -top-12 right-0 text-white/50 hover:text-white"
+                        >
+                            <X size={32} />
+                        </button>
+                        <ReelPrompt onDeployMission={() => {
+                            setShowPrompt(false);
+                            setShowCreateModal(true);
+                        }} />
+                    </div>
+                </div>
+            )}
 
             {/* Back to Portal (Top Left) */}
             <Link to="/home" className="absolute top-6 left-6 z-[100] text-white opacity-60 hover:opacity-100 transition-opacity flex items-center gap-2 font-bold text-sm uppercase tracking-wider">
