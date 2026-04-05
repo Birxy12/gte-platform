@@ -57,7 +57,7 @@ const ChatInput = ({
   const emojis = ['👍', '❤️', '😂', '😮', '😢', '🙏', '🔥', '👏', '🎉', '🤔', '👎', '😍'];
 
   return (
-    <div className="chat-input-area flex items-center gap-2 px-4 py-3 bg-[#202c33] border-l border-[#2a3942] relative">
+    <div className="chat-input-area relative bg-transparent px-6 py-4">
       <input 
         type="file" 
         ref={fileInputRef} 
@@ -69,18 +69,23 @@ const ChatInput = ({
       <AnimatePresence>
         {selectedFile && (
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            className="absolute -top-16 left-20 bg-[#202c33] px-4 py-2 rounded-lg shadow-xl border border-[#2a3942] flex items-center gap-3 z-10"
+            initial={{ opacity: 0, y: 10, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.9 }}
+            className="absolute -top-20 left-10 right-10 bg-[#1e293b] p-4 rounded-2xl shadow-2xl border border-white/10 flex items-center gap-4 z-50 backdrop-blur-xl"
           >
-            <Image size={20} className="text-msger-primary" />
-            <span className="text-sm text-white truncate max-w-[200px]">{selectedFile.name}</span>
+            <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center">
+              <Image size={24} className="text-blue-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+               <p className="text-sm font-semibold text-white truncate">{selectedFile.name}</p>
+               <p className="text-xs text-slate-400">Ready to send</p>
+            </div>
             <button 
               onClick={() => setSelectedFile(null)}
-              className="p-1 hover:bg-white/10 rounded-full text-msger-text-dim hover:text-white transition-colors"
+              className="p-2 hover:bg-white/10 rounded-xl text-slate-400 hover:text-white transition-all"
             >
-              <X size={16} />
+              <X size={20} />
             </button>
           </motion.div>
         )}
@@ -89,93 +94,103 @@ const ChatInput = ({
       <AnimatePresence>
         {editingMessageId && (
           <motion.div 
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            className="absolute -top-10 left-20 right-20 bg-[#202c33] px-4 py-2 rounded-t-lg border border-[#2a3942] border-b-0 flex items-center justify-between z-10"
+            exit={{ opacity: 0, y: 5 }}
+            className="absolute -top-12 left-8 right-8 bg-[#1e293b] px-5 py-2.5 rounded-t-2xl border border-white/10 border-b-0 flex items-center justify-between z-10 backdrop-blur-md"
           >
-            <span className="text-xs text-msger-text-dim">Editing message...</span>
+            <div className="flex items-center gap-2">
+               <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse" />
+               <span className="text-xs font-bold text-blue-400 uppercase tracking-widest">Editing</span>
+            </div>
             <button 
               onClick={onCancelEdit}
-              className="text-msger-text-dim hover:text-red-400 transition-colors"
+              className="text-slate-400 hover:text-red-400 transition-colors"
             >
-              <X size={14} />
+              <X size={16} />
             </button>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <button 
-        className="p-2 rounded-full text-msger-text-dim hover:text-white hover:bg-white/10 transition-colors"
-        onClick={() => fileInputRef.current?.click()}
-        title="Attach file"
-      >
-        <Plus size={24} />
-      </button>
-
-      <div className="input-container flex-1 bg-[#2a3942] px-4 py-2.5 rounded-full flex items-center relative">
+      <div className="enterprise-pill">
         <button 
-          className="text-msger-text-dim hover:text-white mr-3 transition-colors"
-          onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+          className="p-2 rounded-full text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+          onClick={() => fileInputRef.current?.click()}
+          title="Attach file"
         >
-          <Smile size={22} />
+          <Plus size={22} />
         </button>
 
-        <AnimatePresence>
-          {showEmojiPicker && (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="absolute bottom-full left-0 mb-2 bg-[#202c33] p-3 rounded-xl shadow-xl border border-[#2a3942] grid grid-cols-6 gap-2 z-20"
-            >
-              {emojis.map(emoji => (
-                <button
-                  key={emoji}
-                  onClick={() => {
-                    setMessage(prev => prev + emoji);
-                    setShowEmojiPicker(false);
-                    inputRef.current?.focus();
-                  }}
-                  className="text-2xl hover:scale-125 transition-transform p-1"
-                >
-                  {emoji}
-                </button>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <div className="flex-1 flex items-center relative">
+          <button 
+            className="text-slate-400 hover:text-white mr-3 transition-colors"
+            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+          >
+            <Smile size={20} />
+          </button>
 
-        <input
-          ref={inputRef}
-          type="text"
-          placeholder={editingMessageId ? "Update your message..." : "Type a message"}
-          value={message}
-          onChange={(e) => {
-            setMessage(e.target.value);
-            handleTyping();
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              handleSubmit(e);
-            }
-            if (e.key === 'Escape' && editingMessageId) {
-              onCancelEdit();
-            }
-          }}
-          className="w-full bg-transparent border-none outline-none text-white placeholder:text-msger-text-dim text-sm"
-        />
+          <AnimatePresence>
+            {showEmojiPicker && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                className="absolute bottom-full left-0 mb-4 bg-[#1e293b] p-4 rounded-2xl shadow-2xl border border-white/10 grid grid-cols-6 gap-3 z-50 backdrop-blur-xl"
+              >
+                {emojis.map(emoji => (
+                  <button
+                    key={emoji}
+                    onClick={() => {
+                      setMessage(prev => prev + emoji);
+                      setShowEmojiPicker(false);
+                      inputRef.current?.focus();
+                    }}
+                    className="text-2xl hover:scale-125 hover:bg-white/5 p-2 rounded-xl transition-all"
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <input
+            ref={inputRef}
+            type="text"
+            placeholder={editingMessageId ? "Update your message..." : "Type a message..."}
+            value={message}
+            onChange={(e) => {
+              setMessage(e.target.value);
+              handleTyping();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSubmit(e);
+              }
+              if (e.key === 'Escape' && editingMessageId) {
+                onCancelEdit();
+              }
+            }}
+            className="enterprise-input"
+          />
+        </div>
+
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={handleSubmit}
+          disabled={!message.trim() && !selectedFile}
+          className={`p-3 rounded-full transition-all shadow-lg ${
+            message.trim() || selectedFile 
+              ? 'bg-blue-600 text-white hover:bg-blue-500 shadow-blue-500/20' 
+              : 'bg-white/5 text-slate-500'
+          }`}
+        >
+          {message.trim() || selectedFile ? <Send size={18} /> : <Mic size={18} />}
+        </motion.button>
       </div>
-
-      <motion.button
-        whileTap={{ scale: 0.9 }}
-        onClick={handleSubmit}
-        disabled={!message.trim() && !selectedFile}
-        className={`p-3 rounded-full transition-colors ${message.trim() || selectedFile ? 'bg-[#00a884] text-white hover:bg-[#008f72]' : 'bg-[#2a3942] text-msger-text-dim'}`}
-      >
-        {message.trim() || selectedFile ? <Send size={20} /> : <Mic size={20} />}
-      </motion.button>
     </div>
   );
 };

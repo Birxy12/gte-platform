@@ -42,49 +42,51 @@ const MessageBubble = ({
 
   return (
     <div 
-      className={`message-wrapper ${isMe ? 'sent' : 'received'} mb-1`}
+      className={`message-wrapper ${isMe ? 'sent' : 'received'} mb-1 px-4 animate-msg-in`}
       onContextMenu={(e) => onContextMenu(e, message.id)}
     >
-      <div className={`message-bubble relative max-w-[65%] px-3 py-2 rounded-lg ${isMe ? 'bg-[#005c4b] rounded-tr-none' : 'bg-[#202c33] rounded-tl-none'}`}>
+      <div className={`message-bubble relative max-w-[65%] px-4 py-2.5 transition-all shadow-sm ${
+        isMe ? 'sent' : 'received'
+      }`}>
         {message.type === 'image' ? (
-          <div className="message-image max-w-[300px] rounded-lg overflow-hidden my-1">
+          <div className="message-image max-w-[300px] rounded-lg overflow-hidden my-1 cursor-pointer">
             {!imageLoaded && (
-              <div className="w-48 h-32 bg-msger-header animate-pulse rounded-lg" />
+              <div className="w-48 h-32 bg-[#2a3942] animate-pulse rounded-lg" />
             )}
             <img 
               src={message.fileUrl || message.text} 
               alt="Shared" 
-              className={`w-full h-auto cursor-pointer hover:opacity-90 transition-all ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+              className={`w-full h-auto hover:opacity-90 transition-all ${imageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
               onClick={() => window.open(message.fileUrl || message.text, '_blank')}
               onLoad={() => setImageLoaded(true)}
             />
           </div>
         ) : (
-          <p className="message-text text-sm leading-relaxed text-white">
+          <div className="message-text text-[14.5px] leading-relaxed text-white">
             {highlightText(message.text, searchTerm)}
             {message.isEdited && (
-              <span className="text-[10px] ml-1 opacity-50 italic">(edited)</span>
+              <span className="text-[10px] ml-1 opacity-50 italic font-medium">(edited)</span>
             )}
-          </p>
+          </div>
         )}
         
-        <div className="message-meta flex items-center justify-end gap-1 mt-1">
-          <span className="message-time text-[11px] text-[#99beb7]">
+        <div className="message-meta flex items-center justify-end gap-1.5 mt-1.5 border-t border-white/5 pt-1">
+          <span className="message-time text-[10.5px] font-medium text-white/50 tracking-tight">
             {formatTime(message.timestamp)}
           </span>
           {isMe && (
-            <span className={`message-status ${message.isRead ? 'text-[#53bdeb]' : 'text-[#8696a0]'}`}>
-              <CheckCheck size={14} />
+            <span className={`message-status ${message.isRead ? 'text-[#34d399]' : 'text-white/30'}`}>
+              <CheckCheck size={14} strokeWidth={2.5} />
             </span>
           )}
         </div>
 
         {(isMe || isAdmin) && isContextMenuActive && (
-          <div className="absolute -top-8 right-0 flex gap-1 bg-msger-secondary p-1.5 rounded-lg shadow-xl border border-msger-border animate-in fade-in zoom-in-95 z-10">
+          <div className="absolute -top-10 right-0 flex gap-1 bg-[#1e293b] p-1.5 rounded-xl shadow-2xl border border-white/10 animate-in fade-in zoom-in-95 z-10">
             {isMe && (
               <button 
                 onClick={() => onEdit(message)}
-                className="p-1.5 text-msger-text-dim hover:text-blue-400 hover:bg-white/5 rounded transition-colors"
+                className="p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-all"
                 title="Edit"
               >
                 <Edit2 size={14} />
@@ -92,7 +94,7 @@ const MessageBubble = ({
             )}
             <button 
               onClick={() => onDelete(message.id)}
-              className="p-1.5 text-msger-text-dim hover:text-red-400 hover:bg-white/5 rounded transition-colors"
+              className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
               title="Delete"
             >
               <X size={14} />

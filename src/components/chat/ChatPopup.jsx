@@ -49,9 +49,9 @@ export default function ChatPopup({ targetUser, onClose }) {
             setMessages(updatedMessages);
         });
 
-        const unsubscribeTyping = chatService.subscribeToTyping(chatId, (typingUsers) => {
-            // Check if the target user is in the typing array
-            setIsTyping(typingUsers.includes(targetUser.uid || targetUser.id));
+        const unsubscribeTyping = chatService.subscribeToStatuses(chatId, (statuses) => {
+            // Check if the target user is currently in a 'typing' status
+            setIsTyping(statuses[targetUser.uid || targetUser.id] === 'typing');
         });
 
         return () => {
@@ -71,11 +71,11 @@ export default function ChatPopup({ targetUser, onClose }) {
         setInputText(e.target.value);
         if (!chatId) return;
 
-        chatService.setTypingStatus(chatId, user.uid, true);
+        chatService.setStatus(chatId, user.uid, "typing");
 
         if (typingTimeout) clearTimeout(typingTimeout);
         const timeout = setTimeout(() => {
-            chatService.setTypingStatus(chatId, user.uid, false);
+            chatService.setStatus(chatId, user.uid, "none");
         }, 1500);
         setTypingTimeout(timeout);
     };
@@ -87,7 +87,7 @@ export default function ChatPopup({ targetUser, onClose }) {
         try {
             await chatService.sendMessage(chatId, user.uid, inputText);
             setInputText("");
-            chatService.setTypingStatus(chatId, user.uid, false);
+            chatService.setStatus(chatId, user.uid, "none");
             if (typingTimeout) clearTimeout(typingTimeout);
         } catch (err) {
             console.error("Popup send error:", err);

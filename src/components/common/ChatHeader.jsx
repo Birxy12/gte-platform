@@ -39,8 +39,8 @@ const ChatHeader = ({
   const status = getOtherUserStatus();
 
   return (
-    <div className="chat-header bg-msger-header h-[60px] flex items-center justify-between px-4 border-l border-msger-border">
-      <div className="flex items-center gap-2">
+    <div className="chat-header glass-header h-[72px] flex items-center justify-between px-6 border-l border-white/5 shadow-lg">
+      <div className="flex items-center gap-4">
         <button 
           className="md:hidden text-msger-text-dim p-2 -ml-2 hover:bg-white/10 rounded-full transition-colors" 
           onClick={onBack}
@@ -55,7 +55,7 @@ const ChatHeader = ({
           <Avatar 
             src={chat.photoURL} 
             name={displayName} 
-            size="small"
+            size="chat"
             isOnline={isOnline && chat.type === 'direct'}
           />
           <div className="flex-1">
@@ -102,34 +102,34 @@ const ChatHeader = ({
           </button>
           
           {showOptions && (
-            <div className="absolute right-0 top-full mt-2 w-56 bg-msger-header border border-msger-border rounded-lg shadow-xl overflow-hidden z-50 animate-in fade-in zoom-in-95">
+            <div className="absolute right-0 top-full mt-3 w-60 bg-[#1e293b] border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 backdrop-blur-xl">
               <div 
                 onClick={(e) => { e.stopPropagation(); onShowUserInfo(); onShowOptions(false); }} 
-                className="px-4 py-3 hover:bg-white/5 cursor-pointer text-sm text-white"
+                className="px-5 py-4 hover:bg-white/5 cursor-pointer text-[14px] text-slate-200 flex items-center gap-3 transition-colors"
               >
                 Contact Info
               </div>
               
-              <div className="px-4 py-2 text-[10px] uppercase font-bold text-msger-text-dim border-y border-msger-border bg-black/20">
+              <div className="px-5 py-2.5 text-[10px] uppercase font-bold text-slate-500 border-y border-white/5 bg-black/20 tracking-widest">
                 Wallpapers
               </div>
               
               {['default', 'midnight', 'starry'].map((wp) => (
                 <div 
                   key={wp}
-                  className="px-4 py-3 hover:bg-white/5 cursor-pointer text-sm text-white flex items-center gap-2 capitalize"
+                  className="px-5 py-4 hover:bg-white/5 cursor-pointer text-[14px] text-slate-200 flex items-center gap-3 capitalize transition-colors"
                   onClick={(e) => { e.stopPropagation(); onWallpaperChange(`wp-${wp}`); onShowOptions(false); }}
                 >
-                  <div className={`w-3 h-3 rounded ${wp === 'default' ? 'bg-[#0b141a]' : wp === 'midnight' ? 'bg-black' : 'bg-blue-900'}`} />
+                  <div className={`w-3.5 h-3.5 rounded-full ring-2 ring-white/10 ${wp === 'default' ? 'bg-[#0b141a]' : wp === 'midnight' ? 'bg-black' : 'bg-blue-600'}`} />
                   {wp}
                 </div>
               ))}
               
-              <div className="border-t border-msger-border"></div>
+              <div className="border-t border-white/5"></div>
               
               <div 
                 onClick={(e) => { e.stopPropagation(); onClearChat(); onShowOptions(false); }} 
-                className="px-4 py-3 hover:bg-white/5 cursor-pointer text-sm text-white"
+                className="px-5 py-4 hover:bg-white/5 cursor-pointer text-[14px] text-slate-200 transition-colors"
               >
                 Clear Chat
               </div>
@@ -137,7 +137,7 @@ const ChatHeader = ({
               {!chat.groupName && (
                 <div 
                   onClick={(e) => { e.stopPropagation(); onBlockUser(); onShowOptions(false); }} 
-                  className="px-4 py-3 hover:bg-red-500/20 text-red-400 cursor-pointer text-sm"
+                  className="px-5 py-4 hover:bg-red-500/10 text-red-400 cursor-pointer text-[14px] font-medium transition-colors"
                 >
                   Block
                 </div>
