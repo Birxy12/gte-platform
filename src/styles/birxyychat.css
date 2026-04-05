@@ -1,4 +1,5 @@
-/* BirxyyChat - Complete WhatsApp Clone Styles */
+/* BirxyyChat - WhatsApp-style Chat Styles */
+/* NOTE: Scoped to .birxyychat-container to avoid global resets breaking the app */
 
 :root {
   --msger-bg: #0b141a;
@@ -12,14 +13,15 @@
   --msger-border: #2a3942;
 }
 
-* {
-  margin: 0;
-  padding: 0;
+.birxyychat-container {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   box-sizing: border-box;
 }
 
-.birxyychat-container {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+.birxyychat-container *,
+.birxyychat-container *::before,
+.birxyychat-container *::after {
+  box-sizing: border-box;
 }
 
 /* Scrollbar */
@@ -42,23 +44,6 @@
 }
 
 /* Animations */
-.animate-in {
-  animation-duration: 0.2s;
-  animation-fill-mode: both;
-}
-
-.fade-in {
-  animation-name: fadeIn;
-}
-
-.zoom-in-95 {
-  animation-name: zoomIn95;
-}
-
-.slide-in-from-top {
-  animation-name: slideInFromTop;
-}
-
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -74,17 +59,42 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Empty/No Chat State */
+.chat-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background: #0b141a;
+  color: #8696a0;
+  gap: 1rem;
+}
+
+.chat-empty-state-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(0, 168, 132, 0.1);
+  border: 1px solid rgba(0, 168, 132, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+  animation: fadeIn 0.5s ease;
+}
+
 /* Responsive */
 @media (max-width: 900px) {
   .messenger-sidebar {
     width: 100% !important;
     min-width: unset !important;
   }
-  
+
   .messenger-sidebar.hidden {
     display: none;
   }
-  
+
   .messenger-main {
     position: fixed;
     top: 0;
@@ -104,7 +114,7 @@
 .text-msger-primary { color: #00a884; }
 .border-msger-border { border-color: #2a3942; }
 
-/* Avatar Sizing Refinements */
+/* Avatar */
 .avatar-container.small { width: 32px !important; height: 32px !important; }
 .avatar-container.medium { width: 44px !important; height: 44px !important; }
 .avatar-container.large { width: 56px !important; height: 56px !important; }
@@ -131,9 +141,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--msger-primary-gradient);
+  background: linear-gradient(135deg, #00a884, #005c4b);
   color: white;
   font-weight: bold;
+  font-size: 1.1rem;
 }
 
 .online-indicator {

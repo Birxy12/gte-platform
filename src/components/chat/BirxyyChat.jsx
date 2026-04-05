@@ -488,14 +488,16 @@ const SettingsDrawer = ({
     </div>
     
     <div className="p-4 overflow-y-auto h-full pb-20 custom-scrollbar">
-      <div className="flex flex-col items-center mb-6">
+      <div className="flex items-center gap-3 mb-6 p-3 bg-[#182229] rounded-xl border border-[#2a3942]">
         <Avatar 
           src={user?.photoURL || "/GlobixTech-logo.png"} 
           name={user?.displayName || "Me"} 
-          size="large" 
-          className="mb-2"
+          size="medium"
         />
-        <p className="text-sm text-[#8696a0]">{user?.email}</p>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-white truncate">{user?.displayName || "My Account"}</p>
+          <p className="text-xs text-[#8696a0] truncate">{user?.email}</p>
+        </div>
       </div>
 
       <div className="space-y-4">
