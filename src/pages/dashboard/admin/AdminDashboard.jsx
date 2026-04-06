@@ -1,522 +1,356 @@
-import { useState, useEffect } from "react";
-import { db } from "../../config/firebase";
-import { collection, getDocs, query, where } from "firebase/firestore";
-import { 
-  LayoutDashboard, 
-  Users, 
-  BookOpen, 
-  Settings, 
-  BarChart3, 
-  Shield, 
-  Bell, 
-  Search,
-  Menu,
-  X,
-  ChevronDown,
-  LogOut,
-  Plus,
-  TrendingUp,
-  DollarSign,
-  UserCheck,
-  AlertCircle,
-  CheckCircle,
-  Clock
-} from "lucide-react";
+import { Link, useLocation, useNavigate, Outlet } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { db, auth } from "../../../config/firebase";
+import { collection, getDocs, writeBatch, query, where } from "firebase/firestore";
+import { signOut } from "firebase/auth";
+import { presenceService } from "../../../services/presenceService";
 import { motion, AnimatePresence } from "framer-motion";
-import ManageInstructors from "./ManageInstructors";
+import { 
+  Users, BookOpen, Newspaper, Film, Layout, 
+  Settings, LogOut, PlusCircle, PenTool, 
+  CheckCircle, Shield, Star, HelpCircle, 
+  MessageSquare, Award, Clock, UserCheck
+} from "lucide-react";
 import "./AdminDashboard.css";
 
-// Mock components for other sections - replace with actual imports
-const ManageUsers = () => <div className="ad-placeholder">Users Management Component</div>;
-const ManageCourses = () => <div className="ad-placeholder">Courses Management Component</div>;
-const Analytics = () => <div className="ad-placeholder">Analytics Component</div>;
-const AdminSettings = () => <div className="ad-placeholder">Settings Component</div>;
-
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState("overview");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [notifications, setNotifications] = useState([]);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [adminData, setAdminData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  // Fetch admin data and notifications
+  const [usersCount, setUsersCount] = useState(0);
+  const [coursesCount, setCoursesCount] = useState(0);
+  const [postsCount, setPostsCount] = useState(0);
+  const [reelsCount, setReelsCount] = useState(0);
+  const [tasksCount, setTasksCount] = useState(0);
+  const [leadershipCount, setLeadershipCount] = useState(0);
+  const [instructorsCount, setInstructorsCount] = useState(0);
+  const [pendingInstructors, setPendingInstructors] = useState(0);
+  const [error, setError] = useState(null);
+
   useEffect(() => {
-    const fetchDashboardData = async () => {
+    const autoApproveTestimonies = async () => {
       try {
-        // Fetch pending instructor verifications
-        const instructorsQuery = query(
-          collection(db, "users"), 
-          where("role", "==", "pending_instructor")
-        );
-        const instructorsSnap = await getDocs(instructorsQuery);
-        const pendingInstructors = instructorsSnap.docs.length;
+        const testimoniesRef = collection(db, "testimonies");
+        const q = query(testimoniesRef, where("published", "==", false));
+        const snapshot = await getDocs(q);
+        
+        const now = Date.now();
+        const ONE_HOUR = 60 * 60 * 1000;
+        const toApprove = [];
 
-        // Fetch pending course approvals
-        const coursesQuery = query(
-          collection(db, "courses"),
-          where("status", "==", "pending_review")
-        );
-        const coursesSnap = await getDocs(coursesQuery);
-        const pendingCourses = coursesSnap.docs.length;
-
-        // Fetch total stats
-        const usersSnap = await getDocs(collection(db, "users"));
-        const totalUsers = usersSnap.docs.length;
-
-        const allCoursesSnap = await getDocs(collection(db, "courses"));
-        const totalCourses = allCoursesSnap.docs.length;
-
-        setAdminData({
-          totalUsers,
-          totalCourses,
-          pendingInstructors,
-          pendingCourses,
-          totalRevenue: 125000,
-          monthlyGrowth: 23.5
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          if (data.createdAt) {
+            const createdTime = data.createdAt.toMillis ? data.createdAt.toMillis() : new Date(data.createdAt).getTime();
+            if (now - createdTime > ONE_HOUR) {
+              toApprove.push({ ref: doc.ref });
+            }
+          }
         });
 
-        // Generate notifications
-        const notifs = [];
-        if (pendingInstructors > 0) {
-          notifs.push({
-            id: 1,
-            type: "instructor",
-            message: `${pendingInstructors} instructor${pendingInstructors > 1 ? 's' : ''} awaiting verification`,
-            time: "Just now",
-            icon: UserCheck,
-            color: "amber"
+        if (toApprove.length > 0) {
+          const batch = writeBatch(db);
+          toApprove.forEach(item => {
+            batch.update(item.ref, { published: true });
           });
+          await batch.commit();
         }
-        if (pendingCourses > 0) {
-          notifs.push({
-            id: 2,
-            type: "course",
-            message: `${pendingCourses} course${pendingCourses > 1 ? 's' : ''} pending review`,
-            time: "2 hours ago",
-            icon: BookOpen,
-            color: "blue"
-          });
-        }
-        notifs.push({
-          id: 3,
-          type: "system",
-          message: "System backup completed successfully",
-          time: "5 hours ago",
-          icon: CheckCircle,
-          color: "green"
-        });
-
-        setNotifications(notifs);
-        setLoading(false);
       } catch (err) {
-        console.error("Error fetching admin data:", err);
-        setLoading(false);
+        console.error("Auto-approval error:", err);
       }
     };
 
-    fetchDashboardData();
+    const fetchAnalytics = async () => {
+      try {
+        const [uSnap, cSnap, pSnap, rSnap, tSnap, lSnap, iSnap, pendingSnap] = await Promise.all([
+          getDocs(collection(db, "users")),
+          getDocs(collection(db, "courses")),
+          getDocs(collection(db, "posts")),
+          getDocs(collection(db, "reels")),
+          getDocs(collection(db, "tasks")),
+          getDocs(collection(db, "leadership")),
+          getDocs(query(collection(db, "users"), where("role", "in", ["instructor", "pending_instructor"]))),
+          getDocs(query(collection(db, "users"), where("status", "==", "pending")))
+        ]);
+        setUsersCount(uSnap.size);
+        setCoursesCount(cSnap.size);
+        setPostsCount(pSnap.size);
+        setReelsCount(rSnap.size);
+        setTasksCount(tSnap.size);
+        setLeadershipCount(lSnap.size);
+        setInstructorsCount(iSnap.size);
+        setPendingInstructors(pendingSnap.size);
+      } catch (err) {
+        console.error("Error fetching analytics:", err);
+        if (err.code === "permission-denied") {
+          setError("Access restricted. Operational clearance required.");
+        }
+      }
+    };
+
+    autoApproveTestimonies();
+    fetchAnalytics();
   }, []);
 
-  const menuItems = [
-    { id: "overview", label: "Overview", icon: LayoutDashboard, badge: null },
-    { id: "instructors", label: "    { id: "instructors", label: "Instructors", icon: Shield, badge: adminData?.pendingInstructors || 0 },
-    { id: "users", label: "Users", icon: Users, badge: null },
-    { id: "courses", label: "Courses", icon: BookOpen, badge: adminData?.pendingCourses || 0 },
-    { id: "analytics", label: "Analytics", icon: BarChart3, badge: null },
-    { id: "settings", label: "Settings", icon: Settings, badge: null }
-  ];
-
-  const quickActions = [
-    { label: "Add Instructor", icon: Plus, color: "blue", action: () => setActiveTab("instructors") },
-    { label: "Review Courses", icon: BookOpen, color: "amber", action: () => setActiveTab("courses") },
-    { label: "View Reports", icon: BarChart3, color: "purple", action: () => setActiveTab("analytics") }
-  ];
-
-  const renderContent = () => {
-    switch(activeTab) {
-      case "overview":
-        return <OverviewDashboard data={adminData} quickActions={quickActions} />;
-      case "instructors":
-        return <ManageInstructors />;
-      case "users":
-        return <ManageUsers />;
-      case "courses":
-        return <ManageCourses />;
-      case "analytics":
-        return <Analytics />;
-      case "settings":
-        return <AdminSettings />;
-      default:
-        return <OverviewDashboard data={adminData} quickActions={quickActions} />;
+  const handleLogout = async () => {
+    try {
+      const currentUser = auth.currentUser;
+      if (currentUser) await presenceService.setOffline(currentUser.uid);
+      await signOut(auth);
+      navigate("/login");
+    } catch (error) {
+      console.error("Error signing out:", error);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="ad-loading-screen">
-        <div className="ad-spinner"></div>
-        <p>Loading Admin Dashboard...</p>
-      </div>
-    );
-  }
+  const isActive = (path) => location.pathname === path ? "ad-nav-item active" : "ad-nav-item";
+  const isOverview = location.pathname === "/admin";
 
   return (
-    <div className="admin-dashboard">
-      {/* Mobile Overlay */}
-      <AnimatePresence>
-        {sidebarOpen && (
-          <motion.div 
-            className="ad-mobile-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
-      </AnimatePresence>
-
+    <div className="admin-dash">
       {/* Sidebar */}
-      <motion.aside 
-        className={`ad-sidebar ${sidebarOpen ? 'open' : 'closed'}`}
-        initial={false}
-        animate={{ width: sidebarOpen ? 280 : 80 }}
-      >
-        <div className="ad-sidebar-header">
-          <div className="ad-logo">
-            <Shield size={32} className="ad-logo-icon" />
-            {sidebarOpen && (
-              <motion.div 
-                className="ad-logo-text"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-              >
-                <span className="ad-logo-title">GTE Admin</span>
-                <span className="ad-logo-subtitle">Control Center</span>
-              </motion.div>
-            )}
-          </div>
-          <button 
-            className="ad-toggle-btn"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-          >
-            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
-        </div>
-
+      <aside className="ad-sidebar">
+        <Link to="/home" className="ad-brand">
+          <Shield className="text-blue-500" size={24} />
+          <span>Admin <b>Panel</b></span>
+        </Link>
         <nav className="ad-nav">
-          {menuItems.map((item) => (
-            <button
-              key={item.id}
-              className={`ad-nav-item ${activeTab === item.id ? 'active' : ''}`}
-              onClick={() => setActiveTab(item.id)}
-            >
-              <item.icon size={22} />
-              {sidebarOpen && (
-                <motion.span 
-                  className="ad-nav-label"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                >
-                  {item.label}
-                </motion.span>
-              )}
-              {sidebarOpen && item.badge > 0 && (
-                <span className="ad-badge">{item.badge}</span>
-              )}
-              {!sidebarOpen && item.badge > 0 && (
-                <span className="ad-badge-mini">{item.badge}</span>
-              )}
-            </button>
-          ))}
+          <Link to="/admin" className={isActive("/admin")}>
+            <Layout size={18} className="ad-nav-icon" />
+            <span>Overview</span>
+          </Link>
+          <Link to="/admin/users" className={isActive("/admin/users")}>
+            <Users size={18} className="ad-nav-icon" />
+            <span>Users</span>
+          </Link>
+          <Link to="/admin/instructors" className={isActive("/admin/instructors")}>
+            <UserCheck size={18} className="ad-nav-icon" />
+            <span>Instructors</span>
+            {pendingInstructors > 0 && (
+              <span className="ad-badge">{pendingInstructors}</span>
+            )}
+          </Link>
+          <Link to="/admin/manage-courses" className={isActive("/admin/manage-courses")}>
+            <BookOpen size={18} className="ad-nav-icon" />
+            <span>Courses</span>
+          </Link>
+          <Link to="/admin/manage-posts" className={isActive("/admin/manage-posts")}>
+            <Newspaper size={18} className="ad-nav-icon" />
+            <span>Posts</span>
+          </Link>
+          <Link to="/admin/manage-reels" className={isActive("/admin/manage-reels")}>
+            <Film size={18} className="ad-nav-icon" />
+            <span>Reels</span>
+          </Link>
+          <Link to="/admin/manage-tasks" className={isActive("/admin/manage-tasks")}>
+            <Clock size={18} className="ad-nav-icon" />
+            <span>Tasks</span>
+          </Link>
+          <Link to="/admin/manage-quizzes" className={isActive("/admin/manage-quizzes")}>
+            <HelpCircle size={18} className="ad-nav-icon" />
+            <span>Quizzes</span>
+          </Link>
+          <Link to="/admin/certificates" className={isActive("/admin/certificates")}>
+             <Award size={18} className="ad-nav-icon" />
+            <span>Certificates</span>
+          </Link>
+          <Link to="/admin/manage-leadership" className={isActive("/admin/manage-leadership")}>
+            <Star size={18} className="ad-nav-icon" />
+            <span>Leadership</span>
+          </Link>
+          <Link to="/admin/reports" className={isActive("/admin/reports")}>
+            <Shield size={18} className="ad-nav-icon" />
+            <span>Moderation</span>
+          </Link>
+          <Link to="/admin/testimonies" className={isActive("/admin/testimonies")}>
+            <Star size={18} className="ad-nav-icon" />
+            <span>Testimonies</span>
+          </Link>
+          
+          <div className="mx-4 my-6 h-px bg-slate-800/50" />
+          
+          <Link to="/admin/settings" className={isActive("/admin/settings")}>
+            <Settings size={18} className="ad-nav-icon" />
+            <span>Settings</span>
+          </Link>
         </nav>
 
-        <div className="ad-sidebar-footer">
-          <button className="ad-logout">
-            <LogOut size={20} />
-            {sidebarOpen && <span>Logout</span>}
-          </button>
-        </div>
-      </motion.aside>
+        <button onClick={handleLogout} className="ad-logout">
+          <LogOut size={18} className="ad-nav-icon" />
+          <span>Sign Out</span>
+        </button>
+      </aside>
 
-      {/* Main Content */}
+      {/* Main Area */}
       <main className="ad-main">
-        {/* Top Header */}
-        <header className="ad-header">
-          <div className="ad-header-left">
-            <button 
-              className="ad-menu-toggle"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
+        <AnimatePresence mode="wait">
+          {isOverview ? (
+            <motion.div 
+              key="overview"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={{ duration: 0.3 }}
             >
-              <Menu size={24} />
-            </button>
-            <div className="ad-search">
-              <Search size={18} />
-              <input type="text" placeholder="Search anything..." />
-            </div>
-          </div>
+              <div className="ad-page-header">
+                <div className="ad-header-title">
+                  <h1>Strategic Intelligence</h1>
+                  <p>Real-time analytics and platform mission status</p>
+                </div>
+              </div>
 
-          <div className="ad-header-right">
-            {/* Notifications */}
-            <div className="ad-notifications">
-              <button 
-                className="ad-icon-btn"
-                onClick={() => setShowNotifications(!showNotifications)}
-              >
-                <Bell size={20} />
-                {notifications.length > 0 && (
-                  <span className="ad-notification-dot">{notifications.length}</span>
-                )}
-              </button>
-              
-              <AnimatePresence>
-                {showNotifications && (
-                  <motion.div 
-                    className="ad-notification-dropdown"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                  >
-                    <div className="ad-notification-header">
-                      <h4>Notifications</h4>
-                      <span>{notifications.length} new</span>
-                    </div>
-                    {notifications.map((notif) => (
-                      <div 
-                        key={notif.id} 
-                        className="ad-notification-item"
-                        onClick={() => {
-                          if (notif.type === "instructor") setActiveTab("instructors");
-                          if (notif.type === "course") setActiveTab("courses");
-                          setShowNotifications(false);
-                        }}
-                      >
-                        <div className={`ad-notification-icon ${notif.color}`}>
-                          <notif.icon size={16} />
-                        </div>
-                        <div className="ad-notification-content">
-                          <p>{notif.message}</p>
-                          <span>{notif.time}</span>
-                        </div>
+              {error && (
+                <div className="ad-card border border-red-500/30 bg-red-500/5">
+                  <p className="text-red-400 font-bold flex items-center gap-2">
+                    <Shield size={18} /> {error}
+                  </p>
+                </div>
+              )}
+
+              <div className="ad-stats">
+                <div className="ad-stat group">
+                  <div className="ad-stat-icon group-hover:bg-blue-500/20 group-hover:text-blue-400 transition-colors">
+                    <Users size={24} />
+                  </div>
+                  <div>
+                    <p className="ad-stat-value">{usersCount}</p>
+                    <p className="ad-stat-label">Total Users</p>
+                  </div>
+                </div>
+                <div className="ad-stat group">
+                  <div className="ad-stat-icon group-hover:bg-amber-500/20 group-hover:text-amber-400 transition-colors">
+                    <UserCheck size={24} />
+                  </div>
+                  <div>
+                    <p className="ad-stat-value">{instructorsCount}</p>
+                    <p className="ad-stat-label">Instructors</p>
+                    {pendingInstructors > 0 && (
+                      <span className="text-xs text-amber-500 font-bold">{pendingInstructors} pending</span>
+                    )}
+                  </div>
+                </div>
+                <div className="ad-stat group">
+                  <div className="ad-stat-icon group-hover:bg-blue-500/20 group-hover:text-blue-400 transition-colors">
+                    <BookOpen size={24} />
+                  </div>
+                  <div>
+                    <p className="ad-stat-value">{coursesCount}</p>
+                    <p className="ad-stat-label">Tactical Modules</p>
+                  </div>
+                </div>
+                <div className="ad-stat group">
+                  <div className="ad-stat-icon group-hover:bg-blue-500/20 group-hover:text-blue-400 transition-colors">
+                    <Newspaper size={24} />
+                  </div>
+                  <div>
+                    <p className="ad-stat-value">{postsCount}</p>
+                    <p className="ad-stat-label">Intel Briefings</p>
+                  </div>
+                </div>
+                <div className="ad-stat group">
+                  <div className="ad-stat-icon group-hover:bg-blue-500/20 group-hover:text-blue-400 transition-colors">
+                    <Film size={24} />
+                  </div>
+                  <div>
+                    <p className="ad-stat-value">{reelsCount}</p>
+                    <p className="ad-stat-label">Reel Assets</p>
+                  </div>
+                </div>
+                <div className="ad-stat group">
+                  <div className="ad-stat-icon group-hover:bg-blue-500/20 group-hover:text-blue-400 transition-colors">
+                    <Clock size={24} />
+                  </div>
+                  <div>
+                    <p className="ad-stat-value">{tasksCount}</p>
+                    <p className="ad-stat-label">Active Missions</p>
+                  </div>
+                </div>
+                <div className="ad-stat group">
+                  <div className="ad-stat-icon group-hover:bg-blue-500/20 group-hover:text-blue-400 transition-colors">
+                    <Star size={24} />
+                  </div>
+                  <div>
+                    <p className="ad-stat-value">{leadershipCount}</p>
+                    <p className="ad-stat-label">Commanders</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="ad-card">
+                  <h3 className="uppercase tracking-widest text-sm text-slate-500 mb-8 border-b border-slate-800 pb-4">
+                    Fast Deployment
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Link to="/admin/create-course" className="ad-btn-primary flex items-center justify-center gap-2 no-underline">
+                      <PlusCircle size={16} /> New Module
+                    </Link>
+                    <Link to="/admin/create-post" className="ad-btn-primary flex items-center justify-center gap-2 no-underline">
+                      <PenTool size={16} /> New Briefing
+                    </Link>
+                    <Link to="/admin/users" className="ad-btn-secondary flex items-center justify-center gap-2 no-underline">
+                      <Users size={16} /> Manage Units
+                    </Link>
+                    <Link to="/admin/instructors" className="ad-btn-secondary flex items-center justify-center gap-2 no-underline">
+                      <UserCheck size={16} /> Instructors
+                    </Link>
+                  </div>
+                </div>
+
+                <div className="ad-card">
+                  <h3 className="uppercase tracking-widest text-sm text-slate-500 mb-8 border-b border-slate-800 pb-4">
+                    Operational Status
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-3 bg-slate-900/50 rounded-xl border border-slate-800">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                        <span className="text-sm font-bold text-slate-300">Firestore Master Node</span>
                       </div>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Admin Profile */}
-            <div className="ad-profile">
-              <div className="ad-avatar">AD</div>
-              <div className="ad-profile-info">
-                <span className="ad-profile-name">Admin User</span>
-                <span className="ad-profile-role">Super Admin</span>
+                      <span className="badge badge-completed">Online</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-slate-900/50 rounded-xl border border-slate-800">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                        <span className="text-sm font-bold text-slate-300">Intelligence Services</span>
+                      </div>
+                      <span className="badge badge-completed">Secure</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-slate-900/50 rounded-xl border border-slate-800">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                        <span className="text-sm font-bold text-slate-300">Automated Protocols</span>
+                      </div>
+                      <span className="badge badge-medium">Active</span>
+                    </div>
+                    {pendingInstructors > 0 && (
+                      <div className="flex items-center justify-between p-3 bg-amber-900/20 rounded-xl border border-amber-800/50">
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                          <span className="text-sm font-bold text-amber-400">Pending Verifications</span>
+                        </div>
+                        <Link to="/admin/instructors" className="badge badge-pending cursor-pointer hover:brightness-110">
+                          {pendingInstructors} Pending
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
-              <ChevronDown size={16} />
-            </div>
-          </div>
-        </header>
-
-        {/* Dashboard Content */}
-        <div className="ad-content">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.2 }}
-            >
-              {renderContent()}
             </motion.div>
-          </AnimatePresence>
-        </div>
-      </main>
-    </div>
-  );
-}
-
-// Overview Dashboard Component
-function OverviewDashboard({ data, quickActions }) {
-  const stats = [
-    { 
-      title: "Total Users", 
-      value: data?.totalUsers?.toLocaleString() || "0", 
-      change: "+12%", 
-      icon: Users, 
-      color: "blue" 
-    },
-    { 
-      title: "Total Courses", 
-      value: data?.totalCourses?.toLocaleString() || "0", 
-      change: "+8%", 
-      icon: BookOpen, 
-      color: "purple" 
-    },
-    { 
-      title: "Revenue", 
-      value: `$${(data?.totalRevenue / 1000).toFixed(1)}k`, 
-      change: `+${data?.monthlyGrowth}%`, 
-      icon: DollarSign, 
-      color: "green" 
-    },
-    { 
-      title: "Pending Verifications", 
-      value: (data?.pendingInstructors + data?.pendingCourses) || "0", 
-      change: "Action needed", 
-      icon: AlertCircle, 
-      color: "amber" 
-    }
-  ];
-
-  const recentActivity = [
-    { action: "New instructor registered", time: "2 min ago", icon: UserCheck, color: "blue" },
-    { action: "Course published: React Advanced", time: "15 min ago", icon: BookOpen, color: "green" },
-    { action: "Payment received: $2,499", time: "1 hour ago", icon: DollarSign, color: "purple" },
-    { action: "User report submitted", time: "3 hours ago", icon: AlertCircle, color: "amber" }
-  ];
-
-  return (
-    <div className="ad-overview">
-      {/* Welcome Section */}
-      <div className="ad-welcome">
-        <div>
-          <h1>Welcome back, Admin! 👋</h1>
-          <p>Here's what's happening across your platform today.</p>
-        </div>
-        <div className="ad-quick-actions">
-          {quickActions.map((action, idx) => (
-            <button 
-              key={idx} 
-              className={`ad-quick-btn ${action.color}`}
-              onClick={action.action}
+          ) : (
+            <motion.div
+              key="content"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
             >
-              <action.icon size={18} />
-              {action.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="ad-stats-grid">
-        {stats.map((stat, idx) => (
-          <motion.div 
-            key={stat.title}
-            className={`ad-stat-card ${stat.color}`}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.1 }}
-          >
-            <div className="ad-stat-icon">
-              <stat.icon size={24} />
-            </div>
-            <div className="ad-stat-info">
-              <span className="ad-stat-value">{stat.value}</span>
-              <span className="ad-stat-label">{stat.title}</span>
-            </div>
-            <span className={`ad-stat-change ${stat.change.includes('+') ? 'positive' : 'neutral'}`}>
-              {stat.change}
-            </span>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Main Grid */}
-      <div className="ad-overview-grid">
-        {/* Pending Verifications */}
-        <div className="ad-card">
-          <div className="ad-card-header">
-            <h3>Pending Verifications</h3>
-            <button className="ad-btn-text">View All</button>
-          </div>
-          <div className="ad-pending-list">
-            {data?.pendingInstructors > 0 && (
-              <div 
-                className="ad-pending-item"
-                onClick={() => document.querySelector('[data-tab="instructors"]')?.click()}
-              >
-                <div className="ad-pending-icon amber">
-                  <UserCheck size={20} />
-                </div>
-                <div className="ad-pending-content">
-                  <h4>{data.pendingInstructors} Instructor Verifications</h4>
-                  <p>Awaiting approval to create courses</p>
-                </div>
-                <button className="ad-btn-small">Review</button>
-              </div>
-            )}
-            {data?.pendingCourses > 0 && (
-              <div 
-                className="ad-pending-item"
-                onClick={() => document.querySelector('[data-tab="courses"]')?.click()}
-              >
-                <div className="ad-pending-icon blue">
-                  <BookOpen size={20} />
-                </div>
-                <div className="ad-pending-content">
-                  <h4>{data.pendingCourses} Course Reviews</h4>
-                  <p>Pending publication approval</p>
-                </div>
-                <button className="ad-btn-small">Review</button>
-              </div>
-            )}
-            {data?.pendingInstructors === 0 && data?.pendingCourses === 0 && (
-              <div className="ad-all-clear">
-                <CheckCircle size={48} />
-                <p>All caught up! No pending verifications.</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Recent Activity */}
-        <div className="ad-card">
-          <div className="ad-card-header">
-            <h3>Recent Activity</h3>
-            <button className="ad-btn-text">View All</button>
-          </div>
-          <div className="ad-activity-list">
-            {recentActivity.map((activity, idx) => (
-              <div key={idx} className="ad-activity-item">
-                <div className={`ad-activity-icon ${activity.color}`}>
-                  <activity.icon size={16} />
-                </div>
-                <div className="ad-activity-content">
-                  <p>{activity.action}</p>
-                  <span>{activity.time}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Quick Stats */}
-        <div className="ad-card wide">
-          <div className="ad-card-header">
-            <h3>Platform Health</h3>
-            <span className="ad-status-badge healthy">All Systems Operational</span>
-          </div>
-          <div className="ad-health-metrics">
-            <div className="ad-metric">
-              <span className="ad-metric-value">99.9%</span>
-              <span className="ad-metric-label">Uptime</span>
-            </div>
-            <div className="ad-metric">
-              <span className="ad-metric-value">245ms</span>
-              <span className="ad-metric-label">Avg Response</span>
-            </div>
-            <div className="ad-metric">
-              <span className="ad-metric-value">1.2k</span>
-              <span className="ad-metric-label">Active Now</span>
-            </div>
-            <div className="ad-metric">
-              <span className="ad-metric-value">0</span>
-              <span className="ad-metric-label">Incidents</span>
-            </div>
-          </div>
-        </div>
-      </div>
+              <Outlet />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </main>
     </div>
   );
 }
