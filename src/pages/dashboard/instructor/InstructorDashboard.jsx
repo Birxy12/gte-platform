@@ -146,6 +146,36 @@ export default function InstructorDashboard() {
     }
   };
 
+  const handleToggleLive = async (courseId, currentStatus) => {
+    try {
+      setLoading(true);
+      const newStatus = !currentStatus;
+      const { courseService } = await import("../../../services/courseService");
+      await courseService.toggleLiveStatus(courseId, newStatus);
+      setCourses(prev => prev.map(c => c.id === courseId ? { ...c, isLive: newStatus } : c));
+      alert(`Course is now ${newStatus ? 'LIVE 🔴' : 'OFFLINE ⚪'}`);
+    } catch (err) {
+      alert("Failed to update status.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleQuiz = async (quizId, currentStatus) => {
+    try {
+      setLoading(true);
+      const newStatus = !currentStatus;
+      const { courseService } = await import("../../../services/courseService");
+      await courseService.toggleQuizStatus(quizId, newStatus);
+      setQuizzes(prev => prev.map(q => q.id === quizId ? { ...q, isActive: newStatus } : q));
+      alert(`Quiz is now ${newStatus ? 'ACTIVE 🟢' : 'INACTIVE ⚪'}`);
+    } catch (err) {
+      alert("Failed to update status.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleScheduleQuiz = async () => {
     if (!schedulingQuiz || !scheduleDate) return;
     try {
@@ -375,9 +405,20 @@ export default function InstructorDashboard() {
                         <p style={{ color: '#64748b', fontSize: '0.85rem', marginTop: '0.5rem' }}>{course.description?.substring(0, 100)}...</p>
                       </div>
                       <div className="course-footer">
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                          <button className="btn-text" onClick={() => { setSelectedCourseId(course.id); setShowMaterialForm(true); setActiveTab("materials"); }}>
-                            Add Material
+                        <div style={{ display: 'flex', gap: '0.75rem', width: '100%' }}>
+                          <button 
+                            className={`btn-primary ${course.isLive ? 'btn-danger' : ''}`} 
+                            style={{ flex: 1, gap: '0.4rem', background: course.isLive ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)', color: course.isLive ? '#ef4444' : '#10b981', border: course.isLive ? '1px solid rgba(239,68,68,0.3)' : '1px solid rgba(16,185,129,0.3)' }}
+                            onClick={() => handleToggleLive(course.id, course.isLive)}
+                          >
+                            {course.isLive ? <><X size={14} /> End Class</> : <><Play size={14} /> Start Class</>}
+                          </button>
+                          <button 
+                            className="btn-text" 
+                            style={{ flex: 1 }}
+                            onClick={() => { setSelectedCourseId(course.id); setShowMaterialForm(true); setActiveTab("materials"); }}
+                          >
+                            <Plus size={14} /> Add Material
                           </button>
                         </div>
                       </div>
@@ -563,13 +604,21 @@ export default function InstructorDashboard() {
                                 <div style={{ fontSize: '0.78rem', color: '#3b82f6', marginTop: '0.2rem' }}>Not yet scheduled</div>
                               )}
                             </div>
-                            <button
-                              style={{ padding: '0.5rem 1rem', background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '8px', color: '#818cf8', fontSize: '0.82rem', fontWeight: '700', cursor: 'pointer' }}
-                              onClick={() => { setSchedulingQuiz(quiz); setScheduleDate(quiz.availableFrom ? new Date(quiz.availableFrom).toISOString().slice(0,16) : ""); setShowScheduleModal(true); }}
-                            >
-                              <Calendar size={14} style={{ display: 'inline', marginRight: '0.3rem' }} />
-                              {quiz.availableFrom ? "Reschedule" : "Schedule"}
-                            </button>
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                              <button
+                                style={{ padding: '0.5rem 1rem', background: quiz.isActive ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)', border: quiz.isActive ? '1px solid rgba(239,68,68,0.2)' : '1px solid rgba(16,185,129,0.2)', borderRadius: '8px', color: quiz.isActive ? '#ef4444' : '#10b981', fontSize: '0.82rem', fontWeight: '700', cursor: 'pointer' }}
+                                onClick={() => handleToggleQuiz(quiz.id, quiz.isActive)}
+                              >
+                                {quiz.isActive ? "Stop" : "Live"}
+                              </button>
+                              <button
+                                style={{ padding: '0.5rem 1rem', background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '8px', color: '#818cf8', fontSize: '0.82rem', fontWeight: '700', cursor: 'pointer' }}
+                                onClick={() => { setSchedulingQuiz(quiz); setScheduleDate(quiz.availableFrom ? new Date(quiz.availableFrom).toISOString().slice(0,16) : ""); setShowScheduleModal(true); }}
+                              >
+                                <Calendar size={14} style={{ display: 'inline', marginRight: '0.3rem' }} />
+                                {quiz.availableFrom ? "Reschedule" : "Schedule"}
+                              </button>
+                            </div>
                           </div>
                         );
                       })}
