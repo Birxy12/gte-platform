@@ -228,8 +228,6 @@ export default function Home() {
 
     return (
         <div className="landing">
-            <Navbar />
-
             {/* ─── Hero Section with Parallax ─── */}
             <section className="hero" style={{ perspective: "1000px" }}>
                 <div className="hero-glow hero-glow-1" style={{
@@ -717,8 +715,6 @@ export default function Home() {
                     </div>
                 </div>
             </section>
-
-            <Footer />
         </div>
     );
 }
