@@ -1,185 +1,188 @@
 import { useState, useEffect } from "react";
-import { 
-  LayoutDashboard, 
-  BookOpen, 
-  Users, 
-  MessageSquare, 
-  BarChart3, 
-  Settings,
-  Plus,
-  MoreVertical,
-  TrendingUp,
-  DollarSign,
-  Star,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  ChevronRight,
-  Search,
-  Filter,
-  Download,
-  Calendar,
-  Award,
-  Eye
+import { db } from "../../../config/firebase";
+import { useAuth } from "../../../context/AuthProvider";
+import {
+  collection, query, where, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp
+} from "firebase/firestore";
+import {
+  LayoutDashboard, BookOpen, Users, MessageSquare, Settings, Plus, MoreVertical,
+  TrendingUp, Star, Clock, CheckCircle, AlertCircle, ChevronRight, Search, Filter,
+  Download, Calendar, Award, Eye, FileText, HelpCircle, Shield, X, Upload, Trash2, Edit3
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import "./InstructorDashboard.css";
 
-// Mock data - replace with actual API calls
-const mockStats = {
-  totalStudents: 12483,
-  activeCourses: 12,
-  totalRevenue: 45280,
-  averageRating: 4.8,
-  monthlyGrowth: 23.5,
-  pendingAssignments: 45
-};
-
-const mockCourses = [
-  {
-    id: 1,
-    title: "React & Next.js Masterclass",
-    students: 3240,
-    revenue: 28960,
-    rating: 4.9,
-    status: "published",
-    progress: 100,
-    image: "linear-gradient(135deg, #3b82f6, #6366f1)",
-    lastUpdated: "2 days ago",
-    category: "Frontend"
-  },
-  {
-    id: 2,
-    title: "Advanced Node.js Patterns",
-    students: 1890,
-    revenue: 15200,
-    rating: 4.7,
-    status: "published",
-    progress: 100,
-    image: "linear-gradient(135deg, #10b981, #059669)",
-    lastUpdated: "1 week ago",
-    category: "Backend"
-  },
-  {
-    id: 3,
-    title: "System Design Fundamentals",
-    students: 856,
-    revenue: 8560,
-    rating: 4.8,
-    status: "draft",
-    progress: 65,
-    image: "linear-gradient(135deg, #f59e0b, #d97706)",
-    lastUpdated: "3 days ago",
-    category: "Architecture"
-  },
-  {
-    id: 4,
-    title: "DevOps Engineering Bootcamp",
-    students: 0,
-    revenue: 0,
-    rating: 0,
-    status: "review",
-    progress: 90,
-    image: "linear-gradient(135deg, #8b5cf6, #7c3aed)",
-    lastUpdated: "Just now",
-    category: "DevOps"
-  }
-];
-
-const mockRecentStudents = [
-  { id: 1, name: "Sarah Chen", course: "React & Next.js", progress: 75, avatar: "SC", joined: "2 hours ago" },
-  { id: 2, name: "Michael Ross", course: "Node.js Patterns", progress: 45, avatar: "MR", joined: "5 hours ago" },
-  { id: 3, name: "Emma Wilson", course: "React & Next.js", progress: 90, avatar: "EW", joined: "1 day ago" },
-  { id: 4, name: "James Kumar", course: "System Design", progress: 20, avatar: "JK", joined: "2 days ago" },
-  { id: 5, name: "Lisa Park", course: "Node.js Patterns", progress: 60, avatar: "LP", joined: "3 days ago" }
-];
-
-const mockReviews = [
-  { id: 1, student: "Alex Thompson", rating: 5, comment: "Best course I've ever taken! The instructor explains complex concepts so clearly.", course: "React & Next.js", date: "2 days ago" },
-  { id: 2, student: "Maria Garcia", rating: 4, comment: "Great content, but would love more practical exercises.", course: "Node.js Patterns", date: "4 days ago" },
-  { id: 3, student: "David Kim", rating: 5, comment: "Absolutely transformative for my career. Highly recommend!", course: "React & Next.js", date: "1 week ago" }
-];
-
-const mockEarningsData = [
-  { month: "Jan", amount: 3200 },
-  { month: "Feb", amount: 4100 },
-  { month: "Mar", amount: 3800 },
-  { month: "Apr", amount: 5200 },
-  { month: "May", amount: 6100 },
-  { month: "Jun", amount: 7800 }
-];
-
 export default function InstructorDashboard() {
+  const { user, isAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [selectedCourse, setSelectedCourse] = useState(null);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [notifications, setNotifications] = useState(3);
-  const [timeRange, setTimeRange] = useState("7d");
+
+  // Real data state
+  const [courses, setCourses] = useState([]);
+  const [enrollments, setEnrollments] = useState([]);
+  const [testimonies, setTestimonies] = useState([]);
+  const [quizzes, setQuizzes] = useState([]);
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Materials state
+  const [showMaterialForm, setShowMaterialForm] = useState(false);
+  const [selectedCourseId, setSelectedCourseId] = useState("");
+  const [materialTitle, setMaterialTitle] = useState("");
+  const [materialUrl, setMaterialUrl] = useState("");
+  const [materialType, setMaterialType] = useState("pdf");
+  const [materialDesc, setMaterialDesc] = useState("");
+  const [savingMaterial, setSavingMaterial] = useState(false);
+
+  // Quiz scheduling state
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [schedulingQuiz, setSchedulingQuiz] = useState(null);
+  const [scheduleDate, setScheduleDate] = useState("");
+
+  useEffect(() => {
+    if (!user) return;
+    const load = async () => {
+      setLoading(true);
+      try {
+        // Fetch instructor's courses (admin: all; instructor: their own)
+        const coursesSnap = isAdmin
+          ? await getDocs(collection(db, "courses"))
+          : await getDocs(query(collection(db, "courses"), where("instructorUid", "==", user.uid)));
+
+        const coursesList = coursesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        setCourses(coursesList);
+
+        // Fetch enrollments for all their courses
+        if (coursesList.length > 0) {
+          const courseIds = coursesList.map(c => c.id);
+          let allEnrollments = [];
+          // Firestore doesn't allow 'in' with > 10, so batch
+          for (let i = 0; i < courseIds.length; i += 10) {
+            const batch = courseIds.slice(i, i + 10);
+            const q = query(collection(db, "enrollments"), where("courseId", "in", batch));
+            const snap = await getDocs(q);
+            allEnrollments.push(...snap.docs.map(d => ({ id: d.id, ...d.data() })));
+          }
+          setEnrollments(allEnrollments);
+        }
+
+        // Fetch pending testimonies (instructor can approve)
+        const testSnap = await getDocs(query(collection(db, "testimonies"), where("published", "==", false)));
+        setTestimonies(testSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+
+        // Fetch quizzes for their courses
+        if (isAdmin) {
+          const qSnap = await getDocs(collection(db, "quizzes"));
+          setQuizzes(qSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+        } else if (coursesList.length > 0) {
+          const courseIds = coursesList.map(c => c.id);
+          let allQuizzes = [];
+          for (let i = 0; i < courseIds.length; i += 10) {
+            const batch = courseIds.slice(i, i + 10);
+            const q = query(collection(db, "quizzes"), where("courseId", "in", batch));
+            const snap = await getDocs(q);
+            allQuizzes.push(...snap.docs.map(d => ({ id: d.id, ...d.data() })));
+          }
+          setQuizzes(allQuizzes);
+        }
+
+        // Fetch instructor profile
+        const { getDoc } = await import("firebase/firestore");
+        const profileSnap = await getDoc(doc(db, "users", user.uid));
+        if (profileSnap.exists()) setProfile(profileSnap.data());
+
+      } catch (err) {
+        console.error("Error loading instructor data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [user, isAdmin]);
+
+  const handleAddMaterial = async (e) => {
+    e.preventDefault();
+    if (!selectedCourseId || !materialTitle || !materialUrl) return;
+    setSavingMaterial(true);
+    try {
+      await addDoc(collection(db, "courseMaterials"), {
+        courseId: selectedCourseId,
+        title: materialTitle,
+        url: materialUrl,
+        type: materialType,
+        description: materialDesc,
+        order: Date.now(),
+        addedBy: user.uid,
+        createdAt: serverTimestamp()
+      });
+      alert("Material added successfully! 📎");
+      setShowMaterialForm(false);
+      setMaterialTitle(""); setMaterialUrl(""); setMaterialDesc(""); setMaterialType("pdf");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to add material.");
+    } finally {
+      setSavingMaterial(false);
+    }
+  };
+
+  const handleApproveTestimony = async (id) => {
+    try {
+      await updateDoc(doc(db, "testimonies", id), { published: true });
+      setTestimonies(prev => prev.filter(t => t.id !== id));
+      alert("Testimony approved and published! ✅");
+    } catch (err) {
+      alert("Failed to approve testimony.");
+    }
+  };
+
+  const handleRejectTestimony = async (id) => {
+    if (!window.confirm("Reject and delete this testimony?")) return;
+    try {
+      await deleteDoc(doc(db, "testimonies", id));
+      setTestimonies(prev => prev.filter(t => t.id !== id));
+    } catch (err) {
+      alert("Failed to reject testimony.");
+    }
+  };
+
+  const handleScheduleQuiz = async () => {
+    if (!schedulingQuiz || !scheduleDate) return;
+    try {
+      await updateDoc(doc(db, "quizzes", schedulingQuiz.id), {
+        availableFrom: new Date(scheduleDate).toISOString()
+      });
+      setQuizzes(prev => prev.map(q => q.id === schedulingQuiz.id ? { ...q, availableFrom: new Date(scheduleDate).toISOString() } : q));
+      setShowScheduleModal(false);
+      setSchedulingQuiz(null);
+      setScheduleDate("");
+      alert("Quiz scheduled successfully! 📅");
+    } catch (err) {
+      alert("Failed to schedule quiz.");
+    }
+  };
+
+  const totalStudents = enrollments.length;
+  const initials = profile?.username?.substring(0, 2).toUpperCase() || user?.email?.substring(0, 2).toUpperCase() || "ID";
 
   const menuItems = [
     { id: "overview", label: "Overview", icon: LayoutDashboard },
     { id: "courses", label: "My Courses", icon: BookOpen },
-    { id: "students", label: "Students", icon: Users },
-    { id: "messages", label: "Messages", icon: MessageSquare, badge: 5 },
-    { id: "analytics", label: "Analytics", icon: BarChart3 },
-    { id: "settings", label: "Settings", icon: Settings }
+    { id: "students", label: "Students", icon: Users, badge: enrollments.length },
+    { id: "materials", label: "Course Materials", icon: FileText },
+    { id: "quizzes", label: "Quiz Scheduler", icon: HelpCircle, badge: quizzes.filter(q => !q.availableFrom).length },
+    { id: "testimonies", label: "Testimonies", icon: Star, badge: testimonies.length || null },
+    { id: "moderation", label: "Moderation", icon: Shield },
   ];
 
-  const statsCards = [
-    { 
-      title: "Total Students", 
-      value: mockStats.totalStudents.toLocaleString(), 
-      change: "+12.5%", 
-      icon: Users, 
-      color: "blue",
-      trend: "up"
-    },
-    { 
-      title: "Active Courses", 
-      value: mockStats.activeCourses, 
-      change: "+2", 
-      icon: BookOpen, 
-      color: "green",
-      trend: "up"
-    },
-    { 
-      title: "Total Revenue", 
-      value: `$${mockStats.totalRevenue.toLocaleString()}`, 
-      change: "+23.5%", 
-      icon: DollarSign, 
-      color: "purple",
-      trend: "up"
-    },
-    { 
-      title: "Average Rating", 
-      value: mockStats.averageRating, 
-      change: "+0.2", 
-      icon: Star, 
-      color: "amber",
-      trend: "up"
-    }
-  ];
-
-  const getStatusColor = (status) => {
-    const colors = {
-      published: "green",
-      draft: "gray",
-      review: "amber",
-      archived: "red"
-    };
-    return colors[status] || "gray";
-  };
-
-  const getStatusIcon = (status) => {
-    const icons = {
-      published: CheckCircle,
-      draft: Clock,
-      review: AlertCircle,
-      archived: AlertCircle
-    };
-    return icons[status] || Clock;
-  };
+  if (loading) return (
+    <div className="instructor-dashboard" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ textAlign: 'center', color: '#64748b' }}>
+        <div style={{ width: 48, height: 48, border: '3px solid #3b82f6', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 1rem' }}></div>
+        <p>Loading instructor data...</p>
+      </div>
+    </div>
+  );
 
   return (
     <div className="instructor-dashboard">
@@ -188,12 +191,9 @@ export default function InstructorDashboard() {
         <div className="sidebar-header">
           <div className="logo">
             <Award size={32} className="logo-icon" />
-            {!sidebarCollapsed && <span className="logo-text">GTE Instructor</span>}
+            {!sidebarCollapsed && <span className="logo-text">GTE {isAdmin ? "Admin" : "Instructor"}</span>}
           </div>
-          <button 
-            className="collapse-btn"
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          >
+          <button className="collapse-btn" onClick={() => setSidebarCollapsed(!sidebarCollapsed)}>
             <ChevronRight size={20} className={sidebarCollapsed ? "rotated" : ""} />
           </button>
         </div>
@@ -209,7 +209,7 @@ export default function InstructorDashboard() {
               {!sidebarCollapsed && (
                 <>
                   <span>{item.label}</span>
-                  {item.badge && <span className="badge">{item.badge}</span>}
+                  {item.badge > 0 && <span className="badge">{item.badge}</span>}
                 </>
               )}
             </button>
@@ -218,11 +218,11 @@ export default function InstructorDashboard() {
 
         <div className="sidebar-footer">
           <div className="instructor-profile">
-            <div className="profile-avatar">JD</div>
+            <div className="profile-avatar">{initials}</div>
             {!sidebarCollapsed && (
               <div className="profile-info">
-                <span className="profile-name">John Doe</span>
-                <span className="profile-role">Senior Instructor</span>
+                <span className="profile-name">{profile?.username || "Instructor"}</span>
+                <span className="profile-role">{isAdmin ? "Admin & Instructor" : "Instructor"}</span>
               </div>
             )}
           </div>
@@ -231,69 +231,53 @@ export default function InstructorDashboard() {
 
       {/* Main Content */}
       <main className="main-content">
-        {/* Top Header */}
         <header className="top-header">
           <div className="header-search">
             <Search size={20} />
             <input type="text" placeholder="Search courses, students..." />
           </div>
-          
           <div className="header-actions">
-            <button className="icon-btn">
-              <Calendar size={20} />
-            </button>
             <button className="icon-btn notification">
               <MessageSquare size={20} />
-              {notifications > 0 && <span className="notification-badge">{notifications}</span>}
+              {testimonies.length > 0 && <span className="notification-badge">{testimonies.length}</span>}
             </button>
-            <button className="create-course-btn" onClick={() => setShowCreateModal(true)}>
-              <Plus size={18} />
-              Create Course
+            <button className="create-course-btn" onClick={() => setShowMaterialForm(true)}>
+              <Plus size={18} /> Add Material
             </button>
           </div>
         </header>
 
-        {/* Dashboard Content */}
         <div className="dashboard-content">
           <AnimatePresence mode="wait">
+
+            {/* ===== OVERVIEW ===== */}
             {activeTab === "overview" && (
-              <motion.div
-                key="overview"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="tab-content"
-              >
-                {/* Welcome Banner */}
+              <motion.div key="overview" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="tab-content">
                 <div className="welcome-banner">
                   <div className="welcome-text">
-                    <h1>Welcome back, John! 👋</h1>
-                    <p>You have {mockStats.pendingAssignments} assignments to review and 3 new messages.</p>
+                    <h1>Welcome back, {profile?.username || "Instructor"}! 👋</h1>
+                    <p>You have {testimonies.length} pending testimonies and {courses.length} courses.</p>
                   </div>
                   <div className="quick-stats">
                     <div className="quick-stat">
                       <TrendingUp size={20} />
-                      <span>+{mockStats.monthlyGrowth}% this month</span>
+                      <span>{totalStudents} enrolled students</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Stats Grid */}
                 <div className="stats-grid">
-                  {statsCards.map((stat, idx) => (
-                    <motion.div
-                      key={stat.title}
-                      className={`stat-card ${stat.color}`}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.1 }}
-                      whileHover={{ y: -5, transition: { duration: 0.2 } }}
-                    >
+                  {[
+                    { title: "Total Students", value: totalStudents, icon: Users, color: "blue" },
+                    { title: "Active Courses", value: courses.length, icon: BookOpen, color: "green" },
+                    { title: "Pending Testimonies", value: testimonies.length, icon: Star, color: "amber" },
+                    { title: "Total Quizzes", value: quizzes.length, icon: HelpCircle, color: "purple" },
+                  ].map((stat, idx) => (
+                    <motion.div key={stat.title} className={`stat-card ${stat.color}`}
+                      initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 }}
+                      whileHover={{ y: -5, transition: { duration: 0.2 } }}>
                       <div className="stat-header">
-                        <div className={`stat-icon ${stat.color}`}>
-                          <stat.icon size={24} />
-                        </div>
-                        <span className={`stat-change ${stat.trend}`}>{stat.change}</span>
+                        <div className={`stat-icon ${stat.color}`}><stat.icon size={24} /></div>
                       </div>
                       <div className="stat-value">{stat.value}</div>
                       <div className="stat-label">{stat.title}</div>
@@ -301,256 +285,101 @@ export default function InstructorDashboard() {
                   ))}
                 </div>
 
-                {/* Main Grid */}
                 <div className="dashboard-grid">
-                  {/* Courses Section */}
                   <div className="dashboard-card courses-section">
                     <div className="card-header">
                       <h3>My Courses</h3>
-                      <div className="card-actions">
-                        <button className="btn-text">View All</button>
-                        <button className="icon-btn small"><Filter size={16} /></button>
-                      </div>
+                      <button className="btn-text" onClick={() => setActiveTab("courses")}>View All</button>
                     </div>
                     <div className="courses-list">
-                      {mockCourses.map((course) => (
-                        <div 
-                          key={course.id} 
-                          className="course-item"
-                          onClick={() => setSelectedCourse(course)}
-                        >
-                          <div className="course-thumb" style={{ background: course.image }}>
-                            <span className="course-emoji">
-                              {course.category === "Frontend" ? "⚛️" : 
-                               course.category === "Backend" ? "🟢" : 
-                               course.category === "DevOps" ? "☁️" : "🏗️"}
-                            </span>
+                      {courses.slice(0, 4).map(course => (
+                        <div key={course.id} className="course-item">
+                          <div className="course-thumb" style={{ background: "linear-gradient(135deg, #3b82f6, #6366f1)" }}>
+                            <span className="course-emoji">📚</span>
                           </div>
                           <div className="course-info">
                             <h4>{course.title}</h4>
                             <div className="course-meta">
-                              <span><Users size={14} /> {course.students.toLocaleString()}</span>
-                              <span><Star size={14} /> {course.rating || "N/A"}</span>
-                              <span className={`status ${getStatusColor(course.status)}`}>
-                                {course.status}
-                              </span>
+                              <span><Users size={14} /> {enrollments.filter(e => e.courseId === course.id).length} students</span>
+                              <span className={`status green`}>active</span>
                             </div>
                           </div>
-                          <div className="course-revenue">
-                            <span className="revenue-amount">${course.revenue.toLocaleString()}</span>
-                            <span className="revenue-label">Revenue</span>
-                          </div>
-                          <button className="icon-btn ghost">
-                            <MoreVertical size={16} />
-                          </button>
                         </div>
                       ))}
+                      {courses.length === 0 && (
+                        <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
+                          <BookOpen size={32} opacity={0.4} />
+                          <p style={{ marginTop: '0.75rem' }}>No courses assigned yet</p>
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  {/* Recent Students */}
                   <div className="dashboard-card students-section">
                     <div className="card-header">
-                      <h3>Recent Students</h3>
-                      <button className="btn-text">View All</button>
+                      <h3>Recent Enrollments</h3>
                     </div>
                     <div className="students-list">
-                      {mockRecentStudents.map((student, idx) => (
-                        <motion.div
-                          key={student.id}
-                          className="student-item"
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: idx * 0.1 }}
-                        >
-                          <div className="student-avatar">{student.avatar}</div>
+                      {enrollments.slice(0, 5).map((enr, idx) => (
+                        <motion.div key={enr.id} className="student-item"
+                          initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.08 }}>
+                          <div className="student-avatar">{(enr.userId || "U").substring(0, 2).toUpperCase()}</div>
                           <div className="student-info">
-                            <span className="student-name">{student.name}</span>
-                            <span className="student-course">{student.course}</span>
+                            <span className="student-name">{enr.userId?.substring(0, 10)}...</span>
+                            <span className="student-course">{courses.find(c => c.id === enr.courseId)?.title || enr.courseId}</span>
                           </div>
                           <div className="student-progress">
                             <div className="progress-bar">
-                              <div 
-                                className="progress-fill" 
-                                style={{ width: `${student.progress}%` }}
-                              />
+                              <div className="progress-fill" style={{ width: `${enr.progress || 0}%` }} />
                             </div>
-                            <span>{student.progress}%</span>
+                            <span>{enr.progress || 0}%</span>
                           </div>
                         </motion.div>
                       ))}
-                    </div>
-                  </div>
-
-                  {/* Reviews Section */}
-                  <div className="dashboard-card reviews-section">
-                    <div className="card-header">
-                      <h3>Recent Reviews</h3>
-                      <div className="rating-summary">
-                        <Star size={16} className="star-filled" />
-                        <span>{mockStats.averageRating}</span>
-                      </div>
-                    </div>
-                    <div className="reviews-list">
-                      {mockReviews.map((review) => (
-                        <div key={review.id} className="review-item">
-                          <div className="review-header">
-                            <span className="reviewer-name">{review.student}</span>
-                            <div className="review-rating">
-                              {[...Array(5)].map((_, i) => (
-                                <Star 
-                                  key={i} 
-                                  size={12} 
-                                  className={i < review.rating ? "star-filled" : "star-empty"} 
-                                />
-                              ))}
-                            </div>
-                          </div>
-                          <p className="review-text">{review.comment}</p>
-                          <div className="review-footer">
-                            <span className="review-course">{review.course}</span>
-                            <span className="review-date">{review.date}</span>
-                          </div>
+                      {enrollments.length === 0 && (
+                        <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
+                          <Users size={32} opacity={0.4} />
+                          <p style={{ marginTop: '0.75rem' }}>No students enrolled yet</p>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Earnings Chart */}
-                  <div className="dashboard-card earnings-section">
-                    <div className="card-header">
-                      <h3>Earnings Overview</h3>
-                      <div className="time-range-selector">
-                        {["7d", "30d", "90d", "1y"].map((range) => (
-                          <button
-                            key={range}
-                            className={timeRange === range ? "active" : ""}
-                            onClick={() => setTimeRange(range)}
-                          >
-                            {range}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="earnings-chart">
-                      <div className="chart-bars">
-                        {mockEarningsData.map((data, idx) => (
-                          <div key={idx} className="chart-bar-wrapper">
-                            <div 
-                              className="chart-bar"
-                              style={{ height: `${(data.amount / 8000) * 100}%` }}
-                            >
-                              <div className="bar-tooltip">${data.amount}</div>
-                            </div>
-                            <span className="bar-label">{data.month}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="earnings-summary">
-                      <div className="summary-item">
-                        <span className="summary-label">This Month</span>
-                        <span className="summary-value">$7,800</span>
-                      </div>
-                      <div className="summary-item">
-                        <span className="summary-label">Last Month</span>
-                        <span className="summary-value">$6,100</span>
-                      </div>
-                      <div className="summary-item positive">
-                        <span className="summary-label">Growth</span>
-                        <span className="summary-value">+27.8%</span>
-                      </div>
+                      )}
                     </div>
                   </div>
                 </div>
               </motion.div>
             )}
 
+            {/* ===== COURSES ===== */}
             {activeTab === "courses" && (
-              <motion.div
-                key="courses"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="tab-content"
-              >
+              <motion.div key="courses" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="tab-content">
                 <div className="page-header">
                   <h2>My Courses</h2>
-                  <button className="btn-primary" onClick={() => setShowCreateModal(true)}>
-                    <Plus size={18} /> Create New Course
-                  </button>
                 </div>
-                
-                <div className="courses-filter-bar">
-                  <div className="search-box">
-                    <Search size={18} />
-                    <input type="text" placeholder="Search courses..." />
-                  </div>
-                  <div className="filter-group">
-                    <select>
-                      <option>All Status</option>
-                      <option>Published</option>
-                      <option>Draft</option>
-                      <option>Under Review</option>
-                    </select>
-                    <select>
-                      <option>Sort by: Recent</option>
-                      <option>Most Popular</option>
-                      <option>Highest Rated</option>
-                    </select>
-                    <button className="btn-secondary">
-                      <Download size={16} /> Export
-                    </button>
-                  </div>
-                </div>
-
                 <div className="courses-grid-detailed">
-                  {mockCourses.map((course) => (
+                  {courses.length === 0 ? (
+                    <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: '#64748b' }}>
+                      <BookOpen size={48} opacity={0.3} />
+                      <p style={{ marginTop: '1rem' }}>No courses found. Contact admin to assign courses.</p>
+                    </div>
+                  ) : courses.map(course => (
                     <div key={course.id} className="course-card-detailed">
-                      <div className="course-header" style={{ background: course.image }}>
-                        <span className={`status-badge ${getStatusColor(course.status)}`}>
-                          {course.status}
-                        </span>
-                        <button className="icon-btn white">
-                          <MoreVertical size={18} />
-                        </button>
+                      <div className="course-header" style={{ background: "linear-gradient(135deg, #1e3a5f, #3b82f6)" }}>
+                        <span className="status-badge green">active</span>
                       </div>
                       <div className="course-body">
-                        <span className="course-category">{course.category}</span>
+                        <span className="course-category">{course.category || "General"}</span>
                         <h3>{course.title}</h3>
                         <div className="course-stats-row">
-                          <div className="mini-stat">
-                            <Users size={14} />
-                            <span>{course.students.toLocaleString()}</span>
-                          </div>
-                          <div className="mini-stat">
-                            <Star size={14} />
-                            <span>{course.rating || "-"}</span>
-                          </div>
-                          <div className="mini-stat">
-                            <Clock size={14} />
-                            <span>{course.lastUpdated}</span>
-                          </div>
+                          <div className="mini-stat"><Users size={14} /><span>{enrollments.filter(e => e.courseId === course.id).length} students</span></div>
+                          <div className="mini-stat"><Star size={14} /><span>4.9 ★</span></div>
                         </div>
-                        <div className="course-progress">
-                          <div className="progress-header">
-                            <span>Completion</span>
-                            <span>{course.progress}%</span>
-                          </div>
-                          <div className="progress-bar">
-                            <div 
-                              className="progress-fill" 
-                              style={{ width: `${course.progress}%` }}
-                            />
-                          </div>
-                        </div>
+                        <p style={{ color: '#64748b', fontSize: '0.85rem', marginTop: '0.5rem' }}>{course.description?.substring(0, 100)}...</p>
                       </div>
                       <div className="course-footer">
-                        <div className="revenue">
-                          <DollarSign size={16} />
-                          <span>{course.revenue.toLocaleString()}</span>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button className="btn-text" onClick={() => { setSelectedCourseId(course.id); setShowMaterialForm(true); setActiveTab("materials"); }}>
+                            Add Material
+                          </button>
                         </div>
-                        <button className="btn-text">Manage</button>
                       </div>
                     </div>
                   ))}
@@ -558,140 +387,285 @@ export default function InstructorDashboard() {
               </motion.div>
             )}
 
+            {/* ===== STUDENTS ===== */}
             {activeTab === "students" && (
-              <motion.div
-                key="students"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="tab-content"
-              >
+              <motion.div key="students" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="tab-content">
                 <div className="page-header">
                   <h2>Student Management</h2>
                   <div className="header-stats">
                     <div className="header-stat">
-                      <span className="stat-number-large">12,483</span>
-                      <span className="stat-label-small">Total Students</span>
-                    </div>
-                    <div className="header-stat">
-                      <span className="stat-number-large">89%</span>
-                      <span className="stat-label-small">Avg. Completion</span>
+                      <span className="stat-number-large">{totalStudents}</span>
+                      <span className="stat-label-small">Total Enrolled</span>
                     </div>
                   </div>
                 </div>
-                
                 <div className="students-table-container">
                   <table className="students-table">
                     <thead>
                       <tr>
-                        <th>Student</th>
-                        <th>Enrolled Course</th>
+                        <th>Student ID</th>
+                        <th>Course</th>
                         <th>Progress</th>
-                        <th>Last Active</th>
-                        <th>Status</th>
-                        <th>Actions</th>
+                        <th>Quiz Scores</th>
+                        <th>Enrolled</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {mockRecentStudents.map((student) => (
-                        <tr key={student.id}>
+                      {enrollments.map(enr => (
+                        <tr key={enr.id}>
                           <td>
                             <div className="table-user">
-                              <div className="user-avatar small">{student.avatar}</div>
-                              <span>{student.name}</span>
+                              <div className="user-avatar small">{(enr.userId || "U").substring(0, 2).toUpperCase()}</div>
+                              <span style={{ fontSize: '0.8rem' }}>{enr.userId?.substring(0, 16)}...</span>
                             </div>
                           </td>
-                          <td>{student.course}</td>
+                          <td>{courses.find(c => c.id === enr.courseId)?.title || enr.courseId}</td>
                           <td>
                             <div className="table-progress">
                               <div className="progress-bar small">
-                                <div 
-                                  className="progress-fill" 
-                                  style={{ width: `${student.progress}%` }}
-                                />
+                                <div className="progress-fill" style={{ width: `${enr.progress || 0}%` }} />
                               </div>
-                              <span>{student.progress}%</span>
+                              <span>{enr.progress || 0}%</span>
                             </div>
                           </td>
-                          <td>{student.joined}</td>
                           <td>
-                            <span className={`status-pill ${student.progress > 80 ? 'active' : 'warning'}`}>
-                              {student.progress > 80 ? 'Active' : 'Needs Attention'}
-                            </span>
+                            {Object.keys(enr.quizScores || {}).length > 0 ? (
+                              <div>
+                                {Object.entries(enr.quizScores).map(([qId, s]) => (
+                                  <span key={qId} style={{ fontSize: '0.78rem', color: '#10b981', fontWeight: '700' }}>
+                                    {s.score}/{s.total} ({Math.round((s.score / s.total) * 100)}%)
+                                  </span>
+                                ))}
+                              </div>
+                            ) : <span style={{ color: '#475569', fontSize: '0.8rem' }}>No quizzes taken</span>}
                           </td>
-                          <td>
-                            <button className="icon-btn ghost"><MessageSquare size={16} /></button>
-                            <button className="icon-btn ghost"><Eye size={16} /></button>
-                          </td>
+                          <td>{enr.enrolledAt?.toDate ? enr.enrolledAt.toDate().toLocaleDateString() : 'N/A'}</td>
                         </tr>
                       ))}
+                      {enrollments.length === 0 && (
+                        <tr><td colSpan="5" style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>No students enrolled yet</td></tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
               </motion.div>
             )}
+
+            {/* ===== MATERIALS ===== */}
+            {activeTab === "materials" && (
+              <motion.div key="materials" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="tab-content">
+                <div className="page-header">
+                  <h2>Course Materials</h2>
+                  <button className="btn-primary" onClick={() => setShowMaterialForm(true)}>
+                    <Plus size={18} /> Add Material
+                  </button>
+                </div>
+
+                <AnimatePresence>
+                  {showMaterialForm && (
+                    <motion.div className="dashboard-card" style={{ marginBottom: '1.5rem' }}
+                      initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
+                      <div className="card-header">
+                        <h3><Upload size={18} /> Add New Material</h3>
+                        <button className="icon-btn ghost" onClick={() => setShowMaterialForm(false)}><X size={16} /></button>
+                      </div>
+                      <form onSubmit={handleAddMaterial} style={{ padding: '1rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                          <div className="form-group">
+                            <label>Course</label>
+                            <select value={selectedCourseId} onChange={e => setSelectedCourseId(e.target.value)} required>
+                              <option value="">Select a course...</option>
+                              {courses.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+                            </select>
+                          </div>
+                          <div className="form-group">
+                            <label>Material Type</label>
+                            <select value={materialType} onChange={e => setMaterialType(e.target.value)}>
+                              <option value="pdf">📄 PDF Document</option>
+                              <option value="video">🎬 Video Link</option>
+                              <option value="resource">🔗 Resource Link</option>
+                            </select>
+                          </div>
+                          <div className="form-group">
+                            <label>Title</label>
+                            <input placeholder="e.g. Week 1 Notes" value={materialTitle} onChange={e => setMaterialTitle(e.target.value)} required />
+                          </div>
+                          <div className="form-group">
+                            <label>URL / Link</label>
+                            <input placeholder="https://..." value={materialUrl} onChange={e => setMaterialUrl(e.target.value)} required />
+                          </div>
+                        </div>
+                        <div className="form-group">
+                          <label>Description (optional)</label>
+                          <textarea rows="2" placeholder="Brief description..." value={materialDesc} onChange={e => setMaterialDesc(e.target.value)} />
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                          <button type="button" className="btn-secondary" onClick={() => setShowMaterialForm(false)}>Cancel</button>
+                          <button type="submit" className="btn-primary" disabled={savingMaterial}>
+                            {savingMaterial ? "Saving..." : "✅ Add Material"}
+                          </button>
+                        </div>
+                      </form>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {courses.map(course => (
+                  <div key={course.id} className="dashboard-card" style={{ marginBottom: '1rem' }}>
+                    <div className="card-header">
+                      <h3><BookOpen size={16} /> {course.title}</h3>
+                      <button className="btn-text" onClick={() => { setSelectedCourseId(course.id); setShowMaterialForm(true); }}>
+                        <Plus size={14} /> Add
+                      </button>
+                    </div>
+                    <p style={{ color: '#64748b', fontSize: '0.83rem', padding: '0 0 0.5rem 0' }}>
+                      Paste PDF links, video URLs, or external resources for students.
+                    </p>
+                  </div>
+                ))}
+              </motion.div>
+            )}
+
+            {/* ===== QUIZ SCHEDULER ===== */}
+            {activeTab === "quizzes" && (
+              <motion.div key="quizzes" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="tab-content">
+                <div className="page-header">
+                  <h2>Quiz Scheduler</h2>
+                </div>
+                <div className="dashboard-card">
+                  <div className="card-header"><h3>All Quizzes</h3></div>
+                  {quizzes.length === 0 ? (
+                    <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>
+                      <HelpCircle size={48} opacity={0.3} />
+                      <p style={{ marginTop: '1rem' }}>No quizzes found.</p>
+                    </div>
+                  ) : (
+                    <div style={{ padding: '0.5rem 0' }}>
+                      {quizzes.map(quiz => {
+                        const available = quiz.availableFrom ? new Date() >= new Date(quiz.availableFrom) : true;
+                        return (
+                          <div key={quiz.id} style={{
+                            display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem',
+                            borderBottom: '1px solid rgba(255,255,255,0.05)'
+                          }}>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontWeight: '700', color: '#f1f5f9', marginBottom: '0.25rem' }}>{quiz.title}</div>
+                              <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                                Course: {courses.find(c => c.id === quiz.courseId)?.title || quiz.courseId || "Global"}
+                              </div>
+                              {quiz.availableFrom && (
+                                <div style={{ fontSize: '0.78rem', color: available ? '#10b981' : '#f59e0b', marginTop: '0.2rem' }}>
+                                  <Clock size={12} style={{ display: 'inline', marginRight: '0.2rem' }} />
+                                  {available ? "Available now" : `Unlocks: ${new Date(quiz.availableFrom).toLocaleString()}`}
+                                </div>
+                              )}
+                              {!quiz.availableFrom && (
+                                <div style={{ fontSize: '0.78rem', color: '#3b82f6', marginTop: '0.2rem' }}>Not yet scheduled</div>
+                              )}
+                            </div>
+                            <button
+                              style={{ padding: '0.5rem 1rem', background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '8px', color: '#818cf8', fontSize: '0.82rem', fontWeight: '700', cursor: 'pointer' }}
+                              onClick={() => { setSchedulingQuiz(quiz); setScheduleDate(quiz.availableFrom ? new Date(quiz.availableFrom).toISOString().slice(0,16) : ""); setShowScheduleModal(true); }}
+                            >
+                              <Calendar size={14} style={{ display: 'inline', marginRight: '0.3rem' }} />
+                              {quiz.availableFrom ? "Reschedule" : "Schedule"}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+
+            {/* ===== TESTIMONIES ===== */}
+            {activeTab === "testimonies" && (
+              <motion.div key="testimonies" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="tab-content">
+                <div className="page-header">
+                  <h2>Testimony Moderation</h2>
+                  <span style={{ color: '#64748b', fontSize: '0.9rem' }}>{testimonies.length} pending</span>
+                </div>
+                {testimonies.length === 0 ? (
+                  <div className="dashboard-card" style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>
+                    <Star size={48} opacity={0.3} />
+                    <p style={{ marginTop: '1rem' }}>All caught up! No pending testimonies.</p>
+                  </div>
+                ) : testimonies.map(t => (
+                  <div key={t.id} className="dashboard-card" style={{ marginBottom: '1rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: '700', color: '#f1f5f9', marginBottom: '0.25rem' }}>{t.name || t.username || "Anonymous"}</div>
+                        <p style={{ color: '#94a3b8', fontSize: '0.9rem', margin: '0 0 0.5rem', lineHeight: '1.5' }}>{t.message || t.content}</p>
+                        <span style={{ fontSize: '0.75rem', color: '#475569' }}>
+                          {t.createdAt?.toDate ? t.createdAt.toDate().toLocaleDateString() : 'Recently'}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+                        <button
+                          style={{ padding: '0.5rem 1rem', background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '8px', color: '#10b981', fontWeight: '700', cursor: 'pointer', fontSize: '0.82rem' }}
+                          onClick={() => handleApproveTestimony(t.id)}
+                        >
+                          <CheckCircle size={14} style={{ display: 'inline', marginRight: '0.3rem' }} />Approve
+                        </button>
+                        <button
+                          style={{ padding: '0.5rem 1rem', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '8px', color: '#ef4444', fontWeight: '700', cursor: 'pointer', fontSize: '0.82rem' }}
+                          onClick={() => handleRejectTestimony(t.id)}
+                        >
+                          <Trash2 size={14} style={{ display: 'inline', marginRight: '0.3rem' }} />Reject
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </motion.div>
+            )}
+
+            {/* ===== MODERATION ===== */}
+            {activeTab === "moderation" && (
+              <motion.div key="moderation" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="tab-content">
+                <div className="page-header">
+                  <h2>Content Moderation</h2>
+                </div>
+                <div className="dashboard-card" style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>
+                  <Shield size={48} opacity={0.3} />
+                  <p style={{ marginTop: '1rem' }}>No reported content to review.</p>
+                  <span style={{ fontSize: '0.85rem' }}>Reports from students about course content will appear here.</span>
+                </div>
+              </motion.div>
+            )}
+
           </AnimatePresence>
         </div>
       </main>
 
-      {/* Create Course Modal */}
+      {/* Quiz Schedule Modal */}
       <AnimatePresence>
-        {showCreateModal && (
-          <motion.div
-            className="modal-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setShowCreateModal(false)}
-          >
-            <motion.div
-              className="modal-content"
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-            >
+        {showScheduleModal && schedulingQuiz && (
+          <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowScheduleModal(false)}>
+            <motion.div className="modal-content" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} onClick={e => e.stopPropagation()}>
               <div className="modal-header">
-                <h2>Create New Course</h2>
-                <button className="icon-btn" onClick={() => setShowCreateModal(false)}>
-                  <AlertCircle size={20} />
-                </button>
+                <h2>Schedule Quiz</h2>
+                <button className="icon-btn" onClick={() => setShowScheduleModal(false)}><X size={20} /></button>
               </div>
               <div className="modal-body">
+                <p style={{ color: '#94a3b8', marginBottom: '1rem' }}>
+                  Set when <strong style={{ color: '#f1f5f9' }}>{schedulingQuiz.title}</strong> becomes available to students.
+                </p>
                 <div className="form-group">
-                  <label>Course Title</label>
-                  <input type="text" placeholder="Enter course title" />
-                </div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Category</label>
-                    <select>
-                      <option>Frontend Development</option>
-                      <option>Backend Development</option>
-                      <option>DevOps</option>
-                      <option>Data Science</option>
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label>Difficulty</label>
-                    <select>
-                      <option>Beginner</option>
-                      <option>Intermediate</option>
-                      <option>Advanced</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="form-group">
-                  <label>Description</label>
-                  <textarea rows="4" placeholder="Brief description of the course"></textarea>
+                  <label>Available From (Date & Time)</label>
+                  <input
+                    type="datetime-local"
+                    value={scheduleDate}
+                    onChange={e => setScheduleDate(e.target.value)}
+                    style={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', color: '#f1f5f9', borderRadius: '8px', padding: '0.6rem 1rem', width: '100%' }}
+                  />
                 </div>
               </div>
               <div className="modal-footer">
-                <button className="btn-secondary" onClick={() => setShowCreateModal(false)}>
-                  Cancel
-                </button>
-                <button className="btn-primary">
-                  Create Course
+                <button className="btn-secondary" onClick={() => setShowScheduleModal(false)}>Cancel</button>
+                <button className="btn-primary" onClick={handleScheduleQuiz} disabled={!scheduleDate}>
+                  <Calendar size={16} /> Schedule Quiz
                 </button>
               </div>
             </motion.div>

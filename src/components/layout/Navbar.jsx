@@ -12,7 +12,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import "./Navbar.css";
 
 export default function Navbar() {
-    const { user, isAdmin, siteSettings } = useAuth();
+    const { user, isAdmin, isInstructor, siteSettings } = useAuth();
     const location = useLocation();
     const navigate = useNavigate();
     const [menuOpen, setMenuOpen] = useState(false);
@@ -81,7 +81,7 @@ export default function Navbar() {
 
     // Hide navbar on auth pages, Chat, Reels, and Dashboards
     const hiddenPaths = ["/login", "/register", "/forgot-password", "/chat", "/reels"];
-    if (hiddenPaths.includes(location.pathname) || location.pathname.startsWith("/dashboard") || location.pathname.startsWith("/admin")) return null;
+    if (hiddenPaths.includes(location.pathname) || location.pathname.startsWith("/dashboard") || location.pathname.startsWith("/admin") || location.pathname.startsWith("/instructor")) return null;
 
     const handleLogout = async () => {
         try {
@@ -124,6 +124,9 @@ export default function Navbar() {
                     )}
                     {isAdmin && (
                         <Link to="/admin" className={isActive("/admin")} onClick={() => setMenuOpen(false)}>Admin</Link>
+                    )}
+                    {(isInstructor || isAdmin) && (
+                        <Link to="/instructor" className={isActive("/instructor")} onClick={() => setMenuOpen(false)}>Instructor</Link>
                     )}
                 </div>
 

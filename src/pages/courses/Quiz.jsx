@@ -5,7 +5,7 @@ import { db } from "../../config/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import "./Quiz.css";
 
-export default function Quiz({ course, onComplete, onClose }) {
+export default function Quiz({ course, quiz: preloadedQuiz, onComplete, onClose }) {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState({});
   const [markedForReview, setMarkedForReview] = useState([]);
@@ -40,11 +40,17 @@ export default function Quiz({ course, onComplete, onClose }) {
     }))
   ];
 
-  // Fetch quiz from Firestore by courseId
+  // Fetch quiz from Firestore by courseId (or use preloaded quiz)
   useEffect(() => {
     const fetchQuiz = async () => {
       setLoadingQuiz(true);
       try {
+        // If a specific quiz was passed in, use it
+        if (preloadedQuiz && preloadedQuiz.questions && preloadedQuiz.questions.length > 0) {
+          setQuestions(preloadedQuiz.questions);
+          setLoadingQuiz(false);
+          return;
+        }
         const q = query(collection(db, "quizzes"), where("courseId", "==", course.id));
         const snapshot = await getDocs(q);
         if (!snapshot.empty) {
@@ -65,7 +71,7 @@ export default function Quiz({ course, onComplete, onClose }) {
       }
     };
     fetchQuiz();
-  }, [course.id]);
+  }, [course.id, preloadedQuiz]);
 
   const calculateScore = useCallback(() => {
     let finalScore = 0;
@@ -79,10 +85,9 @@ export default function Quiz({ course, onComplete, onClose }) {
   const handleFinish = useCallback(() => {
     const finalScore = calculateScore();
     setShowResult(true);
-    if (finalScore >= 15) {
-       onComplete(finalScore);
-    }
-  }, [calculateScore, onComplete]);
+    // Always call onComplete with score and total so caller can save result
+    onComplete(finalScore, questions.length || 30);
+  }, [calculateScore, onComplete, questions.length]);
 
   useEffect(() => {
     if (!quizStarted || showResult) return;

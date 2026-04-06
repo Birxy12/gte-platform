@@ -25,6 +25,7 @@ import ManageTasks from "../pages/dashboard/admin/ManageTasks";
 import ManageQuizzes from "../pages/dashboard/admin/ManageQuizzes";
 import ManageCertificates from "../pages/dashboard/admin/ManageCertificates";
 import ManageLeadership from "../pages/dashboard/admin/ManageLeadership";
+import ManageInstructors from "../pages/dashboard/admin/ManageInstructors";
 import CreateQuiz from "../pages/dashboard/admin/CreateQuiz";
 
 import EnrolledCourses from "../pages/dashboard/student/EnrolledCourses";
@@ -32,6 +33,8 @@ import UserDashboard from "../pages/dashboard/user/UserDashboard";
 import EditProfile from "../pages/dashboard/user/EditProfile";
 import UserBlogPost from "../pages/dashboard/user/UserBlogPost";
 import MyPosts from "../pages/dashboard/user/MyPosts";
+
+import InstructorDashboard from "../pages/dashboard/instructor/InstructorDashboard";
 
 import Blog from "../pages/blog/Blog";
 import Courses from "../pages/courses/Courses";
@@ -43,9 +46,11 @@ import PublicProfile from "../pages/social/PublicProfile";
 
 import ProtectedRoute from "../components/common/ProtectedRoute";
 import AdminRoute from "../routes/AdminRoute";
+import InstructorRoute from "../routes/InstructorRoute";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import AiChatBot from "../components/bot/AiChatBot";
+
 
 export default function Router() {
   return (
@@ -115,6 +120,7 @@ export default function Router() {
           </AdminRoute>
         }>
           <Route path="users" element={<ManageUsers />} />
+          <Route path="instructors" element={<ManageInstructors />} />
           <Route path="manage-courses" element={<ManageCourses />} />
           <Route path="manage-posts" element={<ManagePosts />} />
           <Route path="edit-course/:id" element={<EditCourse />} />
@@ -130,6 +136,14 @@ export default function Router() {
           <Route path="manage-leadership" element={<ManageLeadership />} />
           <Route path="create-quiz" element={<CreateQuiz />} />
         </Route>
+
+        {/* Protected Instructor Routes */}
+        <Route path="/instructor" element={
+          <InstructorRoute>
+            <InstructorDashboard />
+          </InstructorRoute>
+        } />
+
 
         {/* 404 fallback */}
         <Route path="*" element={<Navigate to="/login" replace />} />

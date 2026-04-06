@@ -426,3 +426,286 @@
         padding: 1.5rem;
     }
 }
+
+/* Hero coins display */
+.courses-hero-coins {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(10px);
+  padding: 0.5rem 1.25rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.25);
+  color: white;
+  font-size: 0.9rem;
+}
+
+/* Enrolled card border */
+.course-card.enrolled {
+  border-color: rgba(59, 130, 246, 0.35);
+}
+
+/* Status badges on thumbnail */
+.course-completed-badge,
+.course-enrolled-badge {
+  position: absolute;
+  bottom: 0.75rem;
+  right: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  backdrop-filter: blur(6px);
+}
+
+.course-completed-badge {
+  background: rgba(16, 185, 129, 0.85);
+  color: white;
+}
+
+.course-enrolled-badge {
+  background: rgba(59, 130, 246, 0.85);
+  color: white;
+}
+
+/* Course action row */
+.course-action-row {
+  margin-top: 0.75rem;
+}
+
+.course-enroll-btn {
+  width: 100%;
+  padding: 0.65rem 1rem;
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  border: none;
+  border-radius: 10px;
+  color: white;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.course-enroll-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+}
+
+.course-continue-btn {
+  width: 100%;
+  padding: 0.65rem 1rem;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  border-radius: 10px;
+  color: #60a5fa;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+}
+
+.course-continue-btn:hover {
+  background: rgba(59, 130, 246, 0.25);
+  color: #93c5fd;
+}
+
+/* ==========================================
+   ENROLLMENT MODAL
+   ========================================== */
+.enroll-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  z-index: 9998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.enroll-modal {
+  background: linear-gradient(165deg, #0f172a, #1e293b);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 480px;
+  overflow: hidden;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+  position: relative;
+}
+
+.enroll-modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 2;
+}
+
+.enroll-modal-close:hover {
+  background: rgba(239,68,68,0.15);
+  border-color: rgba(239,68,68,0.4);
+  color: #ef4444;
+}
+
+.enroll-modal-thumb {
+  height: 180px;
+  overflow: hidden;
+}
+
+.enroll-modal-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.7;
+}
+
+.enroll-modal-body {
+  padding: 1.5rem;
+}
+
+.enroll-modal-body h2 {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #f1f5f9;
+  margin: 0 0 0.5rem;
+  line-height: 1.3;
+}
+
+.enroll-modal-body p {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin: 0 0 0.4rem;
+  line-height: 1.5;
+}
+
+.enroll-instructor {
+  font-size: 0.8rem !important;
+  color: #3b82f6 !important;
+  font-weight: 600;
+  margin-bottom: 1.25rem !important;
+}
+
+.enroll-cost-box {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.enroll-cost-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 0;
+  font-size: 0.9rem;
+  color: #94a3b8;
+}
+
+.enroll-cost-row:not(:last-child) {
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  margin-bottom: 0.4rem;
+}
+
+.enroll-coins {
+  font-weight: 700;
+  color: #fbbf24;
+  font-size: 1rem;
+}
+
+.enroll-coins-ok {
+  font-weight: 700;
+  color: #10b981;
+  font-size: 1rem;
+}
+
+.enroll-coins-low {
+  font-weight: 700;
+  color: #ef4444;
+  font-size: 1rem;
+}
+
+.enroll-warning {
+  color: #f97316 !important;
+  font-size: 0.8rem !important;
+  font-weight: 600;
+  margin-top: 0.5rem !important;
+}
+
+.enroll-free-badge {
+  color: #10b981;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-align: center;
+  padding: 0.5rem;
+}
+
+.enroll-modal-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.enroll-cancel-btn {
+  flex: 1;
+  padding: 0.75rem;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  color: #94a3b8;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.enroll-cancel-btn:hover {
+  background: rgba(255,255,255,0.08);
+  color: #f1f5f9;
+}
+
+.enroll-confirm-btn {
+  flex: 2;
+  padding: 0.75rem;
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.enroll-confirm-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(59,130,246,0.4);
+}
+
+.enroll-confirm-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

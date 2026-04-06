@@ -167,3 +167,146 @@
     color: #64748b;
     margin-bottom: 2rem;
 }
+
+/* Loading state */
+.ec-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 4rem;
+    gap: 1rem;
+    color: #64748b;
+}
+
+.ec-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(59, 130, 246, 0.2);
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: ec-spin 0.8s linear infinite;
+}
+
+@keyframes ec-spin { to { transform: rotate(360deg); } }
+
+/* Stats bar */
+.ec-stats-bar {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.ec-stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1.25rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    flex: 1;
+    min-width: 120px;
+}
+
+.ec-stat-item svg {
+    color: #3b82f6;
+    flex-shrink: 0;
+}
+
+.ec-stat-item div {
+    display: flex;
+    flex-direction: column;
+}
+
+.ec-stat-item strong {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #f1f5f9;
+}
+
+.ec-stat-item span {
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+/* Quiz scores in enrolled card */
+.ec-quiz-scores {
+    background: rgba(99, 102, 241, 0.06);
+    border: 1px solid rgba(99, 102, 241, 0.15);
+    border-radius: 10px;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.ec-quiz-label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #818cf8;
+    margin-bottom: 0.5rem;
+}
+
+.ec-quiz-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.82rem;
+    color: #94a3b8;
+    padding: 0.2rem 0;
+}
+
+.ec-score-val {
+    font-weight: 700;
+}
+
+.ec-score-val.pass { color: #10b981; }
+.ec-score-val.fail { color: #ef4444; }
+
+.ec-quiz-avg {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin-top: 0.4rem;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    padding-top: 0.4rem;
+}
+
+.ec-quiz-avg strong {
+    color: #818cf8;
+}
+
+/* Coins paid */
+.ec-coins-paid {
+    font-size: 0.78rem;
+    color: #64748b;
+    margin-bottom: 0.75rem;
+}
+
+/* Certificate button */
+.ec-btn-cert {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1rem;
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: 10px;
+    color: #f59e0b;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.ec-btn-cert:hover {
+    background: rgba(245, 158, 11, 0.2);
+    color: #fbbf24;
+}
+
+/* Footer gap */
+.ec-footer {
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+

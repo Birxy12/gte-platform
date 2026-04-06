@@ -72,6 +72,7 @@ export function AuthProvider({ children }) {
     siteSettings,
     isAdmin: role === "admin",
     isInstructor: role === "instructor",
+    isAdminOrInstructor: role === "admin" || role === "instructor",
     loading
   };
 

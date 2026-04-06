@@ -5,11 +5,16 @@ service cloud.firestore {
     // --- Helpers ---
     function isAuthenticated() { return request.auth != null; }
     function isAdmin() { 
-      // Checks if user has an admin role
       return isAuthenticated() && (
         request.auth.token.admin == true || 
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
       ); 
+    }
+    function isInstructor() {
+      return isAuthenticated() && (
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'instructor' ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
     }
     function isOwner(userId) { return isAuthenticated() && request.auth.uid == userId; }
 
@@ -21,8 +26,33 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // --- Enrollments ---
+    match /enrollments/{enrollmentId} {
+      allow read, list: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid || isInstructor()
+      );
+      allow delete: if isAdmin();
+    }
+
+    // --- Course Materials ---
+    match /courseMaterials/{materialId} {
+      allow read, list: if isAuthenticated();
+      allow create, update, delete: if isInstructor();
+    }
+
+    // --- Quiz Results ---
+    match /quizResults/{resultId} {
+      allow read, list: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid || isInstructor()
+      );
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow delete: if isAdmin();
+    }
+
     // --- User Progress ---
-    // Modified to correctly match progressService.js and prevent list errors
     match /userProgress/{progressId} {
       allow list: if isAuthenticated();
       allow get, update, delete: if isOwner(resource.data.userId);
@@ -31,16 +61,16 @@ service cloud.firestore {
 
     // --- Quizzes ---
     match /quizzes/{quizId} {
-      allow read, list: if isAuthenticated();      // Anyone can read quizzes
-      allow write: if isAdmin();             // Only admins can create or modify quizzes
+      allow read, list: if isAuthenticated();
+      allow write: if isInstructor();  // Instructors & admins can manage quizzes
     }
 
     // --- Certificates ---
     match /certificates/{userId} {
-      allow read, list: if isOwner(userId);        // Users can read their own certificates
-      allow create: if isAdmin();            // Only admins can create certificates
-      allow update: if isOwner(userId);      // Users can update their certificates
-      allow delete: if isAdmin();            // Admins can delete certificates
+      allow read, list: if isOwner(userId);
+      allow create: if isAdmin();
+      allow update: if isOwner(userId);
+      allow delete: if isAdmin();
     }
 
     // --- Social & App Settings ---
@@ -54,9 +84,9 @@ service cloud.firestore {
       allow read, list, write: if isAuthenticated();
     }
     match /reports/{reportId} {
-      allow read: if isAdmin();
+      allow read: if isInstructor();
       allow create: if isAuthenticated();
-      allow update, delete: if isAdmin();
+      allow update, delete: if isInstructor();
     }
     match /settings/{docId} {
       allow read: if true;
@@ -72,20 +102,17 @@ service cloud.firestore {
 
     // --- Chats & Messages ---
     match /chats/{chatId} {
-      // Only participants can read or update the group metadata
       allow read: if isAuthenticated() && request.auth.uid in resource.data.participants;
       allow create: if isAuthenticated();
       allow update: if isAuthenticated() && request.auth.uid in resource.data.participants;
       allow delete: if isAdmin();
 
       match /messages/{messageId} {
-        // Only participants of the parent chat can read or send messages
         allow read, create: if isAuthenticated() && 
           request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
         
         allow delete: if isAdmin() || (isAuthenticated() && request.auth.uid == resource.data.senderId);
         
-        // Allow sender to update everything, or receiver to update only isRead
         allow update: if isAuthenticated() && (
           request.auth.uid == resource.data.senderId ||
           (request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants &&
@@ -94,13 +121,11 @@ service cloud.firestore {
       }
 
       match /status/{userId} {
-        // Only participants can see each other's typing/recording status
         allow read, write: if isAuthenticated() && 
           request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
       }
 
       match /reads/{messageId} {
-        // Track which user has read which message
         allow read, write: if isAuthenticated() && 
           request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
       }
@@ -109,12 +134,12 @@ service cloud.firestore {
     // --- Content & LMS ---
     match /courses/{courseId} {
       allow read, list: if isAuthenticated();
-      allow write: if isAdmin();
+      allow write: if isInstructor();  // Instructors & admins can manage courses
     }
     match /posts/{postId} {
-      allow read, list: if true; // Public posts
+      allow read, list: if true;
       allow create: if isAuthenticated();
-      allow update: if isAuthenticated(); // Allow users to toggle likes/reactions
+      allow update: if isAuthenticated();
       allow delete: if isAdmin() || (isAuthenticated() && request.auth.token.email == resource.data.authorEmail);
     }
     match /statuses/{statusId} {
@@ -124,11 +149,10 @@ service cloud.firestore {
     }
 
     // --- Reels ---
-    // Added during Phase 4 upgrades to support the new video platform
     match /reels/{reelId} {
       allow read, list: if isAuthenticated();
       allow create: if isAuthenticated();
-      allow update: if isAuthenticated(); // For likes/comments
+      allow update: if isAuthenticated();
       allow delete: if isAdmin() || (isAuthenticated() && request.auth.uid == (resource.data.userId));
     }
 
@@ -145,7 +169,6 @@ service cloud.firestore {
     }
 
     // --- Notifications ---
-    // Updated list queries to prevent permission errors
     match /notifications/{notificationId} {
       allow get, update, delete: if isOwner(resource.data.userId);
       allow list: if isAuthenticated();
@@ -156,7 +179,7 @@ service cloud.firestore {
     match /testimonies/{testimonyId} {
       allow read: if true;
       allow create: if isAuthenticated();
-      allow update, delete: if isAdmin();
+      allow update, delete: if isInstructor();  // Instructors & admins can moderate
     }
   }
 }
