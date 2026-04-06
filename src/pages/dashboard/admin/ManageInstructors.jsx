@@ -3,10 +3,8 @@ import { db } from "../../../config/firebase";
 import {
   collection,
   getDocs,
-  deleteDoc,
   doc,
   updateDoc,
-  setDoc,
   serverTimestamp,
   query,
   where
@@ -16,265 +14,118 @@ import {
   Plus, 
   Search, 
   Filter, 
-  MoreVertical, 
   Mail, 
   Calendar, 
   Award, 
   BookOpen, 
-  TrendingUp,
   CheckCircle,
   XCircle,
   Edit3,
-  Trash2,
   Shield,
   UserCheck,
   Star,
-  DollarSign,
-  Eye
+  Clock,
+  UserX,
+  Crown
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import "./Admindashboard.css";
 
 export default function ManageInstructors() {
-  const [instructors, setInstructors] = useState([]);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterRole, setFilterRole] = useState("all");
+  const [updating, setUpdating] = useState(null);
 
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedInstructor, setSelectedInstructor] = useState(null);
-  const [newInstructor, setNewInstructor] = useState({ 
-    username: "", 
-    email: "", 
-    bio: "",
-    expertise: [],
-    status: "pending",
-    hourlyRate: 50
-  });
-  const [addingInstructor, setAddingInstructor] = useState(false);
-
-  const expertiseOptions = [
-    "Frontend Development",
-    "Backend Development", 
-    "Full Stack",
-    "DevOps",
-    "Data Science",
-    "Mobile Development",
-    "UI/UX Design",
-    "Cloud Computing",
-    "Cybersecurity",
-    "AI/ML"
-  ];
-
-  const fetchInstructors = async () => {
+  const fetchUsers = async () => {
     try {
       setLoading(true);
-      const q = query(collection(db, "users"), where("role", "in", ["instructor", "pending_instructor"]));
-      const snapshot = await getDocs(q);
-      const instructorsList = snapshot.docs.map(doc => ({
-        ...doc.data(),
-        id: doc.id
+      const snapshot = await getDocs(collection(db, "users"));
+      const usersList = snapshot.docs.map(d => ({
+        ...d.data(),
+        id: d.id
       }));
-      setInstructors(instructorsList);
+      setUsers(usersList);
     } catch (err) {
       console.error(err);
-      setError("Failed to load instructors");
+      setError("Failed to load users. Check Firestore permissions.");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchInstructors();
+    fetchUsers();
   }, []);
 
-  const changeStatus = async (id, currentStatus) => {
-    const statuses = ["pending", "active", "suspended", "inactive"];
-    const nextStatus = statuses[(statuses.indexOf(currentStatus) + 1) % statuses.length];
-
-    if (currentStatus === "active" && nextStatus === "suspended") {
-      const confirm = window.confirm("Are you sure you want to suspend this instructor? They will lose access to create courses.");
-      if (!confirm) return;
-    }
-
+  const promoteToInstructor = async (userId, username) => {
+    if (!window.confirm(`Promote "${username}" to Instructor? They will gain course management access.`)) return;
+    setUpdating(userId);
     try {
-      await updateDoc(doc(db, "users", id), { 
-        status: nextStatus,
-        updatedAt: new Date().toISOString()
-      });
-      setInstructors(instructors.map(i => i.id === id ? { ...i, status: nextStatus } : i));
-    } catch (err) {
-      console.error("Error changing status:", err);
-      if (err.code === "permission-denied") {
-        alert("Permission denied: Insufficient privileges to modify instructor status.");
-      } else {
-        alert("Failed to update status. Please try again.");
-      }
-    }
-  };
-
-  const verifyInstructor = async (id) => {
-    const confirm = window.confirm("Verify this instructor? They will gain full instructor privileges.");
-    if (!confirm) return;
-
-    try {
-      await updateDoc(doc(db, "users", id), { 
-        status: "active",
-        verifiedAt: serverTimestamp(),
-        updatedAt: new Date().toISOString()
-      });
-      setInstructors(instructors.map(i => i.id === id ? { ...i, status: "active" } : i));
-      alert("Instructor verified successfully! ✅");
-    } catch (err) {
-      console.error(err);
-      alert("Failed to verify instructor.");
-    }
-  };
-
-  const deleteInstructor = async (id, status) => {
-    if (status === "active") {
-      const confirm = window.confirm("⚠️ This instructor has active courses. Deleting will unenroll all students. Continue?");
-      if (!confirm) return;
-    }
-
-    const confirmDelete = window.confirm("Permanently delete this instructor account?");
-    if (!confirmDelete) return;
-
-    try {
-      await deleteDoc(doc(db, "users", id));
-      setInstructors(instructors.filter(i => i.id !== id));
-      alert("Instructor record permanently deleted.");
-    } catch (err) {
-      console.error(err);
-      if (err.code === "permission-denied") {
-        alert("Permission denied: Insufficient privileges to delete instructors.");
-      } else {
-        alert("Failed to delete instructor. Please try again.");
-      }
-    }
-  };
-
-  const handleAddInstructor = async (e) => {
-    e.preventDefault();
-    if (!newInstructor.username || !newInstructor.email) return;
-
-    setAddingInstructor(true);
-    try {
-      const customId = `inst_${Date.now()}`;
-      const instructorRef = doc(db, "users", customId);
-
-      const instructorData = {
-        uid: customId,
-        username: newInstructor.username,
-        email: newInstructor.email,
-        bio: newInstructor.bio,
-        expertise: newInstructor.expertise,
+      await updateDoc(doc(db, "users", userId), {
         role: "instructor",
-        status: newInstructor.status,
-        hourlyRate: parseInt(newInstructor.hourlyRate) || 50,
-        totalStudents: 0,
-        totalRevenue: 0,
-        averageRating: 0,
-        coursesCount: 0,
-        createdAt: serverTimestamp(),
+        promotedAt: serverTimestamp(),
         updatedAt: new Date().toISOString()
-      };
-
-      await setDoc(instructorRef, instructorData);
-      alert("Instructor added successfully! 👨‍🏫");
-      setShowAddForm(false);
-      setNewInstructor({ 
-        username: "", 
-        email: "", 
-        bio: "",
-        expertise: [],
-        status: "pending",
-        hourlyRate: 50
       });
-      fetchInstructors();
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: "instructor" } : u));
     } catch (err) {
       console.error(err);
-      alert("Failed to add instructor.");
+      if (err.code === "permission-denied") {
+        alert("Permission denied: Only admins can promote instructors.");
+      } else {
+        alert("Failed to promote user.");
+      }
     } finally {
-      setAddingInstructor(false);
+      setUpdating(null);
     }
   };
 
-  const handleUpdateInstructor = async (e) => {
-    e.preventDefault();
-    if (!selectedInstructor) return;
-
+  const demoteFromInstructor = async (userId, username) => {
+    if (!window.confirm(`Remove instructor access from "${username}"? They will revert to student role.`)) return;
+    setUpdating(userId);
     try {
-      await updateDoc(doc(db, "users", selectedInstructor.id), {
-        ...selectedInstructor,
+      await updateDoc(doc(db, "users", userId), {
+        role: "student",
+        demotedAt: serverTimestamp(),
         updatedAt: new Date().toISOString()
       });
-      alert("Instructor updated successfully! ✏️");
-      setShowEditModal(false);
-      setSelectedInstructor(null);
-      fetchInstructors();
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: "student" } : u));
     } catch (err) {
       console.error(err);
-      alert("Failed to update instructor.");
+      alert("Failed to remove instructor access.");
+    } finally {
+      setUpdating(null);
     }
   };
 
-  const toggleExpertise = (exp) => {
-    setNewInstructor(prev => ({
-      ...prev,
-      expertise: prev.expertise.includes(exp)
-        ? prev.expertise.filter(e => e !== exp)
-        : [...prev.expertise, exp]
-    }));
-  };
+  const filteredUsers = users.filter(u => {
+    const matchesSearch =
+      u.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      u.email?.toLowerCase().includes(searchTerm.toLowerCase());
 
-  const filteredInstructors = instructors.filter(instructor => {
-    const matchesSearch = 
-      instructor.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      instructor.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      instructor.expertise?.some(e => e.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    const matchesFilter = filterStatus === "all" || instructor.status === filterStatus;
-    
-    return matchesSearch && matchesFilter;
+    if (filterRole === "all") return matchesSearch;
+    if (filterRole === "instructor") return matchesSearch && (u.role === "instructor" || u.role === "admin");
+    if (filterRole === "student") return matchesSearch && (u.role === "student" || !u.role);
+    return matchesSearch;
   });
 
-  const getStatusColor = (status) => {
-    const colors = {
-      active: "green",
-      pending: "amber",
-      suspended: "red",
-      inactive: "gray"
-    };
-    return colors[status] || "gray";
+  const instructors = users.filter(u => u.role === "instructor" || u.role === "admin");
+  const pendingUsers = users.filter(u => !u.role || u.role === "student");
+
+  const getRoleBadge = (role) => {
+    if (role === "admin") return { label: "Admin (Instructor)", color: "purple", icon: Crown };
+    if (role === "instructor") return { label: "Instructor", color: "green", icon: UserCheck };
+    if (role === "suspended") return { label: "Suspended", color: "red", icon: UserX };
+    return { label: "Student", color: "gray", icon: Users };
   };
 
-  const getStatusIcon = (status) => {
-    const icons = {
-      active: CheckCircle,
-      pending: Clock,
-      suspended: XCircle,
-      inactive: UserCheck
-    };
-    return icons[status] || Clock;
-  };
-
-  const stats = {
-    total: instructors.length,
-    active: instructors.filter(i => i.status === "active").length,
-    pending: instructors.filter(i => i.status === "pending").length,
-    suspended: instructors.filter(i => i.status === "suspended").length,
-    totalRevenue: instructors.reduce((acc, i) => acc + (i.totalRevenue || 0), 0),
-    totalStudents: instructors.reduce((acc, i) => acc + (i.totalStudents || 0), 0)
-  };
-
-  if (loading && instructors.length === 0) {
+  if (loading && users.length === 0) {
     return (
       <div className="mi-loading">
         <div className="mi-spinner"></div>
-        <p>Loading instructor data...</p>
+        <p>Loading user directory...</p>
       </div>
     );
   }
@@ -284,7 +135,7 @@ export default function ManageInstructors() {
       <div className="mi-error">
         <XCircle size={48} />
         <p>{error}</p>
-        <button onClick={fetchInstructors}>Retry</button>
+        <button onClick={fetchUsers}>Retry</button>
       </div>
     );
   }
@@ -295,177 +146,49 @@ export default function ManageInstructors() {
       <div className="mi-header">
         <div className="mi-header-content">
           <div className="mi-title">
-            <Users size={32} className="mi-icon" />
+            <UserCheck size={32} className="mi-icon" />
             <div>
               <h1>Manage Instructors</h1>
-              <p>Oversee instructor accounts, verify credentials, and monitor performance</p>
+              <p>Promote or remove instructor access for any platform user</p>
             </div>
           </div>
-          <button
-            className="mi-btn-primary"
-            onClick={() => setShowAddForm(!showAddForm)}
-          >
-            {showAddForm ? <XCircle size={18} /> : <Plus size={18} />}
-            {showAddForm ? "Cancel" : "Add Instructor"}
-          </button>
         </div>
       </div>
 
       {/* Stats Cards */}
       <div className="mi-stats-grid">
-        <motion.div 
-          className="mi-stat-card blue"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0 }}
-        >
+        <motion.div className="mi-stat-card blue" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
           <Users size={24} />
           <div>
-            <span className="mi-stat-value">{stats.total}</span>
-            <span className="mi-stat-label">Total Instructors</span>
+            <span className="mi-stat-value">{users.length}</span>
+            <span className="mi-stat-label">Total Users</span>
           </div>
         </motion.div>
-        
-        <motion.div 
-          className="mi-stat-card green"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <CheckCircle size={24} />
+
+        <motion.div className="mi-stat-card green" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+          <UserCheck size={24} />
           <div>
-            <span className="mi-stat-value">{stats.active}</span>
-            <span className="mi-stat-label">Active</span>
+            <span className="mi-stat-value">{users.filter(u => u.role === "instructor").length}</span>
+            <span className="mi-stat-label">Instructors</span>
           </div>
         </motion.div>
-        
-        <motion.div 
-          className="mi-stat-card amber"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
+
+        <motion.div className="mi-stat-card purple" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+          <Crown size={24} />
+          <div>
+            <span className="mi-stat-value">{users.filter(u => u.role === "admin").length}</span>
+            <span className="mi-stat-label">Admins</span>
+          </div>
+        </motion.div>
+
+        <motion.div className="mi-stat-card amber" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
           <Clock size={24} />
           <div>
-            <span className="mi-stat-value">{stats.pending}</span>
-            <span className="mi-stat-label">Pending Verification</span>
-          </div>
-        </motion.div>
-        
-        <motion.div 
-          className="mi-stat-card purple"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <DollarSign size={24} />
-          <div>
-            <span className="mi-stat-value">${stats.totalRevenue.toLocaleString()}</span>
-            <span className="mi-stat-label">Total Revenue</span>
+            <span className="mi-stat-value">{users.filter(u => !u.role || u.role === "student").length}</span>
+            <span className="mi-stat-label">Students</span>
           </div>
         </motion.div>
       </div>
-
-      {/* Add Instructor Form */}
-      <AnimatePresence>
-        {showAddForm && (
-          <motion.div 
-            className="mi-form-card"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-          >
-            <div className="mi-form-header">
-              <h3><Plus size={20} /> Add New Instructor</h3>
-              <p>Create a new instructor account manually</p>
-            </div>
-            
-            <form onSubmit={handleAddInstructor}>
-              <div className="mi-form-grid">
-                <div className="mi-field">
-                  <label>Full Name</label>
-                  <input
-                    placeholder="e.g. Sarah Johnson"
-                    value={newInstructor.username}
-                    onChange={(e) => setNewInstructor({ ...newInstructor, username: e.target.value })}
-                    required
-                  />
-                </div>
-                
-                <div className="mi-field">
-                  <label>Email Address</label>
-                  <input
-                    type="email"
-                    placeholder="sarah@example.com"
-                    value={newInstructor.email}
-                    onChange={(e) => setNewInstructor({ ...newInstructor, email: e.target.value })}
-                    required
-                  />
-                </div>
-                
-                <div className="mi-field">
-                  <label>Hourly Rate ($)</label>
-                  <input
-                    type="number"
-                    min="10"
-                    max="500"
-                    value={newInstructor.hourlyRate}
-                    onChange={(e) => setNewInstructor({ ...newInstructor, hourlyRate: e.target.value })}
-                  />
-                </div>
-                
-                <div className="mi-field">
-                  <label>Initial Status</label>
-                  <select
-                    value={newInstructor.status}
-                    onChange={(e) => setNewInstructor({ ...newInstructor, status: e.target.value })}
-                  >
-                    <option value="pending">Pending Verification</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="mi-field full-width">
-                <label>Bio / Description</label>
-                <textarea
-                  rows="3"
-                  placeholder="Brief description of instructor background and expertise..."
-                  value={newInstructor.bio}
-                  onChange={(e) => setNewInstructor({ ...newInstructor, bio: e.target.value })}
-                />
-              </div>
-
-              <div className="mi-field full-width">
-                <label>Areas of Expertise</label>
-                <div className="mi-expertise-tags">
-                  {expertiseOptions.map(exp => (
-                    <button
-                      key={exp}
-                      type="button"
-                      className={`mi-tag ${newInstructor.expertise.includes(exp) ? 'active' : ''}`}
-                      onClick={() => toggleExpertise(exp)}
-                    >
-                      {newInstructor.expertise.includes(exp) && <CheckCircle size={14} />}
-                      {exp}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mi-form-actions">
-                <button type="button" className="mi-btn-secondary" onClick={() => setShowAddForm(false)}>
-                  Cancel
-                </button>
-                <button type="submit" className="mi-btn-primary" disabled={addingInstructor}>
-                  {addingInstructor ? "Adding..." : "✅ Add Instructor"}
-                </button>
-              </div>
-            </form>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Filters & Search */}
       <div className="mi-filters">
@@ -473,150 +196,119 @@ export default function ManageInstructors() {
           <Search size={18} />
           <input
             type="text"
-            placeholder="Search instructors by name, email, or expertise..."
+            placeholder="Search users by name or email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        
+
         <div className="mi-filter-group">
           <Filter size={18} />
-          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="pending">Pending</option>
-            <option value="suspended">Suspended</option>
-            <option value="inactive">Inactive</option>
+          <select value={filterRole} onChange={(e) => setFilterRole(e.target.value)}>
+            <option value="all">All Users</option>
+            <option value="instructor">Instructors & Admins</option>
+            <option value="student">Students Only</option>
           </select>
         </div>
       </div>
 
-      {/* Instructors Table */}
+      {/* Users Table */}
       <div className="mi-table-card">
         <div className="mi-table-header">
-          <h3>Instructor Directory</h3>
-          <span className="mi-count">{filteredInstructors.length} instructors</span>
+          <h3>User Directory</h3>
+          <span className="mi-count">{filteredUsers.length} users</span>
         </div>
-        
+
         <div className="mi-table-wrapper">
           <table className="mi-table">
             <thead>
               <tr>
-                <th>Instructor</th>
-                <th>Expertise</th>
-                <th>Performance</th>
-                <th>Status</th>
+                <th>User</th>
+                <th>Role</th>
                 <th>Joined</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filteredInstructors.length === 0 ? (
+              {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="mi-empty">
+                  <td colSpan="4" className="mi-empty">
                     <Users size={48} />
-                    <p>No instructors found matching your criteria</p>
+                    <p>No users found matching your criteria</p>
                   </td>
                 </tr>
               ) : (
-                filteredInstructors.map((instructor, idx) => {
-                  const StatusIcon = getStatusIcon(instructor.status);
+                filteredUsers.map((user, idx) => {
+                  const badge = getRoleBadge(user.role);
+                  const BadgeIcon = badge.icon;
+                  const isUpdating = updating === user.id;
+                  const isAdmin = user.role === "admin";
+                  const isInstructor = user.role === "instructor";
+
                   return (
-                    <motion.tr 
-                      key={instructor.id}
+                    <motion.tr
+                      key={user.id}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: idx * 0.05 }}
+                      transition={{ delay: idx * 0.03 }}
                     >
                       <td>
                         <div className="mi-instructor-info">
                           <div className="mi-avatar">
-                            {instructor.username?.charAt(0).toUpperCase() || "?"}
+                            {user.username?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || "?"}
                           </div>
                           <div>
-                            <span className="mi-name">{instructor.username || "N/A"}</span>
+                            <span className="mi-name">{user.username || "Unnamed"}</span>
                             <span className="mi-email">
-                              <Mail size={12} /> {instructor.email}
+                              <Mail size={12} /> {user.email}
                             </span>
                           </div>
                         </div>
                       </td>
-                      
+
                       <td>
-                        <div className="mi-expertise-list">
-                          {instructor.expertise?.slice(0, 2).map((exp, i) => (
-                            <span key={i} className="mi-expertise-badge">{exp}</span>
-                          ))}
-                          {instructor.expertise?.length > 2 && (
-                            <span className="mi-more">+{instructor.expertise.length - 2}</span>
-                          )}
-                        </div>
+                        <span className={`mi-status-badge ${badge.color}`}>
+                          <BadgeIcon size={14} />
+                          {badge.label}
+                        </span>
                       </td>
-                      
-                      <td>
-                        <div className="mi-performance">
-                          <div className="mi-metric">
-                            <BookOpen size={14} />
-                            <span>{instructor.coursesCount || 0} courses</span>
-                          </div>
-                          <div className="mi-metric">
-                            <Users size={14} />
-                            <span>{instructor.totalStudents || 0} students</span>
-                          </div>
-                          <div className="mi-metric">
-                            <Star size={14} />
-                            <span>{instructor.averageRating || "0.0"} ★</span>
-                          </div>
-                        </div>
-                      </td>
-                      
-                      <td>
-                        <button
-                          className={`mi-status-badge ${getStatusColor(instructor.status)}`}
-                          onClick={() => changeStatus(instructor.id, instructor.status)}
-                        >
-                          <StatusIcon size={14} />
-                          {instructor.status}
-                        </button>
-                      </td>
-                      
+
                       <td className="mi-date">
                         <Calendar size={14} />
-                        {instructor.createdAt?.toDate 
-                          ? instructor.createdAt.toDate().toLocaleDateString() 
+                        {user.createdAt?.toDate
+                          ? user.createdAt.toDate().toLocaleDateString()
+                          : user.createdAt
+                          ? new Date(user.createdAt).toLocaleDateString()
                           : 'N/A'}
                       </td>
-                      
+
                       <td>
                         <div className="mi-actions">
-                          <button 
-                            className="mi-btn-icon"
-                            onClick={() => {
-                              setSelectedInstructor(instructor);
-                              setShowEditModal(true);
-                            }}
-                            title="Edit"
-                          >
-                            <Edit3 size={16} />
-                          </button>
-                          
-                          {instructor.status === "pending" && (
-                            <button 
-                              className="mi-btn-icon verify"
-                              onClick={() => verifyInstructor(instructor.id)}
-                              title="Verify Instructor"
+                          {isAdmin ? (
+                            <span style={{ color: '#a855f7', fontSize: '0.8rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                              <Crown size={14} /> Admin Access
+                            </span>
+                          ) : isInstructor ? (
+                            <button
+                              className="mi-btn-icon delete"
+                              onClick={() => demoteFromInstructor(user.id, user.username || user.email)}
+                              disabled={isUpdating}
+                              title="Remove Instructor Access"
                             >
-                              <Shield size={16} />
+                              {isUpdating ? <Clock size={16} /> : <UserX size={16} />}
+                              {isUpdating ? "Updating..." : "Remove Instructor"}
+                            </button>
+                          ) : (
+                            <button
+                              className="mi-btn-icon verify"
+                              onClick={() => promoteToInstructor(user.id, user.username || user.email)}
+                              disabled={isUpdating}
+                              title="Promote to Instructor"
+                            >
+                              {isUpdating ? <Clock size={16} /> : <Shield size={16} />}
+                              {isUpdating ? "Updating..." : "Make Instructor"}
                             </button>
                           )}
-                          
-                          <button 
-                            className="mi-btn-icon delete"
-                            onClick={() => deleteInstructor(instructor.id, instructor.status)}
-                            title="Delete"
-                          >
-                            <Trash2 size={16} />
-                          </button>
                         </div>
                       </td>
                     </motion.tr>
@@ -627,89 +319,6 @@ export default function ManageInstructors() {
           </table>
         </div>
       </div>
-
-      {/* Edit Modal */}
-      <AnimatePresence>
-        {showEditModal && selectedInstructor && (
-          <div className="mi-modal-overlay" onClick={() => setShowEditModal(false)}>
-            <motion.div 
-              className="mi-modal"
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="mi-modal-header">
-                <h3><Edit3 size={20} /> Edit Instructor</h3>
-                <button className="mi-btn-icon" onClick={() => setShowEditModal(false)}>
-                  <XCircle size={20} />
-                </button>
-              </div>
-              
-              <form onSubmit={handleUpdateInstructor}>
-                <div className="mi-form-grid">
-                  <div className="mi-field">
-                    <label>Full Name</label>
-                    <input
-                      value={selectedInstructor.username}
-                      onChange={(e) => setSelectedInstructor({...selectedInstructor, username: e.target.value})}
-                    />
-                  </div>
-                  
-                  <div className="mi-field">
-                    <label>Email</label>
-                    <input
-                      type="email"
-                      value={selectedInstructor.email}
-                      onChange={(e) => setSelectedInstructor({...selectedInstructor, email: e.target.value})}
-                    />
-                  </div>
-                  
-                  <div className="mi-field">
-                    <label>Hourly Rate ($)</label>
-                    <input
-                      type="number"
-                      value={selectedInstructor.hourlyRate || 50}
-                      onChange={(e) => setSelectedInstructor({...selectedInstructor, hourlyRate: e.target.value})}
-                    />
-                  </div>
-                  
-                  <div className="mi-field">
-                    <label>Status</label>
-                    <select
-                      value={selectedInstructor.status}
-                      onChange={(e) => setSelectedInstructor({...selectedInstructor, status: e.target.value})}
-                    >
-                      <option value="active">Active</option>
-                      <option value="pending">Pending</option>
-                      <option value="suspended">Suspended</option>
-                      <option value="inactive">Inactive</option>
-                    </select>
-                  </div>
-                </div>
-                
-                <div className="mi-field full-width">
-                  <label>Bio</label>
-                  <textarea
-                    rows="3"
-                    value={selectedInstructor.bio || ""}
-                    onChange={(e) => setSelectedInstructor({...selectedInstructor, bio: e.target.value})}
-                  />
-                </div>
-                
-                <div className="mi-modal-footer">
-                  <button type="button" className="mi-btn-secondary" onClick={() => setShowEditModal(false)}>
-                    Cancel
-                  </button>
-                  <button type="submit" className="mi-btn-primary">
-                    Save Changes
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

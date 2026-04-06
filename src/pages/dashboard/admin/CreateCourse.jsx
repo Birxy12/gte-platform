@@ -11,6 +11,9 @@ export default function CreateCourse() {
   const [instructor, setInstructor] = useState("");
   const [monthlyPrice, setMonthlyPrice] = useState("");
   const [annualPrice, setAnnualPrice] = useState("");
+  const [coinCost, setCoinCost] = useState("100");
+  const [category, setCategory] = useState("Beginner");
+  const [thumbnailUrl, setThumbnailUrl] = useState("");
   const [loading, setLoading] = useState(false);
 
   const createCourse = async (e) => {
@@ -24,6 +27,10 @@ export default function CreateCourse() {
         instructor: instructor.trim(),
         monthlyPrice: monthlyPrice.trim() || "0",
         annualPrice: annualPrice.trim() || "0",
+        coinCost: parseInt(coinCost) || 100,
+        category: category,
+        thumbnailUrl: thumbnailUrl.trim() || "",
+        enrolledCount: 0,
         createdAt: serverTimestamp()
       });
       alert("Education course created successfully! 🎓");
@@ -70,9 +77,32 @@ export default function CreateCourse() {
             </div>
 
             <div className="ad-field">
+              <label>Thumbnail Image URL</label>
+              <input
+                placeholder="https://... (leave blank for default)"
+                value={thumbnailUrl}
+                onChange={(e) => setThumbnailUrl(e.target.value)}
+              />
+            </div>
+
+            <div className="ad-field">
+              <label>Category / Level</label>
+              <select value={category} onChange={(e) => setCategory(e.target.value)}>
+                <option>Beginner</option>
+                <option>Intermediate</option>
+                <option>Advanced</option>
+                <option>Programming</option>
+                <option>Design</option>
+                <option>Business</option>
+                <option>Marketing</option>
+                <option>Finance</option>
+              </select>
+            </div>
+
+            <div className="ad-field full">
               <label>Video / Resource URL</label>
               <input
-                placeholder="https://..."
+                placeholder="https://youtube.com/watch?v=... or https://vimeo.com/..."
                 value={videoUrl}
                 onChange={(e) => setVideoUrl(e.target.value)}
                 required
@@ -87,6 +117,18 @@ export default function CreateCourse() {
                 onChange={(e) => setInstructor(e.target.value)}
                 required
               />
+            </div>
+
+            <div className="ad-field">
+              <label>🪙 Coin Cost (Vault Payment)</label>
+              <input
+                type="number"
+                min="0"
+                placeholder="100"
+                value={coinCost}
+                onChange={(e) => setCoinCost(e.target.value)}
+              />
+              <small style={{ color: '#64748b', fontSize: '0.75rem' }}>Set to 0 for free access</small>
             </div>
 
             <div className="ad-field">
