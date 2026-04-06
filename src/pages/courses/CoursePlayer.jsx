@@ -135,7 +135,6 @@ export default function CoursePlayer({ course, enrollment, onClose, onQuizComple
                     title={course.title}
                     frameBorder="0"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
-                    allowFullScreen
                     referrerPolicy="strict-origin-when-cross-origin"
                   />
                 ) : (

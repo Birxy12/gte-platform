@@ -38,6 +38,9 @@ export default function ManageInstructors() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRole, setFilterRole] = useState("all");
   const [updating, setUpdating] = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newUserData, setNewUserData] = useState({ email: "", password: "", username: "", role: "student" });
+  const [creating, setCreating] = useState(false);
 
   const fetchUsers = async () => {
     try {
@@ -53,6 +56,40 @@ export default function ManageInstructors() {
       setError("Failed to load users. Check Firestore permissions.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCreateUser = async (e) => {
+    e.preventDefault();
+    if (!newUserData.email || !newUserData.password || !newUserData.username) {
+      alert("All fields are required.");
+      return;
+    }
+    setCreating(true);
+    try {
+      const { setDoc, serverTimestamp, doc } = await import("firebase/firestore");
+      // Note: In this frontend-only context, we simulate user creation by adding to the 'users' collection.
+      // This allows them to sign up later and be automatically granted the role, OR
+      // if using a custom backend/function, it would be handled differently.
+      const userId = `user_${Date.now()}`;
+      
+      await setDoc(doc(db, "users", userId), {
+        email: newUserData.email,
+        username: newUserData.username,
+        role: newUserData.role,
+        createdAt: serverTimestamp(),
+        manualAdd: true
+      });
+      
+      alert(`User "${newUserData.username}" added to directory as ${newUserData.role}.`);
+      setShowCreateModal(false);
+      setNewUserData({ email: "", password: "", username: "", role: "student" });
+      fetchUsers();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to create user entry.");
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -152,6 +189,9 @@ export default function ManageInstructors() {
               <p>Promote or remove instructor access for any platform user</p>
             </div>
           </div>
+          <button className="mi-create-btn" onClick={() => setShowCreateModal(true)}>
+            <Plus size={18} /> Create New User
+          </button>
         </div>
       </div>
 
@@ -319,6 +359,44 @@ export default function ManageInstructors() {
           </table>
         </div>
       </div>
+
+      {/* Create User Modal */}
+      <AnimatePresence>
+        {showCreateModal && (
+          <motion.div className="mi-modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowCreateModal(false)}>
+            <motion.div className="mi-modal-content" initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }} onClick={e => e.stopPropagation()}>
+              <div className="mi-modal-header">
+                <h2>Create New User</h2>
+                <button onClick={() => setShowCreateModal(false)}><XCircle size={20} /></button>
+              </div>
+              <form onSubmit={handleCreateUser} className="mi-modal-form">
+                <div className="mi-field">
+                  <label>Username</label>
+                  <input type="text" value={newUserData.username} onChange={e => setNewUserData({ ...newUserData, username: e.target.value })} required />
+                </div>
+                <div className="mi-field">
+                  <label>Email</label>
+                  <input type="email" value={newUserData.email} onChange={e => setNewUserData({ ...newUserData, email: e.target.value })} required />
+                </div>
+                <div className="mi-field">
+                  <label>Password (Temporary)</label>
+                  <input type="password" value={newUserData.password} onChange={e => setNewUserData({ ...newUserData, password: e.target.value })} required />
+                </div>
+                <div className="mi-field">
+                  <label>Initial Role</label>
+                  <select value={newUserData.role} onChange={e => setNewUserData({ ...newUserData, role: e.target.value })}>
+                    <option value="student">Student</option>
+                    <option value="instructor">Instructor</option>
+                  </select>
+                </div>
+                <button type="submit" className="mi-submit-btn" disabled={creating}>
+                  {creating ? "Creating..." : "Create User"}
+                </button>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

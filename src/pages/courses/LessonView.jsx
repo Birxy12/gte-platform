@@ -15,7 +15,8 @@ import {
     MessageSquare,
     Award,
     HelpCircle,
-    ArrowLeft
+    ArrowLeft,
+    Shield
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -43,7 +44,11 @@ export default function LessonView() {
             try {
                 // 1. Verify Enrollment First
                 const isE = await enrollmentService.isEnrolled(user.uid, courseId);
-                if (!isE) {
+                // Allow instructors/admins anyway
+                const { role } = (await (await import("../../services/userService")).userService.getUser(user.uid)) || {};
+                const hasAccess = isE || role === 'admin' || role === 'instructor';
+
+                if (!hasAccess) {
                     setError("UNAUTHORIZED ACCESS: MISSION ENROLLMENT REQUIRED.");
                     setLoading(false);
                     return;
@@ -74,7 +79,7 @@ export default function LessonView() {
             }
         };
         load();
-    }, [courseId, materialId, user, authLoading]);
+    }, [courseId, materialId, user, authLoading, navigate]);
 
     const handleNext = () => {
         const idx = materials.findIndex(m => m.id === currentMaterial?.id);
@@ -108,7 +113,7 @@ export default function LessonView() {
     );
 
     const currentIndex = materials.findIndex(m => m.id === currentMaterial?.id);
-    const progressPercent = ((currentIndex + 1) / materials.length) * 100;
+    const progressPercent = ((currentIndex + 1) / (materials.length || 1)) * 100;
 
     return (
         <div className="lesson-viewer-layout flex h-screen bg-[#060a14] overflow-hidden text-slate-200">
@@ -137,7 +142,7 @@ export default function LessonView() {
                                     onClick={() => navigate(`/courses/${courseId}/lessons/${m.id}`)}
                                     className={`w-full text-left p-4 rounded-xl flex items-center gap-4 transition-all group ${currentMaterial?.id === m.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'hover:bg-white/5 text-slate-400'}`}
                                 >
-                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black ${currentMaterial?.id === m.id ? 'bg-white/20' : 'bg-slate-800 text-slate-500Group-hover:text-blue-400'}`}>
+                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black ${currentMaterial?.id === m.id ? 'bg-white/20' : 'bg-slate-800 text-slate-500 group-hover:text-blue-400'}`}>
                                         {idx + 1}
                                     </div>
                                     <div className="flex-1 min-w-0">
@@ -213,7 +218,7 @@ export default function LessonView() {
                         <div className="aspect-video w-full bg-slate-900 rounded-3xl overflow-hidden border border-white/10 shadow-2xl relative group">
                             {currentMaterial?.type === 'video' ? (
                                 <iframe 
-                                    src={currentMaterial.url.includes('youtube.com') ? currentMaterial.url.replace('watch?v=', 'embed/') : currentMaterial.url}
+                                    src={currentMaterial.url?.includes('youtube.com') ? currentMaterial.url.replace('watch?v=', 'embed/') : currentMaterial?.url}
                                     title={currentMaterial.title}
                                     className="w-full h-full border-0"
                                     allowFullScreen
@@ -230,7 +235,6 @@ export default function LessonView() {
                                     <div className="max-w-xl">
                                         <h3 className="text-2xl font-black text-white mb-4 uppercase tracking-tighter">{currentMaterial?.title}</h3>
                                         <div className="prose prose-invert prose-blue max-w-none text-slate-400 text-left">
-                                            {/* Render Workflow Content (Could use a Markdown parser here) */}
                                             {currentMaterial?.description || "Mission briefing content is being streamed..."}
                                             {currentMaterial?.content && (
                                                 <div className="mt-8 p-6 bg-blue-600/5 border border-blue-500/20 rounded-2xl">

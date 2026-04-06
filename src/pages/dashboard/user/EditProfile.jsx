@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../../context/AuthProvider";
-import { auth, db, storage } from "../../../config/firebase";
+import { auth, db } from "../../../config/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { updatePassword } from "firebase/auth";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { supabase } from "../../../services/supabase";
 
 const PREDEFINED_AVATARS = [
     "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
@@ -73,9 +73,18 @@ export default function EditProfile() {
             // Upload image if user selected one
             const file = fileRef.current?.files[0];
             if (file) {
-                const storageRef = ref(storage, `avatars/${user.uid}_${Date.now()}`);
-                await uploadBytes(storageRef, file);
-                newPhotoURL = await getDownloadURL(storageRef);
+                const fileName = `avatars/${user.uid}_${Date.now()}`;
+                const { data, error: uploadError } = await supabase.storage
+                    .from('media')
+                    .upload(fileName, file);
+
+                if (uploadError) throw uploadError;
+
+                const { data: { publicUrl } } = supabase.storage
+                    .from('media')
+                    .getPublicUrl(fileName);
+                
+                newPhotoURL = publicUrl;
             }
 
             await setDoc(doc(db, "users", user.uid), {

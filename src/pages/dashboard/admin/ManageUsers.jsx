@@ -62,6 +62,18 @@ export default function ManageUsers() {
     }
   };
 
+  const toggleSuspension = async (id, currentStatus) => {
+    const nextStatus = !currentStatus;
+    try {
+      await updateDoc(doc(db, "users", id), { suspended: nextStatus });
+      setUsers(users.map(u => u.id === id ? { ...u, suspended: nextStatus } : u));
+      alert(`User account ${nextStatus ? "SUSPENDED" : "REINSTATED"} successfully.`);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update suspension status.");
+    }
+  };
+
   const deleteUser = async (id, role) => {
     if (role === "admin") {
       alert("You cannot delete an admin.");
@@ -216,12 +228,21 @@ export default function ManageUsers() {
                         Change Role
                       </button>
                       {user.role !== "admin" && (
-                        <button
-                          className="ad-btn-danger"
-                          onClick={() => deleteUser(user.id, user.role)}
-                        >
-                          Delete
-                        </button>
+                        <>
+                          <button
+                            className={`ad-btn-secondary ${user.suspended ? 'suspended' : ''}`}
+                            style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', border: user.suspended ? '1px solid #ef4444' : '1px solid rgba(255,255,255,0.1)', color: user.suspended ? '#ef4444' : 'inherit' }}
+                            onClick={() => toggleSuspension(user.id, user.suspended || false)}
+                          >
+                            {user.suspended ? "Unsuspend" : "Suspend"}
+                          </button>
+                          <button
+                            className="ad-btn-danger"
+                            onClick={() => deleteUser(user.id, user.role)}
+                          >
+                            Delete
+                          </button>
+                        </>
                       )}
                     </div>
                   </td>
