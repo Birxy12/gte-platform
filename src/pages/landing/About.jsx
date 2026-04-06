@@ -1,13 +1,43 @@
 import { useEffect, useState } from "react";
 import { db } from "../../config/firebase";
 import { collection, getDocs } from "firebase/firestore";
-import { Shield, Target, Zap, Users, ChevronRight, Award, Box, MessageSquare } from "lucide-react";
+import { Shield, Target, Zap, Users, ChevronRight, Award, Box, MessageSquare, Rocket, Globe, BookOpen, Heart, TrendingUp, Calendar, CheckCircle } from "lucide-react";
 import "./About.css";
 import { motion } from "framer-motion";
+
+const milestones = [
+  { year: "2024", title: "Platform Founded", desc: "GTE Portal launched with a mission to transform tech education", icon: Rocket },
+  { year: "2024 Q2", title: "First 1,000 Engineers", desc: "Reached our first milestone of trained tactical engineers", icon: Users },
+  { year: "2024 Q4", title: "Global Expansion", desc: "Expanded to 50+ countries with localized content", icon: Globe },
+  { year: "2025", title: "AI Integration", desc: "Launched AI-powered personalized learning paths", icon: Zap },
+  { year: "2026", title: "Future Vision", desc: "Targeting 100,000+ engineers and enterprise partnerships", icon: TrendingUp }
+];
+
+const differentiators = [
+  {
+    icon: Box,
+    title: "Project-Based Learning",
+    desc: "Build real-world applications, not just theoretical knowledge. Every course includes hands-on projects for your portfolio.",
+    color: "blue"
+  },
+  {
+    icon: Shield,
+    title: "Industry Standards",
+    desc: "Curriculum designed with top tech companies. Learn the exact skills employers are looking for right now.",
+    color: "amber"
+  },
+  {
+    icon: Users,
+    title: "Expert Mentorship",
+    desc: "Get guidance from engineers at Google, Microsoft, Amazon, and other leading tech companies.",
+    color: "green"
+  }
+];
 
 export default function About() {
   const [leadership, setLeadership] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeMilestone, setActiveMilestone] = useState(0);
 
   useEffect(() => {
     const fetchLeadership = async () => {
@@ -27,91 +57,270 @@ export default function About() {
     fetchLeadership();
   }, []);
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: 0.15 } }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 }
+  };
+
   return (
     <div className="about-page">
       {/* Hero Section */}
       <section className="about-hero">
+        <div className="hero-bg-glow"></div>
         <motion.div 
           initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
           className="container mx-auto px-4"
         >
-          <span className="hero-badge">Established 2024</span>
+          <motion.span 
+            className="hero-badge"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.3, type: "spring" }}
+          >
+            <Calendar size={14} /> Established 2024
+          </motion.span>
           <h1>Empowering the Next Generation of <span className="gradient-text">Elite Engineers</span></h1>
           <p className="hero-subtitle">
             GTE Platform is a high-performance ecosystem designed to bridge the gap between 
             theoretical knowledge and tactical execution in modern software engineering.
           </p>
+          <motion.div 
+            className="hero-cta-group"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+          >
+            <a href="/courses" className="btn-primary">
+              Explore Courses <ChevronRight size={18} />
+            </a>
+            <a href="/contact" className="btn-secondary">
+              Contact Us
+            </a>
+          </motion.div>
         </motion.div>
       </section>
 
       {/* Stats Section */}
       <section className="about-stats">
         <div className="container mx-auto px-4">
-          <div className="stats-grid">
-            <div className="stat-card">
+          <motion.div 
+            className="stats-grid"
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+          >
+            <motion.div className="stat-card" variants={itemVariants}>
+              <div className="stat-icon-wrapper blue">
+                <Users size={24} />
+              </div>
               <div className="stat-number">10k+</div>
               <div className="stat-label">Tactical Engineers</div>
-            </div>
-            <div className="stat-card">
+            </motion.div>
+            <motion.div className="stat-card" variants={itemVariants}>
+              <div className="stat-icon-wrapper purple">
+                <BookOpen size={24} />
+              </div>
               <div className="stat-number">50+</div>
               <div className="stat-label">Mission Modules</div>
-            </div>
-            <div className="stat-card">
+            </motion.div>
+            <motion.div className="stat-card" variants={itemVariants}>
+              <div className="stat-icon-wrapper green">
+                <CheckCircle size={24} />
+              </div>
               <div className="stat-number">98%</div>
               <div className="stat-label">Mission Success Rate</div>
-            </div>
+            </motion.div>
+            <motion.div className="stat-card" variants={itemVariants}>
+              <div className="stat-icon-wrapper amber">
+                <Globe size={24} />
+              </div>
+              <div className="stat-number">50+</div>
+              <div className="stat-label">Countries Reached</div>
+            </motion.div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Mission & Vision Section */}
+      <section className="mission-vision-section">
+        <div className="container mx-auto px-4">
+          <div className="mission-vision-grid">
+            <motion.div 
+              className="mission-card"
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              <div className="card-header">
+                <Target className="icon-mission" size={32} />
+                <h3>Our Mission</h3>
+              </div>
+              <p>
+                To democratize elite engineering education by providing accessible, 
+                high-intensity training that transforms beginners into job-ready 
+                professionals through tactical, hands-on learning experiences.
+              </p>
+              <div className="card-accent blue"></div>
+            </motion.div>
+
+            <motion.div 
+              className="vision-card"
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              <div className="card-header">
+                <Rocket className="icon-vision" size={32} />
+                <h3>Our Vision</h3>
+              </div>
+              <p>
+                To become the world's leading platform for engineering excellence, 
+                creating a global community of tactical engineers who drive innovation 
+                and shape the future of technology across every industry.
+              </p>
+              <div className="card-accent purple"></div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* What Makes Us Different */}
+      <section className="differentiators-section">
+        <div className="container mx-auto px-4">
+          <motion.div 
+            className="section-header text-center"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <span className="section-badge">Why Choose Us</span>
+            <h2>What Makes Us <span className="gradient-text">Different</span></h2>
+            <p className="section-subtitle">We don't just teach code. We engineer success.</p>
+          </motion.div>
+
+          <motion.div 
+            className="differentiators-grid"
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+          >
+            {differentiators.map((item, idx) => (
+              <motion.div 
+                key={idx}
+                className={`diff-card ${item.color}`}
+                variants={itemVariants}
+                whileHover={{ y: -10, transition: { duration: 0.2 } }}
+              >
+                <div className={`diff-icon ${item.color}`}>
+                  <item.icon size={28} />
+                </div>
+                <h4>{item.title}</h4>
+                <p>{item.desc}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Journey Timeline */}
+      <section className="timeline-section">
+        <div className="container mx-auto px-4">
+          <motion.div 
+            className="section-header text-center"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <span className="section-badge">Our Journey</span>
+            <h2>The Road to <span className="gradient-text">Excellence</span></h2>
+          </motion.div>
+
+          <div className="timeline-container">
+            <div className="timeline-line"></div>
+            {milestones.map((milestone, idx) => (
+              <motion.div 
+                key={idx}
+                className={`timeline-item ${idx % 2 === 0 ? 'left' : 'right'}`}
+                initial={{ opacity: 0, x: idx % 2 === 0 ? -50 : 50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: idx * 0.1 }}
+                onMouseEnter={() => setActiveMilestone(idx)}
+              >
+                <div className={`timeline-content ${activeMilestone === idx ? 'active' : ''}`}>
+                  <div className="timeline-icon">
+                    <milestone.icon size={20} />
+                  </div>
+                  <span className="timeline-year">{milestone.year}</span>
+                  <h4>{milestone.title}</h4>
+                  <p>{milestone.desc}</p>
+                </div>
+                <div className="timeline-dot"></div>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Strategic Leadership Section */}
-      <section className="bg-slate-950/20 py-24">
+      <section className="leadership-section">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-black text-white mb-4 uppercase tracking-tighter">Strategic <span className="text-blue-500">Leadership</span></h2>
-            <p className="text-slate-500 max-w-2xl mx-auto text-lg">
+          <motion.div 
+            className="section-header text-center"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <span className="section-badge">The Team</span>
+            <h2>Strategic <span className="gradient-text">Leadership</span></h2>
+            <p className="section-subtitle max-w-2xl mx-auto">
               Our elite unit consists of architectural pioneers committed to 
               redefining technical education through precision and engineering excellence.
             </p>
-          </div>
+          </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="leadership-grid">
             {loading ? (
               [1, 2, 3].map(i => (
-                <div key={i} className="leadership-card animate-pulse bg-slate-800/10 h-64 rounded-3xl border border-slate-800" />
+                <div key={i} className="leadership-skeleton" />
               ))
             ) : leadership.length === 0 ? (
-                <div className="col-span-full py-20 text-center bg-slate-900/20 rounded-3xl border border-dashed border-slate-800">
-                    <Users size={48} className="mx-auto text-slate-700 mb-4" />
-                    <p className="text-slate-500 font-mono text-sm uppercase">Strategic unit protocols offline.</p>
-                </div>
+              <div className="empty-state">
+                <Users size={48} className="empty-icon" />
+                <p>Strategic unit protocols offline.</p>
+              </div>
             ) : (
               leadership.map((member, idx) => (
                 <motion.div 
                   key={member.id}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: idx * 0.1 }}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  className="leadership-card group"
+                  transition={{ delay: idx * 0.1 }}
+                  className="leadership-card"
                 >
+                  <div className="card-glow"></div>
                   <div className="card-avatar">
-                     <span className="font-black text-blue-500 text-3xl font-mono">{member.initials}</span>
-                     <div className="avatar-ring" />
+                    <span>{member.initials}</span>
                   </div>
-                  <div className="relative z-10">
-                    <h3 className="text-2xl font-black text-white mb-1 group-hover:text-blue-400 transition-colors uppercase tracking-tight">{member.name}</h3>
-                    <div className="text-[10px] uppercase font-black tracking-[0.2em] text-slate-500 mb-6">{member.role}</div>
-                    <p className="text-sm text-slate-400 mb-8 leading-relaxed line-clamp-3">
-                      {member.bio}
-                    </p>
-                    <div className="flex justify-center gap-6 opacity-30 group-hover:opacity-100 transition-opacity">
-                       <Shield size={18} className="text-slate-400" />
-                       <Award size={18} className="text-slate-400" />
-                       <Target size={18} className="text-slate-400" />
-                    </div>
+                  <h3>{member.name}</h3>
+                  <div className="role-badge">{member.role}</div>
+                  <p className="bio">{member.bio}</p>
+                  <div className="social-links">
+                    <Shield size={16} />
+                    <Award size={16} />
+                    <Target size={16} />
                   </div>
                 </motion.div>
               ))
@@ -120,49 +329,115 @@ export default function About() {
         </div>
       </section>
 
-      {/* Our Values Section */}
-      <section className="about-values py-32">
+      {/* Core Values Section */}
+      <section className="values-section">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
-            <div className="values-content">
-              <h2 className="text-5xl font-black text-white mb-12 uppercase tracking-tighter">Our Core <span className="text-blue-500">Directives</span></h2>
+          <div className="values-grid">
+            <motion.div 
+              className="values-content"
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+            >
+              <span className="section-badge">Our Principles</span>
+              <h2>Our Core <span className="gradient-text">Directives</span></h2>
               
-              <div className="value-item group">
-                <div className="value-icon group-hover:bg-blue-600/20 transition-colors"><Target className="text-blue-500" /></div>
-                <div>
-                  <h4 className="group-hover:text-blue-400 transition-colors">Precision Training</h4>
-                  <p>Every module is optimized for high-retention learning and practical application in real-world scenarios.</p>
+              <div className="value-list">
+                <motion.div 
+                  className="value-item"
+                  whileHover={{ x: 10 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <div className="value-icon blue">
+                    <Target size={24} />
+                  </div>
+                  <div>
+                    <h4>Precision Training</h4>
+                    <p>Every module is optimized for high-retention learning and practical application in real-world scenarios.</p>
+                  </div>
+                </motion.div>
+
+                <motion.div 
+                  className="value-item"
+                  whileHover={{ x: 10 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <div className="value-icon amber">
+                    <Zap size={24} />
+                  </div>
+                  <div>
+                    <h4>Agile Execution</h4>
+                    <p>We believe in building and breaking things fast. Tactical engineering requires rapid iteration and mental fortitude.</p>
+                  </div>
+                </motion.div>
+
+                <motion.div 
+                  className="value-item"
+                  whileHover={{ x: 10 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <div className="value-icon green">
+                    <Shield size={24} />
+                  </div>
+                  <div>
+                    <h4>Operational Security</h4>
+                    <p>In the digital battlefield, security isn't an afterthought. We bake best practices into every engineering workflow.</p>
+                  </div>
+                </motion.div>
+              </div>
+            </motion.div>
+
+            <motion.div 
+              className="values-visual"
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+            >
+              <div className="visual-grid">
+                <div className="visual-box blue">
+                  <Box size={40} />
+                </div>
+                <div className="visual-box amber">
+                  <Zap size={40} />
+                </div>
+                <div className="visual-box purple">
+                  <Users size={40} />
+                </div>
+                <div className="visual-box dark">
+                  <MessageSquare size={40} />
                 </div>
               </div>
-
-              <div className="value-item group">
-                <div className="value-icon group-hover:bg-amber-600/20 transition-colors"><Zap className="text-amber-500" /></div>
-                <div>
-                  <h4 className="group-hover:text-amber-400 transition-colors">Agile Execution</h4>
-                  <p>We believe in building and breaking things fast. Tactical engineering requires rapid iteration and mental fortitude.</p>
-                </div>
-              </div>
-
-              <div className="value-item group">
-                <div className="value-icon group-hover:bg-green-600/20 transition-colors"><Shield className="text-green-500" /></div>
-                <div>
-                  <h4 className="group-hover:text-green-400 transition-colors">Operational Security</h4>
-                  <p>In the digital battlefield, security isn't an afterthought. We bake best practices into every engineering workflow.</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="relative">
-               <div className="visual-grid relative z-10">
-                  <div className="visual-box !bg-blue-500/10 border border-blue-500/20"><Box size={48} className="text-blue-500" /></div>
-                  <div className="visual-box !bg-amber-500/10 border border-amber-500/20"><Zap size={48} className="text-amber-500" /></div>
-                  <div className="visual-box !bg-purple-500/10 border border-purple-500/20"><Users size={48} className="text-purple-500" /></div>
-                  <div className="visual-box !bg-slate-900/30 border border-slate-800"><MessageSquare size={48} className="text-slate-500" /></div>
-               </div>
-               <div className="glow-effect" />
-            </div>
+              <div className="glow-effect"></div>
+            </motion.div>
           </div>
         </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="cta-section">
+        <div className="cta-bg-pattern"></div>
+        <motion.div 
+          className="container mx-auto px-4 text-center"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+        >
+          <h2>Ready to Join the <span className="gradient-text">Elite</span>?</h2>
+          <p>Start your journey today. No prior experience required—just determination and curiosity.</p>
+          <div className="cta-buttons">
+            <a href="/register" className="btn-primary large">
+              Start Learning Free <ChevronRight size={20} />
+            </a>
+            <a href="/courses" className="btn-secondary large">
+              View Curriculum
+            </a>
+          </div>
+          <div className="trust-badges">
+            <span><Heart size={14} /> Loved by 10,000+ students</span>
+            <span><Award size={14} /> Industry recognized</span>
+            <span><Shield size={14} /> Secure & private</span>
+          </div>
+        </motion.div>
       </section>
     </div>
   );
