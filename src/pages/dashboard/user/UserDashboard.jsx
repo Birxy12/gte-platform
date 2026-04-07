@@ -147,6 +147,9 @@ export default function UserDashboard() {
                     <Link to="/dashboard" className={isActive("/dashboard")}>
                         <span className="ud-nav-icon">🏠</span> Overview
                     </Link>
+                    <Link to="/dashboard/inbox" className={isActive("/dashboard/inbox")}>
+                        <span className="ud-nav-icon">📡</span> Comms Center
+                    </Link>
                     <Link to="/dashboard/profile" className={isActive("/dashboard/profile")}>
                         <span className="ud-nav-icon">👤</span> Edit Profile
                     </Link>

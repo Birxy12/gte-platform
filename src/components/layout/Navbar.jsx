@@ -133,10 +133,10 @@ export default function Navbar() {
                 <div className="navbar-actions">
                     {user ? (
                         <div className="user-menu" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', position: 'relative' }}>
-                            <div 
+                             <div 
                                 className="relative mr-2 cursor-pointer text-gray-300 hover:text-white transition-colors" 
-                                title="Notifications"
-                                onClick={() => setShowNotifications(!showNotifications)}
+                                title="Comms Center"
+                                onClick={() => navigate("/dashboard/inbox")}
                             >
                                 <Bell size={20} />
                                 {unreadCount > 0 && (
@@ -209,7 +209,7 @@ export default function Navbar() {
                                         </div>
                                         {notifications.length > 0 && (
                                             <div className="p-3 bg-slate-900/50 border-t border-slate-700 text-center">
-                                                <Link to="/dashboard" className="text-xs text-slate-400 hover:text-white font-bold uppercase tracking-widest transition-colors">
+                                                <Link to="/dashboard/inbox" onClick={() => setShowNotifications(false)} className="text-xs text-slate-400 hover:text-white font-bold uppercase tracking-widest transition-colors">
                                                     View All Intel
                                                 </Link>
                                             </div>

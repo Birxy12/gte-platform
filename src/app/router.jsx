@@ -33,6 +33,7 @@ import UserDashboard from "../pages/dashboard/user/UserDashboard";
 import EditProfile from "../pages/dashboard/user/EditProfile";
 import UserBlogPost from "../pages/dashboard/user/UserBlogPost";
 import MyPosts from "../pages/dashboard/user/MyPosts";
+import Inbox from "../pages/dashboard/user/Inbox";
 
 import InstructorDashboard from "../pages/dashboard/instructor/InstructorDashboard";
 
@@ -85,6 +86,7 @@ export default function Router() {
           <Route path="create-post" element={<UserBlogPost />} />
           <Route path="my-posts" element={<MyPosts />} />
           <Route path="enrolled" element={<EnrolledCourses />} />
+          <Route path="inbox" element={<Inbox />} />
         </Route>
 
         <Route path="/chat" element={<ChatPage />} />
