@@ -54,46 +54,23 @@ export const openAiService = {
         }
     },
 
-    async askAssistant(userMessages) {
-        const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-        if (!apiKey) {
-            console.warn("OpenAI API Key is missing. Chatbot functionalities are offline.");
-            return "To use the AI Chatbot, please provide a valid `VITE_OPENAI_API_KEY` in your `.env` file.";
-        }
-
+    async askAssistant(messages) {
         try {
-            const formattedMessages = [
-                {
-                    role: "system",
-                    content: "You are Birxy, a friendly, helpful, and highly intelligent AI assistant for the GlobixTech learning platform. Your job is to answer user questions about courses, technology, learning, or general inquiries in a concise but engaging manner."
-                },
-                ...userMessages.map(m => ({
-                    role: m.sender === "bot" ? "assistant" : "user",
-                    content: m.text
-                }))
-            ];
-
-            const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            const response = await fetch("/api/chat", {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${apiKey}`,
-                    "HTTP-Referer": window.location.origin,
-                    "X-Title": "GTE Platform"
+                    "Content-Type": "application/json"
                 },
-                body: JSON.stringify({
-                    model: "openai/gpt-3.5-turbo",
-                    messages: formattedMessages,
-                    temperature: 0.7
-                })
+                body: JSON.stringify({ messages })
             });
 
-            const data = await response.json();
             if (!response.ok) {
-                throw new Error(data.error?.message || "Failed to get AI response");
+                const errorData = await response.json();
+                throw new Error(errorData.details || "AI Backend failed to respond");
             }
 
-            return data.choices[0].message.content;
+            const data = await response.json();
+            return data.reply;
         } catch (error) {
             console.error("AI Assistant Error:", error);
             throw error;

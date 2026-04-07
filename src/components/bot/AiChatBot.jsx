@@ -71,16 +71,14 @@ export default function AiChatBot() {
                             <ChevronLeft size={24} />
                         </button>
                         <div className="ai-bot-avatar">
-                            {user?.photoURL ? <img src={user.photoURL} alt="avatar" /> : initials}
+                            <Bot size={24} />
                         </div>
                         <div className="ai-bot-title">
                             <h3>Birxy AI</h3>
-                            <p>Online</p>
+                            <p>Active</p>
                         </div>
                         <div className="ai-bot-actions">
-                            <Video size={18} />
-                            <Phone size={18} />
-                            <MoreVertical size={18} />
+                            <X size={20} className="cursor-pointer opacity-50 hover:opacity-100" onClick={() => setIsOpen(false)} />
                         </div>
                     </div>
 
@@ -91,11 +89,6 @@ export default function AiChatBot() {
                                     {msg.text}
                                     <div className="ai-msg-meta">
                                         <span className="ai-msg-time">{msg.time}</span>
-                                        {msg.sender === 'user' && (
-                                            <div className="ai-msg-status">
-                                                <svg viewBox="0 0 16 15" width="16" height="15" fill="currentColor"><path d="M15.01 3.316l-.478-.372a.365.365 0 00-.51.063L8.666 9.879l-2.031-1.39a.433.433 0 00-.582.08l-.29.395a.434.434 0 00.082.584l2.582 1.768a.482.482 0 00.686-.1l5.865-7.401a.365.365 0 00-.063-.51zm-5.748 7.731c.096.066.213.1.332.1.2 0 .39-.1.517-.267l5.127-6.471a.365.365 0 00-.063-.51l-.478-.372a.365.365 0 00-.51.063l-4.57 5.768a.11.11 0 01-.157.02l-2.031-1.39a.433.433 0 00-.582.08l-.29.395a.434.434 0 00.082.584l2.582 1.768zM2.877 7.822a.433.433 0 00-.582.08l-.29.395a.434.434 0 00.082.584l2.582 1.768a.482.482 0 00.686-.1l3.522-4.444a.365.365 0 00-.063-.51l-.478-.372a.365.365 0 00-.51.063L4.856 9.387 2.877 7.822z"></path></svg>
-                                            </div>
-                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -111,21 +104,16 @@ export default function AiChatBot() {
                     </div>
 
                     <div className="ai-bot-footer">
-                        <button className="ai-footer-btn"><Plus size={22} /></button>
                         <form className="ai-bot-input" onSubmit={handleSend}>
-                            <div className="ai-input-wrapper">
-                                <button type="button" className="ai-inner-icon"><Smile size={20} /></button>
-                                <input
-                                    type="text"
-                                    placeholder="Message"
-                                    value={input}
-                                    onChange={(e) => setInput(e.target.value)}
-                                    disabled={isTyping}
-                                />
-                                <button type="button" className="ai-inner-icon"><Camera size={20} /></button>
-                            </div>
-                            <button type="submit" className="ai-bot-send-main" disabled={isTyping}>
-                                {input.trim() ? <Send size={20} /> : <Mic size={20} />}
+                            <input
+                                type="text"
+                                placeholder="Ask Birxy anything..."
+                                value={input}
+                                onChange={(e) => setInput(e.target.value)}
+                                disabled={isTyping}
+                            />
+                            <button type="submit" className="ai-bot-send-main" disabled={isTyping || !input.trim()}>
+                                <Send size={18} />
                             </button>
                         </form>
                     </div>

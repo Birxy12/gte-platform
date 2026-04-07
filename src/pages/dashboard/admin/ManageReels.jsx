@@ -27,6 +27,7 @@ export default function ManageReels() {
   const [reels, setReels] = useState([]);
   const [missions, setMissions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   
   // Form states
   const [newMission, setNewMission] = useState({ category: "General", prompt: "" });
@@ -39,6 +40,7 @@ export default function ManageReels() {
     
     try {
       setLoading(true);
+      setError(null);
       const [reelsSnap, missionsSnap] = await Promise.all([
         getDocs(collection(db, "reels")),
         missionsService.getMissions()
@@ -47,6 +49,7 @@ export default function ManageReels() {
       setMissions(missionsSnap);
     } catch (err) {
       console.error("Error fetching admin data:", err);
+      setError(err);
     } finally {
       setLoading(false);
     }
@@ -133,6 +136,33 @@ export default function ManageReels() {
 
   if (authLoading) return <div className="ad-card">Verifying security credentials...</div>;
   if (!isAdmin) return <div className="ad-card text-red-500">Access Denied: Admin Level Required</div>;
+  
+  if (error?.code === "permission-denied") {
+    return (
+      <div className="ad-card border-red-500/50 bg-red-500/5">
+        <h2 className="text-red-400 font-bold mb-4 flex items-center gap-2">
+            ⚠️ Security Configuration Required
+        </h2>
+        <p className="text-slate-300 mb-4 font-medium">
+            Access denied to missions collection. You need to update your Firestore security rules.
+        </p>
+        <div className="bg-black/40 p-5 rounded-xl border border-white/5 mb-6">
+            <p className="text-xs text-slate-400 uppercase tracking-widest mb-3 font-bold">Paste this in Firebase Console:</p>
+            <pre className="text-xs text-blue-400 overflow-x-auto leading-relaxed">
+{`match /missions/{missionId} {
+  allow read: if request.auth != null;
+  allow write: if request.auth != null && 
+    get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+}`}
+            </pre>
+        </div>
+        <button onClick={fetchData} className="ad-btn-primary">
+            Retry Connection
+        </button>
+      </div>
+    );
+  }
+
   if (loading && reels.length === 0) return <div className="ad-card">Loading intelligence assets...</div>;
 
   return (
