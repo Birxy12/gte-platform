@@ -19,7 +19,46 @@ export default function AdminSettings() {
         coinToCurrencyRate: 1
     });
 
-    // ... (rest of the code remains the same until the return)
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [message, setMessage] = useState({ type: "", text: "" });
+
+    useEffect(() => {
+        const fetchSettings = async () => {
+            try {
+                const docRef = doc(db, "settings", "global");
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    setSettings(prev => ({ ...prev, ...docSnap.data() }));
+                }
+            } catch (err) {
+                console.error("Error fetching settings:", err);
+                setMessage({ type: "error", text: "Failed to load settings from command center." });
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchSettings();
+    }, []);
+
+    const handleSave = async (e) => {
+        e.preventDefault();
+        setSaving(true);
+        setMessage({ type: "", text: "" });
+
+        try {
+            await setDoc(doc(db, "settings", "global"), settings, { merge: true });
+            setMessage({ type: "success", text: "Global parameters updated successfully. Protocols active." });
+        } catch (err) {
+            console.error("Error saving settings:", err);
+            setMessage({ type: "error", text: "Priority transmission failed. Check connection." });
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    if (loading) return <div className="ad-card">Synchronizing with Command Center...</div>;
 
     return (
         <div className="ad-card" style={{ maxWidth: '800px', margin: '0 0' }}>

@@ -201,5 +201,11 @@ service cloud.firestore {
       allow create: if isAuthenticated();
       allow update, delete: if isInstructor();  // Instructors & admins can moderate
     }
+
+    // --- Mail Templates ---
+    match /mailTemplates/{templateId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
   }
 }
