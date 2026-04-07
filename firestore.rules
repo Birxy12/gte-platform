@@ -30,7 +30,11 @@ service cloud.firestore {
     match /users/{userId} {
       allow read, list: if isAuthenticated();
       allow create: if isOwner(userId);
-      allow update: if isOwner(userId) || isAdmin();
+      allow update: if isOwner(userId) || isAdmin() || (
+        isAuthenticated() && 
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['coins']) && 
+        (request.resource.data.coins == (resource.data.get('coins', 0) + 20))
+      );
       allow delete: if isAdmin();
     }
 

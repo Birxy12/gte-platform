@@ -4,9 +4,9 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword
 } from "firebase/auth";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp, updateDoc, increment, query, collection, where, getDocs } from "firebase/firestore";
 import { useNavigate, Link } from "react-router-dom";
-import { User, Mail, Phone, Lock, ArrowRight } from "lucide-react";
+import { User, Mail, Phone, Lock, ArrowRight, UserPlus } from "lucide-react";
 import { motion } from "framer-motion";
 
 import "./Login.css";
@@ -17,6 +17,7 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
+  const [referralCode, setReferralCode] = useState("");
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -101,8 +102,27 @@ export default function Register() {
         email: normalizedEmail,
         phoneNumber: phoneNumber.trim(),
         role: "user",
+        coins: 0,
         createdAt: serverTimestamp()
       });
+
+      // --- Referral Reward Logic ---
+      if (referralCode.trim()) {
+        try {
+          const q = query(collection(db, "users"), where("username", "==", referralCode.trim()));
+          const snap = await getDocs(q);
+          if (!snap.empty) {
+            const referrerDoc = snap.docs[0];
+            await updateDoc(doc(db, "users", referrerDoc.id), {
+              coins: increment(20)
+            });
+            console.log(`Referral reward of 20 coins sent to ${referralCode}`);
+          }
+        } catch (refErr) {
+          console.error("Error awarding referral coins:", refErr);
+          // We don't block registration if referral award fails
+        }
+      }
 
       navigate("/home");
 
@@ -188,6 +208,18 @@ export default function Register() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+            />
+          </div>
+
+          <div className="input-group">
+            <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <UserPlus size={16} /> Referral Code (Optional)
+            </label>
+            <input
+              type="text"
+              placeholder="Friend's Nickname"
+              value={referralCode}
+              onChange={(e) => setReferralCode(e.target.value)}
             />
           </div>
 

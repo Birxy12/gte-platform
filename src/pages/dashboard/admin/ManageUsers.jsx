@@ -7,8 +7,11 @@ import {
   doc,
   updateDoc,
   setDoc,
-  serverTimestamp
+  setDoc,
+  serverTimestamp,
+  increment
 } from "firebase/firestore";
+import { Coins, Plus } from "lucide-react";
 
 export default function ManageUsers() {
   const [users, setUsers] = useState([]);
@@ -94,6 +97,29 @@ export default function ManageUsers() {
       } else {
         alert("Failed to delete user. Please try again.");
       }
+    }
+  };
+
+  const allocateCoins = async (id, currentCoins) => {
+    const amountStr = window.prompt(`Allocate coins to user (Current: ${currentCoins || 0})\n\nReference Prices:\n- Intro Course: 100 Coins\n- Pro Pack: 500 Coins\n- Masterclass: 1000 Coins`, "100");
+    
+    if (amountStr === null) return;
+    const amount = parseInt(amountStr);
+    
+    if (isNaN(amount) || amount <= 0) {
+      alert("Please enter a valid positive number of coins.");
+      return;
+    }
+
+    try {
+      await updateDoc(doc(db, "users", id), {
+        coins: increment(amount)
+      });
+      setUsers(users.map(u => u.id === id ? { ...u, coins: (u.coins || 0) + amount } : u));
+      alert(`Successfully allocated ${amount} coins to user record.`);
+    } catch (err) {
+      console.error("Error allocating coins:", err);
+      alert("Failed to allocate coins. Access Denied?");
     }
   };
 
@@ -201,6 +227,7 @@ export default function ManageUsers() {
                 <th>Username</th>
                 <th>Email</th>
                 <th>Role</th>
+                <th>Vault Balance</th>
                 <th>Created/Login</th>
                 <th>Actions</th>
               </tr>
@@ -215,6 +242,12 @@ export default function ManageUsers() {
                       {user.role || "user"}
                     </span>
                   </td>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600', color: '#fbbf24' }}>
+                      <Coins size={16} />
+                      {user.coins || 0}
+                    </div>
+                  </td>
                   <td style={{ color: '#64748b', fontSize: '0.85rem' }}>
                     {user.createdAt?.toDate ? user.createdAt.toDate().toLocaleDateString() : 'Manual Record'}
                   </td>
@@ -226,6 +259,13 @@ export default function ManageUsers() {
                         onClick={() => changeRole(user.id, user.role || 'user')}
                       >
                         Change Role
+                      </button>
+                      <button
+                        className="ad-btn-primary"
+                        style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', background: 'linear-gradient(135deg, #fbbf24 0%, #d97706 100%)', border: 'none' }}
+                        onClick={() => allocateCoins(user.id, user.coins || 0)}
+                      >
+                        <Plus size={14} style={{ marginRight: '4px' }} /> Add Coins
                       </button>
                       {user.role !== "admin" && (
                         <>
