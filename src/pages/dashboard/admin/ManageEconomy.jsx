@@ -19,7 +19,19 @@ export default function ManageEconomy() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState({ type: "", text: "" });
-    const [activeTab, setActiveTab] = useState("exchange"); // exchange, pricing, rewards
+    const [activeTab, setActiveTab] = useState("exchange"); // exchange, pricing, rewards, international
+    const [convertAmount, setConvertAmount] = useState(1);
+    const [targetCurrency, setTargetCurrency] = useState("NGN");
+
+    const worldCurrencies = [
+        { code: "USD", name: "US Dollar", flag: "us", rate: 1 },
+        { code: "EUR", name: "Euro", flag: "eu", rate: 0.92 },
+        { code: "GBP", name: "British Pound", flag: "gb", rate: 0.79 },
+        { code: "NGN", name: "Nigerian Naira", flag: "ng", rate: 1200 },
+        { code: "GHS", name: "Ghanaian Cedi", flag: "gh", rate: 12.5 },
+        { code: "KES", name: "Kenyan Shilling", flag: "ke", rate: 145 },
+        { code: "ZAR", name: "South African Rand", flag: "za", rate: 19.1 },
+    ];
 
     useEffect(() => {
         const fetchSettings = async () => {
@@ -107,6 +119,13 @@ export default function ManageEconomy() {
                         onClick={() => setActiveTab('rewards')}
                     >
                         <Save size={16} /> Rewards & Bonuses
+                    </button>
+                    <button 
+                        type="button" 
+                        className={`ad-tab ${activeTab === 'international' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('international')}
+                    >
+                        🌍 Global Exchange
                     </button>
                 </div>
 
@@ -254,6 +273,87 @@ export default function ManageEconomy() {
                                             Awarded every 24 hours of active protocol status.
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {activeTab === 'international' && (
+                        <div className="ad-card" style={{ marginTop: 0 }}>
+                            <div className="flex items-center gap-3 mb-6 border-b border-white/5 pb-4">
+                                <span style={{ fontSize: '1.5rem' }}>🌍</span>
+                                <h3 className="text-xl font-bold text-white mb-0 mt-0">International Currency Dossier</h3>
+                            </div>
+
+                            <p className="text-sm text-slate-400 mb-8">
+                                Tactical currency conversion for agents operating in international territories.
+                            </p>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                {/* Converter Tool */}
+                                <div className="p-6 bg-slate-950 border border-white/5 rounded-3xl">
+                                    <h4 className="text-xs uppercase tracking-widest text-slate-500 mb-6 font-bold">Currency Converter</h4>
+                                    
+                                    <div className="space-y-6">
+                                        <div className="ad-field">
+                                            <label>Base Amount ({settings.baseCurrencyLabel})</label>
+                                            <div className="flex items-center gap-3 bg-slate-900 p-2 rounded-2xl border border-white/5">
+                                                <img src={`https://flagcdn.com/w40/${worldCurrencies.find(c => c.code === settings.baseCurrencyLabel)?.flag || 'us'}.png`} alt="flag" style={{ width: '24px', borderRadius: '4px' }} />
+                                                <input 
+                                                    type="number" 
+                                                    className="bg-transparent border-none outline-none text-white font-bold flex-1"
+                                                    value={convertAmount}
+                                                    onChange={(e) => setConvertAmount(parseFloat(e.target.value))}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="flex justify-center">
+                                            <div className="p-2 bg-slate-800 rounded-full text-slate-500 border border-white/5">
+                                                <ArrowRight size={20} />
+                                            </div>
+                                        </div>
+
+                                        <div className="ad-field">
+                                            <label>Target Currency</label>
+                                            <div className="flex items-center gap-3 bg-slate-900 p-2 rounded-2xl border border-white/5">
+                                                <img src={`https://flagcdn.com/w40/${worldCurrencies.find(c => c.code === targetCurrency)?.flag || 'ng'}.png`} alt="flag" style={{ width: '24px', borderRadius: '4px' }} />
+                                                <select 
+                                                    className="bg-transparent border-none outline-none text-white font-bold flex-1 cursor-pointer"
+                                                    value={targetCurrency}
+                                                    onChange={(e) => setTargetCurrency(e.target.value)}
+                                                >
+                                                    {worldCurrencies.map(c => (
+                                                        <option key={c.code} value={c.code} className="bg-slate-900">{c.code} - {c.name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-4 border-t border-white/5">
+                                            <div className="flex justify-between items-center bg-amber-500/5 p-4 rounded-2xl border border-amber-500/10">
+                                                <span className="text-slate-400 text-sm font-bold lowercase italic">Conversion Result</span>
+                                                <span className="text-white text-xl font-black">
+                                                    { (convertAmount * (worldCurrencies.find(c => c.code === targetCurrency)?.rate || 1)).toLocaleString(undefined, { minimumFractionDigits: 2 }) } {targetCurrency}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Reference Table */}
+                                <div className="space-y-4">
+                                    <h4 className="text-xs uppercase tracking-widest text-slate-500 mb-2 font-bold pl-2">Market Reference</h4>
+                                    {worldCurrencies.map(c => (
+                                        <div key={c.code} className="flex items-center justify-between p-4 bg-slate-900/40 rounded-2xl border border-white/5 hover:bg-slate-900/60 transition-colors">
+                                            <div className="flex items-center gap-3">
+                                                <img src={`https://flagcdn.com/w40/${c.flag}.png`} alt={c.code} style={{ width: '20px', borderRadius: '3px' }} />
+                                                <span className="text-sm font-bold text-slate-200">{c.code}</span>
+                                            </div>
+                                            <div className="text-sm font-mono text-slate-400">
+                                                1 {settings.baseCurrencyLabel} = {c.rate} {c.code}
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                         </div>

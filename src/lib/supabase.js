@@ -1,7 +1,9 @@
 import { createClient } from '@supabase/supabase-js'
 
-const SUPABASE_URL = 'https://njhbnqyamkwlsobqplvm.supabase.co'
-const SUPABASE_ANON_KEY = 'sb_publishable_CuzRSyNGcQ02-iOIQzJbGw_JE9fVTbx'
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://njhbnqyamkwlsobqplvm.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_CuzRSyNGcQ02-iOIQzJbGw_JE9fVTbx';
 
-// ✅ SINGLE instance
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+// ✅ Initialize outside the component to ensure it's a singleton
+// This prevents multiple initializations and orphaned locks in development.
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
