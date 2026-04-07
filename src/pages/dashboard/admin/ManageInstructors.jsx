@@ -29,7 +29,7 @@ import {
   Crown
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import "./Admindashboard.css";
+import "./AdminDashboard.css";
 
 export default function ManageInstructors() {
   const [users, setUsers] = useState([]);
