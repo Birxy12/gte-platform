@@ -7,9 +7,11 @@ import { doc, getDoc, collection, query, where, getDocs, updateDoc, increment } 
 import { StatusFeed } from "../../../components/status/StatusSystem";
 import { progressService } from "../../../services/progressService";
 import CertificateModal from "./CertificateModal";
-import { Award, FileText, Zap, Coins, Shield, Star, Award as MedalIcon, Upload, X } from "lucide-react";
+import { Award, FileText, Zap, Coins, Shield, Star, Upload, X, ChevronRight } from "lucide-react";
 import { reelsService } from "../../../services/reelsService";
 import { socialService } from "../../../services/socialService";
+import { enrollmentService } from "../../../services/enrollmentService";
+import { courseService } from "../../../services/courseService";
 import { ARMY_RANKS, getArmyRank } from "../../../config/armyRanks";
 import TestimonyForm from "../../../components/social/TestimonyForm";
 import "./UserDashboard.css";
@@ -21,6 +23,7 @@ export default function UserDashboard() {
     const [profile, setProfile] = useState(null);
     const [postCount, setPostCount] = useState(0);
     const [completedCourses, setCompletedCourses] = useState([]);
+    const [enrolledCourses, setEnrolledCourses] = useState([]);
     const [selectedCert, setSelectedCert] = useState(null);
     const [purchasing, setPurchasing] = useState(false);
     
@@ -66,10 +69,22 @@ export default function UserDashboard() {
                 setReelsCount(reelsSnap.size);
             } catch (e) { console.error(e); }
         };
+        const loadEnrollments = async () => {
+            try {
+                const enrData = await enrollmentService.getEnrolledCourses(user.uid);
+                // Fetch course details for each enrollment
+                const fullCourses = await Promise.all(enrData.map(async (enr) => {
+                    const course = await courseService.getCourseById(enr.courseId);
+                    return { ...enr, ...course };
+                }));
+                setEnrolledCourses(fullCourses);
+            } catch (e) { console.error("Error loading enrollments:", e); }
+        };
         loadProfile();
         loadPostCount();
         loadProgress();
         loadStats();
+        loadEnrollments();
     }, [user]);
 
     const handleUploadReel = async (e) => {
@@ -275,6 +290,38 @@ export default function UserDashboard() {
                                 <div className="ud-stat-icon">💬</div>
                                 <p className="ud-stat-value">0</p>
                                 <p className="ud-stat-label">Comments</p>
+                            </div>
+                        </div>
+
+                        {/* Enrolled Courses / Mission Logistics */}
+                        <div className="ud-card">
+                            <div className="ud-card-header-flex">
+                                <h3>Mission Logistics: Active Courses</h3>
+                                <Link to="/dashboard/enrolled" className="ud-view-all">Manage All →</Link>
+                            </div>
+                            <div className="ud-enrolled-grid">
+                                {enrolledCourses.length > 0 ? (
+                                    enrolledCourses.slice(0, 3).map(course => (
+                                        <Link to={`/courses/${course.courseId}`} key={course.id} className="ud-enrolled-item">
+                                            <div className="ud-enrolled-icon">📚</div>
+                                            <div className="ud-enrolled-info">
+                                                <h4>{course.title || "Loading..."}</h4>
+                                                <div className="ud-enrolled-meta">
+                                                    <div className="ud-mini-progress">
+                                                        <div className="ud-mini-fill" style={{ width: `${course.progress || 0}%` }}></div>
+                                                    </div>
+                                                    <span>{course.progress || 0}% Ready</span>
+                                                </div>
+                                            </div>
+                                            <ChevronRight size={18} className="ud-enrolled-arrow" />
+                                        </Link>
+                                    ))
+                                ) : (
+                                    <div className="ud-empty-state">
+                                        <p>No active missions found. Visit the academy to begin.</p>
+                                        <Link to="/courses" className="ud-btn-secondary">Explore Courses</Link>
+                                    </div>
+                                )}
                             </div>
                         </div>
 

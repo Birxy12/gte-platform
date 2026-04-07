@@ -23,7 +23,11 @@ export default function InstructorDashboard() {
   const [testimonies, setTestimonies] = useState([]);
   const [quizzes, setQuizzes] = useState([]);
   const [profile, setProfile] = useState(null);
+  const [studentProfiles, setStudentProfiles] = useState({});
   const [loading, setLoading] = useState(true);
+
+  // Materials list state
+  const [courseMaterials, setCourseMaterials] = useState({});
 
   // Materials state
   const [showMaterialForm, setShowMaterialForm] = useState(false);
@@ -63,8 +67,28 @@ export default function InstructorDashboard() {
             const snap = await getDocs(q);
             allEnrollments.push(...snap.docs.map(d => ({ id: d.id, ...d.data() })));
           }
-          setEnrollments(allEnrollments);
-        }
+            setEnrollments(allEnrollments);
+
+            // Fetch unique student profiles
+            const uids = [...new Set(allEnrollments.map(e => e.userId))];
+            const profiles = {};
+            for (let i = 0; i < uids.length; i += 10) {
+              const batch = uids.slice(i, i + 10);
+              const q = query(collection(db, "users"), where("uid", "in", batch));
+              const snap = await getDocs(q);
+              snap.docs.forEach(d => { profiles[d.id] = d.data(); });
+            }
+            setStudentProfiles(profiles);
+
+            // Fetch materials for each course
+            const mats = {};
+            const { courseService } = await import("../../../services/courseService");
+            await Promise.all(courseIds.map(async (cId) => {
+              const m = await courseService.getCourseMaterials(cId).catch(() => []);
+              mats[cId] = m;
+            }));
+            setCourseMaterials(mats);
+          }
 
         // Fetch pending testimonies (instructor can approve)
         const testSnap = await getDocs(query(collection(db, "testimonies"), where("published", "==", false)));
@@ -118,6 +142,11 @@ export default function InstructorDashboard() {
       alert("Material added successfully! 📎");
       setShowMaterialForm(false);
       setMaterialTitle(""); setMaterialUrl(""); setMaterialDesc(""); setMaterialType("pdf");
+      
+      // Refresh local materials state
+      const { courseService } = await import("../../../services/courseService");
+      const updatedMats = await courseService.getCourseMaterials(selectedCourseId);
+      setCourseMaterials(prev => ({ ...prev, [selectedCourseId]: updatedMats }));
     } catch (err) {
       console.error(err);
       alert("Failed to add material.");
@@ -353,9 +382,9 @@ export default function InstructorDashboard() {
                       {enrollments.slice(0, 5).map((enr, idx) => (
                         <motion.div key={enr.id} className="student-item"
                           initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.08 }}>
-                          <div className="student-avatar">{(enr.userId || "U").substring(0, 2).toUpperCase()}</div>
+                          <div className="student-avatar">{(studentProfiles[enr.userId]?.username || "U").substring(0, 2).toUpperCase()}</div>
                           <div className="student-info">
-                            <span className="student-name">{enr.userId?.substring(0, 10)}...</span>
+                            <span className="student-name">{studentProfiles[enr.userId]?.username || enr.userId?.substring(0, 8)}</span>
                             <span className="student-course">{courses.find(c => c.id === enr.courseId)?.title || enr.courseId}</span>
                           </div>
                           <div className="student-progress">
@@ -456,8 +485,15 @@ export default function InstructorDashboard() {
                         <tr key={enr.id}>
                           <td>
                             <div className="table-user">
-                              <div className="user-avatar small">{(enr.userId || "U").substring(0, 2).toUpperCase()}</div>
-                              <span style={{ fontSize: '0.8rem' }}>{enr.userId?.substring(0, 16)}...</span>
+                              <div className="user-avatar small">{(studentProfiles[enr.userId]?.username || "U").substring(0, 2).toUpperCase()}</div>
+                              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#f1f5f9' }}>
+                                  {studentProfiles[enr.userId]?.username || "Unknown Operative"}
+                                </span>
+                                <span style={{ fontSize: '0.7rem', color: '#64748b' }}>
+                                  ID: {studentProfiles[enr.userId]?.studentId || enr.userId?.substring(0, 8)}
+                                </span>
+                              </div>
                             </div>
                           </td>
                           <td>{courses.find(c => c.id === enr.courseId)?.title || enr.courseId}</td>
@@ -559,9 +595,27 @@ export default function InstructorDashboard() {
                         <Plus size={14} /> Add
                       </button>
                     </div>
-                    <p style={{ color: '#64748b', fontSize: '0.83rem', padding: '0 0 0.5rem 0' }}>
+                      <p style={{ color: '#64748b', fontSize: '0.83rem', padding: '0 0 0.5rem 0' }}>
                       Paste PDF links, video URLs, or external resources for students.
                     </p>
+                    
+                    {/* Display existing materials for this course */}
+                    <div className="materials-preview-list">
+                      {courseMaterials[course.id]?.length > 0 ? (
+                        courseMaterials[course.id].map(m => (
+                          <div key={m.id} className="material-preview-item">
+                            <FileText size={14} color="#60a5fa" />
+                            <div className="m-p-info">
+                              <span className="m-p-title">{m.title}</span>
+                              <span className="m-p-meta">{m.type.toUpperCase()} • {new Date(m.createdAt?.seconds * 1000).toLocaleDateString()}</span>
+                            </div>
+                            <a href={m.url} target="_blank" rel="noopener noreferrer" className="m-p-link">View</a>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="m-p-empty">No materials added yet.</div>
+                      )}
+                    </div>
                   </div>
                 ))}
               </motion.div>

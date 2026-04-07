@@ -89,17 +89,19 @@ export default function Register() {
 
       const user = userCredential.user;
 
-      await setDoc(doc(db, "users", user.uid), {
+      // Generate structured student ID: GTE/YEAR/4-DIGITS
+      const regYear = new Date().getFullYear();
+      const randomId = Math.floor(1000 + Math.random() * 9000);
+      const studentId = `GTE/${regYear}/${randomId}`;
 
+      await setDoc(doc(db, "users", user.uid), {
         uid: user.uid,
+        studentId: studentId,
         username: username.trim(),
         email: normalizedEmail,
         phoneNumber: phoneNumber.trim(),
-
         role: "user",
-
         createdAt: serverTimestamp()
-
       });
 
       navigate("/home");
