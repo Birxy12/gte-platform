@@ -42,6 +42,8 @@ export const notificationService = {
             });
 
             onUpdate(notifications, unreadCount, newUnreadIds);
+        }, (error) => {
+            console.error("Firebase Snapshot Error (Notifications):", error);
         });
     },
 

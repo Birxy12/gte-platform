@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthProvider";
 import { auth, db } from "../../config/firebase";
@@ -19,7 +19,7 @@ export default function Navbar() {
     const [unreadCount, setUnreadCount] = useState(0);
     const [notifications, setNotifications] = useState([]);
     const [showNotifications, setShowNotifications] = useState(false);
-    const [notifiedIds, setNotifiedIds] = useState(new Set());
+    const notifiedIdsRef = useRef(new Set());
 
     useEffect(() => {
         if (!user) return;
@@ -32,7 +32,8 @@ export default function Navbar() {
 
             // Trigger Desktop Notification for new unread notifications
             for (const notif of notifs) {
-                if (!notif.read && !notifiedIds.has(notif.id)) {
+                if (!notif.read && !notifiedIdsRef.current.has(notif.id)) {
+                    notifiedIdsRef.current.add(notif.id);
                     // Fetch user info for the notification if needed
                     let senderName = "Someone";
                     if (notif.fromUserId) {
@@ -45,18 +46,12 @@ export default function Navbar() {
                     notificationService.showNotification(`GlobixTech Notification`, {
                         body: notif.message || `New ${notif.type} notification`
                     });
-                    
-                    setNotifiedIds(prev => {
-                        const next = new Set(prev);
-                        next.add(notif.id);
-                        return next;
-                    });
                 }
             }
         });
 
         return () => unsubscribe();
-    }, [user, notifiedIds]);
+    }, [user]);
 
     const handleNotificationClick = async (notif) => {
         if (!notif.read) {
