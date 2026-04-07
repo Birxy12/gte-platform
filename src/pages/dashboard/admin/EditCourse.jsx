@@ -9,7 +9,7 @@ export default function EditCourse() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [course, setCourse] = useState({ 
-        title: "", description: "", videoUrl: "", instructor: "", monthlyPrice: "", annualPrice: "" 
+        title: "", description: "", videoUrl: "", instructor: "", monthlyPrice: "", annualPrice: "", coinCost: 100 
     });
 
     useEffect(() => {
@@ -97,6 +97,17 @@ export default function EditCourse() {
                                 onChange={(e) => setCourse({ ...course, instructor: e.target.value })}
                                 required
                             />
+                        </div>
+
+                        <div className="ad-field">
+                            <label>🪙 Coin Cost</label>
+                            <input
+                                type="number"
+                                min="0"
+                                value={course.coinCost !== undefined ? course.coinCost : ""}
+                                onChange={(e) => setCourse({ ...course, coinCost: parseInt(e.target.value) || 0 })}
+                            />
+                            <small style={{ color: '#64748b', fontSize: '0.75rem' }}>Set to 0 for free access</small>
                         </div>
 
                         <div className="ad-field">

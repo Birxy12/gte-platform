@@ -109,7 +109,44 @@ export default function Navbar() {
 
                 <div className={`navbar-links ${menuOpen ? "open" : ""}`}>
                     <Link to="/home" className={isActive("/home")} onClick={() => setMenuOpen(false)}>Home</Link>
-                    <Link to="/courses" className={isActive("/courses")} onClick={() => setMenuOpen(false)}>Courses</Link>
+                    
+                    {/* Courses Dropdown */}
+                    <div className="relative group">
+                        <Link to="/courses" className={isActive("/courses")} onClick={() => setMenuOpen(false)}>Courses</Link>
+                        
+                        <div className="absolute left-0 mt-4 w-48 bg-slate-900/95 backdrop-blur-xl rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 overflow-hidden border border-slate-700/50 hidden md:block">
+                            <Link 
+                                to="/courses" 
+                                className="block px-4 py-3 text-sm text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
+                                onClick={() => setMenuOpen(false)}
+                            >
+                                📚 Enroll in Catalog
+                            </Link>
+                            {user && (
+                                <Link 
+                                    to="/dashboard/enrolled" 
+                                    className="block px-4 py-3 text-sm text-amber-400 font-bold hover:bg-slate-800 hover:text-amber-300 border-t border-slate-700/50 transition-colors"
+                                    onClick={() => setMenuOpen(false)}
+                                >
+                                    ▶ Continue with Class
+                                </Link>
+                            )}
+                        </div>
+                        
+                        {/* Mobile view sub-links */}
+                        <div className="md:hidden flex flex-col pl-4 mt-2 border-l-2 border-slate-700 gap-2 mb-2">
+                             <Link to="/courses" className="text-sm text-slate-400 hover:text-white" onClick={() => setMenuOpen(false)}>
+                                Enroll Catalog
+                            </Link>
+                            {user && (
+                                <Link to="/dashboard/enrolled" className="text-sm text-amber-500 font-bold" onClick={() => setMenuOpen(false)}>
+                                    Continue Class
+                                </Link>
+                            )}
+                        </div>
+                    </div>
+
+
                     <Link to="/pricing" className={isActive("/pricing")} onClick={() => setMenuOpen(false)}>Pricing</Link>
                     <Link to="/blog" className={isActive("/blog")} onClick={() => setMenuOpen(false)}>Blog</Link>
                     <Link to="/about" className={isActive("/about")} onClick={() => setMenuOpen(false)}>About</Link>
