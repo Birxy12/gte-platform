@@ -19,12 +19,27 @@ export default function LoginAccount() {
     try {
       // Hardcoded Admin Login Intercept
       if (email === "globixtechinc@gmail.com" && password === "@@@@@@@45") {
-        const adminCredential = await signInWithEmailAndPassword(auth, email, password).catch(async (err) => {
+        console.log("Admin intercept triggered.");
+        let adminCredential;
+        try {
+          adminCredential = await signInWithEmailAndPassword(auth, email, password);
+        } catch (err) {
+          console.warn("Admin sign-in failed, checking if user exists:", err.code);
           if (err.code === "auth/invalid-credential" || err.code === "auth/user-not-found") {
-            return await createUserWithEmailAndPassword(auth, email, password);
+            try {
+              adminCredential = await createUserWithEmailAndPassword(auth, email, password);
+            } catch (createErr) {
+              console.error("Admin creation failed:", createErr.code);
+              if (createErr.code === "auth/email-already-in-use") {
+                throw new Error("Admin account exists but password does not match hardcoded value.");
+              }
+              throw createErr;
+            }
+          } else {
+            throw err;
           }
-          throw err;
-        });
+        }
+        
         await setDoc(doc(db, "users", adminCredential.user.uid), {
           uid: adminCredential.user.uid,
           role: "admin",
@@ -37,8 +52,16 @@ export default function LoginAccount() {
       await signInWithEmailAndPassword(auth, email, password);
       navigate("/home");
     } catch (err) {
-      console.error(err);
-      setError("Invalid email or password. Please try again.");
+      console.error("Login error:", err);
+      if (err.code === "auth/invalid-credential") {
+        setError("Invalid credentials. Please double-check your email and password.");
+      } else if (err.code === "auth/user-not-found") {
+        setError("Account not found. Please sign up instead.");
+      } else if (err.code === "auth/wrong-password") {
+        setError("Incorrect password. Please try again.");
+      } else {
+        setError(err.message || "An error occurred during login. Please try again later.");
+      }
     } finally {
       setLoading(false);
     }
