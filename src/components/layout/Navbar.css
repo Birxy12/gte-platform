@@ -6,12 +6,13 @@
     position: sticky;
     top: 0;
     z-index: 1000;
-    font-family: system-ui, -apple-system, sans-serif;
+    font-family: inherit;
 }
 
 .navbar-container {
-    max-width: 1200px;
-    margin: 0 auto;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
     padding: 1rem 2rem;
     display: flex;
     justify-content: space-between;
