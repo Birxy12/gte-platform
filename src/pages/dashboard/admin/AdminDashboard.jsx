@@ -1,9 +1,16 @@
 import { Link, useLocation, useNavigate, Outlet } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { db, auth } from "../../../config/firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, writeBatch, query, where } from "firebase/firestore";
 import { signOut } from "firebase/auth";
-import { Menu, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { presenceService } from "../../../services/presenceService";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  Users, BookOpen, Newspaper, Film, Layout, 
+  Settings, LogOut, PlusCircle, PenTool, 
+  CheckCircle, Shield, Star, HelpCircle, 
+  MessageSquare, Award, Clock, UserCheck, Coins
+} from "lucide-react";
 import "./AdminDashboard.css";
 
 export default function AdminDashboard() {
@@ -13,77 +20,82 @@ export default function AdminDashboard() {
   const [usersCount, setUsersCount] = useState(0);
   const [coursesCount, setCoursesCount] = useState(0);
   const [postsCount, setPostsCount] = useState(0);
-  const [instructorsCount, setInstructorsCount] = useState(0);
-  const [quizzesCount, setQuizzesCount] = useState(0);
   const [reelsCount, setReelsCount] = useState(0);
   const [tasksCount, setTasksCount] = useState(0);
-  const [certificatesCount, setCertificatesCount] = useState(0);
+  const [leadershipCount, setLeadershipCount] = useState(0);
+  const [instructorsCount, setInstructorsCount] = useState(0);
+  const [pendingInstructors, setPendingInstructors] = useState(0);
   const [error, setError] = useState(null);
-  
-  // Sidebar states
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [isMobile, setIsMobile] = useState(false);
 
-  // Detect mobile/desktop
   useEffect(() => {
-    const checkMobile = () => {
-      const mobile = window.innerWidth <= 1024;
-      setIsMobile(mobile);
-      if (mobile) {
-        setSidebarOpen(false);
-      } else {
-        setSidebarOpen(true);
+    const autoApproveTestimonies = async () => {
+      try {
+        const testimoniesRef = collection(db, "testimonies");
+        const q = query(testimoniesRef, where("published", "==", false));
+        const snapshot = await getDocs(q);
+        
+        const now = Date.now();
+        const ONE_HOUR = 60 * 60 * 1000;
+        const toApprove = [];
+
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          if (data.createdAt) {
+            const createdTime = data.createdAt.toMillis ? data.createdAt.toMillis() : new Date(data.createdAt).getTime();
+            if (now - createdTime > ONE_HOUR) {
+              toApprove.push({ ref: doc.ref });
+            }
+          }
+        });
+
+        if (toApprove.length > 0) {
+          const batch = writeBatch(db);
+          toApprove.forEach(item => {
+            batch.update(item.ref, { published: true });
+          });
+          await batch.commit();
+        }
+      } catch (err) {
+        console.error("Auto-approval error:", err);
       }
     };
 
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const [
-          usersSnapshot,
-          coursesSnapshot,
-          postsSnapshot,
-          instructorsSnapshot,
-          quizzesSnapshot,
-          reelsSnapshot,
-          tasksSnapshot,
-          certificatesSnapshot
-        ] = await Promise.all([
+        const [uSnap, cSnap, pSnap, rSnap, tSnap, lSnap, iSnap, pendingSnap] = await Promise.all([
           getDocs(collection(db, "users")),
           getDocs(collection(db, "courses")),
           getDocs(collection(db, "posts")),
-          getDocs(collection(db, "instructors")),
-          getDocs(collection(db, "quizzes")),
           getDocs(collection(db, "reels")),
           getDocs(collection(db, "tasks")),
-          getDocs(collection(db, "certificates"))
+          getDocs(collection(db, "leadership")),
+          getDocs(query(collection(db, "users"), where("role", "in", ["instructor", "pending_instructor"]))),
+          getDocs(query(collection(db, "users"), where("status", "==", "pending")))
         ]);
-
-        setUsersCount(usersSnapshot.size);
-        setCoursesCount(coursesSnapshot.size);
-        setPostsCount(postsSnapshot.size);
-        setInstructorsCount(instructorsSnapshot.size);
-        setQuizzesCount(quizzesSnapshot.size);
-        setReelsCount(reelsSnapshot.size);
-        setTasksCount(tasksSnapshot.size);
-        setCertificatesCount(certificatesSnapshot.size);
+        setUsersCount(uSnap.size);
+        setCoursesCount(cSnap.size);
+        setPostsCount(pSnap.size);
+        setReelsCount(rSnap.size);
+        setTasksCount(tSnap.size);
+        setLeadershipCount(lSnap.size);
+        setInstructorsCount(iSnap.size);
+        setPendingInstructors(pendingSnap.size);
       } catch (err) {
         console.error("Error fetching analytics:", err);
         if (err.code === "permission-denied") {
-          setError("Permission denied. Ensure Firestore rules from [implementation_plan.md] are applied.");
+          setError("Access restricted. Operational clearance required.");
         }
       }
     };
+
+    autoApproveTestimonies();
     fetchAnalytics();
   }, []);
 
   const handleLogout = async () => {
     try {
+      const currentUser = auth.currentUser;
+      if (currentUser) await presenceService.setOffline(currentUser.uid);
       await signOut(auth);
       navigate("/login");
     } catch (error) {
@@ -91,270 +103,261 @@ export default function AdminDashboard() {
     }
   };
 
-  const isActive = (path) => {
-    const baseClass = "ad-nav-item";
-    const activeClass = location.pathname === path || location.pathname.startsWith(`${path}/`) ? " active" : "";
-    return `${baseClass}${activeClass}`;
-  };
-
+  const isActive = (path) => location.pathname === path ? "ad-nav-item active" : "ad-nav-item";
   const isOverview = location.pathname === "/admin";
 
-  const handleNavClick = () => {
-    if (isMobile) {
-      setSidebarOpen(false);
-    }
-  };
-
   return (
-    <div className={`admin-dash ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
-      {/* Mobile Header */}
-      <header className="ad-mobile-header">
-        <button 
-          className="ad-menu-toggle"
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          aria-label="Toggle menu"
-        >
-          {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
-        <span className="ad-mobile-brand">Admin Panel</span>
-        <div style={{ width: 40 }} />
-      </header>
-
-      {/* Overlay for mobile */}
-      {isMobile && sidebarOpen && (
-        <div 
-          className="ad-overlay"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
+    <div className="admin-dash">
       {/* Sidebar */}
-      <aside className={`ad-sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
-        {/* Desktop Toggle Button */}
-        {!isMobile && (
-          <button
-            className="ad-sidebar-toggle"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-          >
-            {sidebarOpen ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
-          </button>
-        )}
-
+      <aside className="ad-sidebar">
         <Link to="/home" className="ad-brand">
-          <span className="ad-nav-icon">🛡️</span>
-          {sidebarOpen && <span>Admin <b>Panel</b></span>}
+          <Shield className="text-blue-500" size={24} />
+          <span>Admin <b>Panel</b></span>
         </Link>
-
         <nav className="ad-nav">
-          {/* Overview */}
-          <Link to="/admin" className={isActive("/admin")} onClick={handleNavClick}>
-            <span className="ad-nav-icon">📊</span>
-            {sidebarOpen && <span>Analytics</span>}
+          <Link to="/admin" className={isActive("/admin")}>
+            <Layout size={18} className="ad-nav-icon" />
+            <span>Overview</span>
           </Link>
-
-          {sidebarOpen && <div className="ad-nav-divider" />}
-
-          {/* Management - All Features with CORRECT ROUTES */}
-          <Link to="/admin/users" className={isActive("/admin/users")} onClick={handleNavClick}>
-            <span className="ad-nav-icon">👥</span>
-            {sidebarOpen && <span>Manage Users</span>}
+          <Link to="/admin/users" className={isActive("/admin/users")}>
+            <Users size={18} className="ad-nav-icon" />
+            <span>Users</span>
           </Link>
-          <Link to="/admin/instructors" className={isActive("/admin/instructors")} onClick={handleNavClick}>
-            <span className="ad-nav-icon">🎓</span>
-            {sidebarOpen && <span>Manage Instructors</span>}
+          <Link to="/admin/instructors" className={isActive("/admin/instructors")}>
+            <UserCheck size={18} className="ad-nav-icon" />
+            <span>Instructors</span>
+            {pendingInstructors > 0 && (
+              <span className="ad-badge">{pendingInstructors}</span>
+            )}
           </Link>
-          <Link to="/admin/manage-courses" className={isActive("/admin/manage-courses")} onClick={handleNavClick}>
-            <span className="ad-nav-icon">📚</span>
-            {sidebarOpen && <span>Manage Courses</span>}
+          <Link to="/admin/manage-courses" className={isActive("/admin/manage-courses")}>
+            <BookOpen size={18} className="ad-nav-icon" />
+            <span>Courses</span>
           </Link>
-          <Link to="/admin/manage-posts" className={isActive("/admin/manage-posts")} onClick={handleNavClick}>
-            <span className="ad-nav-icon">📰</span>
-            {sidebarOpen && <span>Manage Posts</span>}
+          <Link to="/admin/manage-posts" className={isActive("/admin/manage-posts")}>
+            <Newspaper size={18} className="ad-nav-icon" />
+            <span>Posts</span>
           </Link>
-          <Link to="/admin/manage-reels" className={isActive("/admin/manage-reels")} onClick={handleNavClick}>
-            <span className="ad-nav-icon">🎬</span>
-            {sidebarOpen && <span>Manage Reels</span>}
+          <Link to="/admin/manage-reels" className={isActive("/admin/manage-reels")}>
+            <Film size={18} className="ad-nav-icon" />
+            <span>Reels</span>
           </Link>
-          <Link to="/admin/manage-quizzes" className={isActive("/admin/manage-quizzes")} onClick={handleNavClick}>
-            <span className="ad-nav-icon">❓</span>
-            {sidebarOpen && <span>Manage Quizzes</span>}
+          <Link to="/admin/manage-tasks" className={isActive("/admin/manage-tasks")}>
+            <Clock size={18} className="ad-nav-icon" />
+            <span>Tasks</span>
           </Link>
-          <Link to="/admin/certificates" className={isActive("/admin/certificates")} onClick={handleNavClick}>
-            <span className="ad-nav-icon">🏆</span>
-            {sidebarOpen && <span>Manage Certificates</span>}
+          <Link to="/admin/manage-quizzes" className={isActive("/admin/manage-quizzes")}>
+            <HelpCircle size={18} className="ad-nav-icon" />
+            <span>Quizzes</span>
           </Link>
-          <Link to="/admin/manage-tasks" className={isActive("/admin/manage-tasks")} onClick={handleNavClick}>
-            <span className="ad-nav-icon">✅</span>
-            {sidebarOpen && <span>Manage Tasks</span>}
+          <Link to="/admin/certificates" className={isActive("/admin/certificates")}>
+             <Award size={18} className="ad-nav-icon" />
+            <span>Certificates</span>
           </Link>
-          <Link to="/admin/mails" className={isActive("/admin/mails")} onClick={handleNavClick}>
-            <span className="ad-nav-icon">📧</span>
-            {sidebarOpen && <span>Manage Mails</span>}
+          <Link to="/admin/manage-leadership" className={isActive("/admin/manage-leadership")}>
+            <Star size={18} className="ad-nav-icon" />
+            <span>Leadership</span>
           </Link>
-          <Link to="/admin/economy" className={isActive("/admin/economy")} onClick={handleNavClick}>
-            <span className="ad-nav-icon">💰</span>
-            {sidebarOpen && <span>Manage Economy</span>}
+          <Link to="/admin/reports" className={isActive("/admin/reports")}>
+            <Shield size={18} className="ad-nav-icon" />
+            <span>Moderation</span>
           </Link>
-          <Link to="/admin/manage-leadership" className={isActive("/admin/manage-leadership")} onClick={handleNavClick}>
-            <span className="ad-nav-icon">👑</span>
-            {sidebarOpen && <span>Manage Leadership</span>}
+          <Link to="/admin/testimonies" className={isActive("/admin/testimonies")}>
+            <Star size={18} className="ad-nav-icon" />
+            <span>Testimonies</span>
           </Link>
-          <Link to="/admin/testimonies" className={isActive("/admin/testimonies")} onClick={handleNavClick}>
-            <span className="ad-nav-icon">💬</span>
-            {sidebarOpen && <span>Manage Testimonies</span>}
+          <Link to="/admin/mails" className={isActive("/admin/mails")}>
+            <MessageSquare size={18} className="ad-nav-icon" />
+            <span>Mails</span>
           </Link>
-          <Link to="/admin/reports" className={isActive("/admin/reports")} onClick={handleNavClick}>
-            <span className="ad-nav-icon">🛡️</span>
-            {sidebarOpen && <span>Moderation</span>}
+          <Link to="/admin/economy" className={isActive("/admin/economy")}>
+            <Coins size={18} className="ad-nav-icon" />
+            <span>Coin Settings</span>
           </Link>
-
-          {sidebarOpen && <div className="ad-nav-divider" />}
-
-          {/* Create New */}
-          <Link to="/admin/create-course" className={isActive("/admin/create-course")} onClick={handleNavClick}>
-            <span className="ad-nav-icon">✨</span>
-            {sidebarOpen && <span>New Course</span>}
-          </Link>
-          <Link to="/admin/create-post" className={isActive("/admin/create-post")} onClick={handleNavClick}>
-            <span className="ad-nav-icon">🖋️</span>
-            {sidebarOpen && <span>New Post</span>}
-          </Link>
-          <Link to="/admin/create-quiz" className={isActive("/admin/create-quiz")} onClick={handleNavClick}>
-            <span className="ad-nav-icon">📝</span>
-            {sidebarOpen && <span>New Quiz</span>}
-          </Link>
-
-          {sidebarOpen && <div className="ad-nav-divider" />}
-
-          {/* Settings */}
-          <Link to="/admin/settings" className={isActive("/admin/settings")} onClick={handleNavClick}>
-            <span className="ad-nav-icon">⚙️</span>
-            {sidebarOpen && <span>Settings</span>}
+          
+          <div className="mx-4 my-6 h-px bg-slate-800/50" />
+          
+          <Link to="/admin/settings" className={isActive("/admin/settings")}>
+            <Settings size={18} className="ad-nav-icon" />
+            <span>Settings</span>
           </Link>
         </nav>
 
         <button onClick={handleLogout} className="ad-logout">
-          <span className="ad-nav-icon">🚪</span>
-          {sidebarOpen && <span>Sign Out</span>}
+          <LogOut size={18} className="ad-nav-icon" />
+          <span>Sign Out</span>
         </button>
       </aside>
 
-      {/* Main Content Area */}
+      {/* Main Area */}
       <main className="ad-main">
-        {isOverview ? (
-          <>
-            <div className="ad-page-header">
-              <div className="ad-header-title">
-                <h1>Dashboard Overview</h1>
-                <p>Real-time analytics and platform performance</p>
+        <AnimatePresence mode="wait">
+          {isOverview ? (
+            <motion.div 
+              key="overview"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="ad-page-header">
+                <div className="ad-header-title">
+                  <h1>Strategic Intelligence</h1>
+                  <p>Real-time analytics and platform mission status</p>
+                </div>
               </div>
-            </div>
 
-            {error && (
-              <div className="ad-card" style={{ border: '1px solid #ef4444', background: 'rgba(239, 68, 68, 0.05)' }}>
-                <p style={{ color: '#fca5a5', margin: 0, fontSize: '0.9rem' }}>⚠️ {error}</p>
-              </div>
-            )}
-            
-            <div className="ad-stats">
-              <div className="ad-stat">
-                <div className="ad-stat-icon">👥</div>
-                <div>
-                  <p className="ad-stat-value">{usersCount}</p>
-                  <p className="ad-stat-label">Total Users</p>
+              {error && (
+                <div className="ad-card border border-red-500/30 bg-red-500/5">
+                  <p className="text-red-400 font-bold flex items-center gap-2">
+                    <Shield size={18} /> {error}
+                  </p>
                 </div>
-              </div>
-              <div className="ad-stat">
-                <div className="ad-stat-icon">🎓</div>
-                <div>
-                  <p className="ad-stat-value">{instructorsCount}</p>
-                  <p className="ad-stat-label">Instructors</p>
-                </div>
-              </div>
-              <div className="ad-stat">
-                <div className="ad-stat-icon">📚</div>
-                <div>
-                  <p className="ad-stat-value">{coursesCount}</p>
-                  <p className="ad-stat-label">Total Courses</p>
-                </div>
-              </div>
-              <div className="ad-stat">
-                <div className="ad-stat-icon">📰</div>
-                <div>
-                  <p className="ad-stat-value">{postsCount}</p>
-                  <p className="ad-stat-label">Blog Posts</p>
-                </div>
-              </div>
-              <div className="ad-stat">
-                <div className="ad-stat-icon">🎬</div>
-                <div>
-                  <p className="ad-stat-value">{reelsCount}</p>
-                  <p className="ad-stat-label">Reels</p>
-                </div>
-              </div>
-              <div className="ad-stat">
-                <div className="ad-stat-icon">❓</div>
-                <div>
-                  <p className="ad-stat-value">{quizzesCount}</p>
-                  <p className="ad-stat-label">Quizzes</p>
-                </div>
-              </div>
-              <div className="ad-stat">
-                <div className="ad-stat-icon">🏆</div>
-                <div>
-                  <p className="ad-stat-value">{certificatesCount}</p>
-                  <p className="ad-stat-label">Certificates</p>
-                </div>
-              </div>
-              <div className="ad-stat">
-                <div className="ad-stat-icon">✅</div>
-                <div>
-                  <p className="ad-stat-value">{tasksCount}</p>
-                  <p className="ad-stat-label">Tasks</p>
-                </div>
-              </div>
-            </div>
+              )}
 
-            <div className="ad-card">
-              <h3>Quick Actions</h3>
-              <div className="ad-btn-row">
-                <Link to="/admin/create-course" className="ad-btn-primary" style={{ textDecoration: 'none' }}>
-                  ➕ Create New Course
-                </Link>
-                <Link to="/admin/create-post" className="ad-btn-primary" style={{ textDecoration: 'none' }}>
-                  ✍ Write New Blog Post
-                </Link>
-                <Link to="/admin/create-quiz" className="ad-btn-primary" style={{ textDecoration: 'none' }}>
-                  📝 Create New Quiz
-                </Link>
-                <Link to="/admin/users" className="ad-btn-secondary" style={{ textDecoration: 'none' }}>
-                  👥 Manage User Roles
-                </Link>
+              <div className="ad-stats">
+                <div className="ad-stat group">
+                  <div className="ad-stat-icon group-hover:bg-blue-500/20 group-hover:text-blue-400 transition-colors">
+                    <Users size={24} />
+                  </div>
+                  <div>
+                    <p className="ad-stat-value">{usersCount}</p>
+                    <p className="ad-stat-label">Total Users</p>
+                  </div>
+                </div>
+                <div className="ad-stat group">
+                  <div className="ad-stat-icon group-hover:bg-amber-500/20 group-hover:text-amber-400 transition-colors">
+                    <UserCheck size={24} />
+                  </div>
+                  <div>
+                    <p className="ad-stat-value">{instructorsCount}</p>
+                    <p className="ad-stat-label">Instructors</p>
+                    {pendingInstructors > 0 && (
+                      <span className="text-xs text-amber-500 font-bold">{pendingInstructors} pending</span>
+                    )}
+                  </div>
+                </div>
+                <div className="ad-stat group">
+                  <div className="ad-stat-icon group-hover:bg-blue-500/20 group-hover:text-blue-400 transition-colors">
+                    <BookOpen size={24} />
+                  </div>
+                  <div>
+                    <p className="ad-stat-value">{coursesCount}</p>
+                    <p className="ad-stat-label">Tactical Modules</p>
+                  </div>
+                </div>
+                <div className="ad-stat group">
+                  <div className="ad-stat-icon group-hover:bg-blue-500/20 group-hover:text-blue-400 transition-colors">
+                    <Newspaper size={24} />
+                  </div>
+                  <div>
+                    <p className="ad-stat-value">{postsCount}</p>
+                    <p className="ad-stat-label">Intel Briefings</p>
+                  </div>
+                </div>
+                <div className="ad-stat group">
+                  <div className="ad-stat-icon group-hover:bg-blue-500/20 group-hover:text-blue-400 transition-colors">
+                    <Film size={24} />
+                  </div>
+                  <div>
+                    <p className="ad-stat-value">{reelsCount}</p>
+                    <p className="ad-stat-label">Reel Assets</p>
+                  </div>
+                </div>
+                <div className="ad-stat group">
+                  <div className="ad-stat-icon group-hover:bg-blue-500/20 group-hover:text-blue-400 transition-colors">
+                    <Clock size={24} />
+                  </div>
+                  <div>
+                    <p className="ad-stat-value">{tasksCount}</p>
+                    <p className="ad-stat-label">Active Missions</p>
+                  </div>
+                </div>
+                <div className="ad-stat group">
+                  <div className="ad-stat-icon group-hover:bg-blue-500/20 group-hover:text-blue-400 transition-colors">
+                    <Star size={24} />
+                  </div>
+                  <div>
+                    <p className="ad-stat-value">{leadershipCount}</p>
+                    <p className="ad-stat-label">Commanders</p>
+                  </div>
+                </div>
               </div>
-            </div>
 
-            <div className="ad-card">
-              <h3>System Status</h3>
-              <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <div style={{ width: '10px', height: '10px', background: '#10b981', borderRadius: '50%' }} />
-                  <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Database: Online</span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="ad-card">
+                  <h3 className="uppercase tracking-widest text-sm text-slate-500 mb-8 border-b border-slate-800 pb-4">
+                    Fast Deployment
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Link to="/admin/create-course" className="ad-btn-primary flex items-center justify-center gap-2 no-underline">
+                      <PlusCircle size={16} /> New Module
+                    </Link>
+                    <Link to="/admin/create-post" className="ad-btn-primary flex items-center justify-center gap-2 no-underline">
+                      <PenTool size={16} /> New Briefing
+                    </Link>
+                    <Link to="/admin/users" className="ad-btn-secondary flex items-center justify-center gap-2 no-underline">
+                      <Users size={16} /> Manage Units
+                    </Link>
+                    <Link to="/admin/instructors" className="ad-btn-secondary flex items-center justify-center gap-2 no-underline">
+                      <UserCheck size={16} /> Instructors
+                    </Link>
+                  </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <div style={{ width: '10px', height: '10px', background: '#10b981', borderRadius: '50%' }} />
-                  <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Storage: Online</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <div style={{ width: '10px', height: '10px', background: '#10b981', borderRadius: '50%' }} />
-                  <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Auth Service: Online</span>
+
+                <div className="ad-card">
+                  <h3 className="uppercase tracking-widest text-sm text-slate-500 mb-8 border-b border-slate-800 pb-4">
+                    Operational Status
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-3 bg-slate-900/50 rounded-xl border border-slate-800">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                        <span className="text-sm font-bold text-slate-300">Firestore Master Node</span>
+                      </div>
+                      <span className="badge badge-completed">Online</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-slate-900/50 rounded-xl border border-slate-800">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                        <span className="text-sm font-bold text-slate-300">Intelligence Services</span>
+                      </div>
+                      <span className="badge badge-completed">Secure</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-slate-900/50 rounded-xl border border-slate-800">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                        <span className="text-sm font-bold text-slate-300">Automated Protocols</span>
+                      </div>
+                      <span className="badge badge-medium">Active</span>
+                    </div>
+                    {pendingInstructors > 0 && (
+                      <div className="flex items-center justify-between p-3 bg-amber-900/20 rounded-xl border border-amber-800/50">
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                          <span className="text-sm font-bold text-amber-400">Pending Verifications</span>
+                        </div>
+                        <Link to="/admin/instructors" className="badge badge-pending cursor-pointer hover:brightness-110">
+                          {pendingInstructors} Pending
+                        </Link>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          </>
-        ) : (
-          <Outlet />
-        )}
+            </motion.div>
+          ) : (
+            <motion.div
+              key="content"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Outlet />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
     </div>
   );
