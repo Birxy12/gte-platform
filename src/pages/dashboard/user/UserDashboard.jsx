@@ -317,7 +317,7 @@ export default function UserDashboard() {
                             </div>
                             <Link to="/dashboard/enrolled" className="ud-stat" style={{ textDecoration: 'none', cursor: 'pointer' }}>
                                 <div className="ud-stat-icon">📚</div>
-                                <p className="ud-stat-value">{completedCourses.length}</p>
+                                <p className="ud-stat-value">{enrolledCourses.length}</p>
                                 <p className="ud-stat-label">Enrolled Courses</p>
                             </Link>
                             <div className="ud-stat">
