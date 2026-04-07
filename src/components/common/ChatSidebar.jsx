@@ -51,12 +51,12 @@ const ChatSidebar = ({
       style={{ width: '380px', minWidth: '320px', maxWidth: '100vw', height: '100%', flexShrink: 0 }}
     >
       {/* ── Top Bar ── */}
-      <div className="flex items-center justify-between px-4 py-3 bg-[#202c33]">
-        <button onClick={() => {}} className="p-1 rounded-full hover:bg-white/10 transition-colors">
+      <div className="flex items-center justify-between px-4 py-2.5 bg-[#202c33] border-b border-white/5">
+        <button onClick={() => {}} className="p-1 rounded-lg hover:bg-white/5 transition-all active:scale-95">
           <Avatar
             src={user?.photoURL || '/GlobixTech-logo.png'}
             name={user?.displayName || 'Me'}
-            size="small"
+            size="mini"
           />
         </button>
         <h1 className="text-[17px] font-semibold text-white">Chats</h1>

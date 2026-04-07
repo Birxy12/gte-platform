@@ -6,6 +6,7 @@ const Avatar = ({ src, name, size = 'medium', isOnline = false, className = '' }
   const isGroup = name?.toLowerCase().includes('group') || !name; // Heuristic for group icons
   
   const sizeClasses = {
+    mini: 'w-6 h-6 text-[8px]',
     small: 'w-8 h-8 text-[10px]',
     chat:  'w-10 h-10 text-sm',
     medium: 'w-12 h-12 text-sm',
