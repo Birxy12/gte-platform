@@ -28,6 +28,7 @@ import ManageLeadership from "../pages/dashboard/admin/ManageLeadership";
 import ManageInstructors from "../pages/dashboard/admin/ManageInstructors";
 import ManageMails from "../pages/dashboard/admin/ManageMails";
 import CreateQuiz from "../pages/dashboard/admin/CreateQuiz";
+import ManageEconomy from "../pages/dashboard/admin/ManageEconomy";
 
 import EnrolledCourses from "../pages/dashboard/student/EnrolledCourses";
 import UserDashboard from "../pages/dashboard/user/UserDashboard";
@@ -145,6 +146,7 @@ export default function Router() {
           <Route path="certificates" element={<ManageCertificates />} />
           <Route path="manage-leadership" element={<ManageLeadership />} />
           <Route path="mails" element={<ManageMails />} />
+          <Route path="economy" element={<ManageEconomy />} />
           <Route path="create-quiz" element={<CreateQuiz />} />
         </Route>
 

@@ -9,7 +9,7 @@ import {
   Users, BookOpen, Newspaper, Film, Layout, 
   Settings, LogOut, PlusCircle, PenTool, 
   CheckCircle, Shield, Star, HelpCircle, 
-  MessageSquare, Award, Clock, UserCheck
+  MessageSquare, Award, Clock, UserCheck, Coins
 } from "lucide-react";
 import "./AdminDashboard.css";
 
@@ -169,6 +169,10 @@ export default function AdminDashboard() {
           <Link to="/admin/mails" className={isActive("/admin/mails")}>
             <MessageSquare size={18} className="ad-nav-icon" />
             <span>Mails</span>
+          </Link>
+          <Link to="/admin/economy" className={isActive("/admin/economy")}>
+            <Coins size={18} className="ad-nav-icon" />
+            <span>Coin Settings</span>
           </Link>
           
           <div className="mx-4 my-6 h-px bg-slate-800/50" />

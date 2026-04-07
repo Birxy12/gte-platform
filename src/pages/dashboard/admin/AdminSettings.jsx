@@ -166,29 +166,10 @@ export default function AdminSettings() {
                         </div>
                     </div>
 
-                    {/* Section: Economy & Pricing */}
-                    <div className="ad-settings-section">
-                        <h3 style={{ fontSize: '0.9rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)', pb: '0.5rem' }}>Economy & Pricing</h3>
-                        
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                            <div className="ad-field">
-                                <label>Default Course Price (Coins)</label>
-                                <input
-                                    type="number"
-                                    value={settings.defaultCoursePrice || 0}
-                                    onChange={(e) => setSettings({ ...settings, defaultCoursePrice: parseInt(e.target.value) })}
-                                />
-                            </div>
-                            <div className="ad-field">
-                                <label>Coin exchange rate (1 Coin = ?)</label>
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    value={settings.coinToCurrencyRate || 1}
-                                    onChange={(e) => setSettings({ ...settings, coinToCurrencyRate: parseFloat(e.target.value) })}
-                                />
-                            </div>
-                        </div>
+                    <div className="p-4 bg-slate-900/50 rounded-xl border border-white/5 mb-6 text-center">
+                        <p className="text-sm text-slate-400 m-0">
+                            <strong>Note:</strong> Economy, Pricing, and Coin Allocation have been moved to the <a href="/admin/economy" className="text-blue-400 hover:text-blue-300">Coin Settings</a> page.
+                        </p>
                     </div>
 
                     {/* Section: Platform Features */}
