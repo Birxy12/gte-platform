@@ -133,6 +133,32 @@ export default function UserDashboard() {
         navigate("/login");
     };
 
+    const [boosting, setBoosting] = useState(false);
+    const handleBoostProgress = async () => {
+        if (coins < 3) {
+            alert("Not enough coins! You need 3 coins to boost your progress.");
+            return;
+        }
+        setBoosting(true);
+        try {
+            await updateDoc(doc(db, "users", user.uid), {
+                coins: increment(-3),
+                progressBoost: increment(2)
+            });
+            setProfile(prev => ({ 
+                ...prev, 
+                coins: prev.coins - 3, 
+                progressBoost: (prev.progressBoost || 0) + 2 
+            }));
+            alert("🚀 Rank Progress Boosted by 2%!");
+        } catch (err) {
+            console.error("Error boosting progress:", err);
+            alert("Failed to boost progress. Please try again.");
+        } finally {
+            setBoosting(false);
+        }
+    };
+
     const isActive = (path) => location.pathname === path ? "ud-nav-item active" : "ud-nav-item";
     const initials = profile?.username?.substring(0, 2).toUpperCase() || user?.email?.substring(0, 2).toUpperCase() || "U";
     const isOverview = location.pathname === "/dashboard";
@@ -248,21 +274,31 @@ export default function UserDashboard() {
                             </div>
 
                             <div className="ud-progress-section army-mission-box">
-                                <h4 className="army-mission-title">Active Mission Objectives</h4>
+                                <div className="flex justify-between items-center mb-4" style={{ flexWrap: 'wrap', gap: '0.5rem' }}>
+                                    <h4 className="army-mission-title" style={{ margin: 0 }}>Active Mission Objectives</h4>
+                                    <button 
+                                        className="army-btn" 
+                                        style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem', background: 'linear-gradient(135deg, #fbbf24, #d97706)', color: 'white', border: 'none' }}
+                                        onClick={handleBoostProgress}
+                                        disabled={boosting}
+                                    >
+                                        {boosting ? "Boosting..." : "🚀 Boost +2% (Cost: 3 Coins)"}
+                                    </button>
+                                </div>
                                 
                                 <div className="army-task-item">
                                     <div className="army-task-label">Recruit {nextLevelReq.friends} Friends ({friendsCount}/{nextLevelReq.friends})</div>
-                                    <div className="army-progress-bar"><div className="army-progress-fill" style={{ width: `${friendProgress}%` }}></div></div>
+                                    <div className="army-progress-bar"><div className="army-progress-fill" style={{ width: `${Math.min(friendProgress + (profile?.progressBoost || 0), 100)}%` }}></div></div>
                                 </div>
 
                                 <div className="army-task-item">
                                     <div className="army-task-label">Deploy {nextLevelReq.reels} Reels ({reelsCount}/{nextLevelReq.reels})</div>
-                                    <div className="army-progress-bar"><div className="army-progress-fill" style={{ width: `${reelProgress}%` }}></div></div>
+                                    <div className="army-progress-bar"><div className="army-progress-fill" style={{ width: `${Math.min(reelProgress + (profile?.progressBoost || 0), 100)}%` }}></div></div>
                                 </div>
 
                                 <div className="army-task-item">
-                                    <div className="army-task-label">Intelligence Report: Complete Bio ({hasBio ? '100%' : '0%'})</div>
-                                    <div className="army-progress-bar"><div className="army-progress-fill" style={{ width: `${bioProgress}%` }}></div></div>
+                                    <div className="army-task-label">Intelligence Report: Complete Bio ({hasBio ? `${Math.min(100, 100 + (profile?.progressBoost || 0))}%` : `${Math.min(0 + (profile?.progressBoost || 0), 100)}%`})</div>
+                                    <div className="army-progress-bar"><div className="army-progress-fill" style={{ width: `${Math.min(bioProgress + (profile?.progressBoost || 0), 100)}%` }}></div></div>
                                 </div>
                             </div>
                         </div>

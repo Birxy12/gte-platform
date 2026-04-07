@@ -26,6 +26,8 @@ import {
 import PropTypes from 'prop-types';
 import { reelsService } from '../../services/reelsService';
 import { useAuth } from '../../context/AuthProvider';
+import { db } from '../../config/firebase';
+import { updateDoc, doc, increment } from 'firebase/firestore';
 import '../../styles/reels.css';
 
 // Constants
@@ -551,6 +553,7 @@ export default function Reels() {
   const [reels, setReels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const watchedSetRef = useRef(new Set());
   const [activeReelIndex, setActiveReelIndex] = useState(0);
   
   const containerRef = useRef(null);
@@ -608,6 +611,35 @@ export default function Reels() {
     }, SCROLL_THROTTLE_MS),
     [activeReelIndex, reels.length]
   );
+
+  // Watch gamification Hook
+  useEffect(() => {
+    if (reels.length > 0 && user) {
+      const currentReelId = reels[activeReelIndex]?.id;
+      if (currentReelId && !watchedSetRef.current.has(currentReelId)) {
+        watchedSetRef.current.add(currentReelId);
+        
+        if (watchedSetRef.current.size > 0 && watchedSetRef.current.size % 3 === 0) {
+           const giveCoin = async () => {
+              try {
+                 await updateDoc(doc(db, "users", user.uid), {
+                    coins: increment(1)
+                 });
+                 // Basic native toast notification for simplicity
+                 if (window.Notification && Notification.permission === "granted") {
+                     new Notification("GTE Mission", { body: "🎉 You earned 1 Coin for watching 3 reels!" });
+                 } else {
+                     alert("🎉 You earned +1 Coin for watching 3 reels!");
+                 }
+              } catch (e) {
+                 console.error("Error giving coin reward:", e);
+              }
+           };
+           giveCoin();
+        }
+      }
+    }
+  }, [activeReelIndex, reels, user]);
 
   // Touch handling for swipe gestures
   const handleTouchStart = useCallback((e) => {
