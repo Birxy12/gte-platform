@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { db } from "../../../config/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { Coins, Save, TrendingUp, BookOpen, Film, FileText, ArrowRight } from "lucide-react";
+import { mailService } from "../../../services/mailService";
 
 export default function ManageEconomy() {
     const [settings, setSettings] = useState({
@@ -11,7 +12,8 @@ export default function ManageEconomy() {
         videoUnlockPrice: 50,
         pdfUnlockPrice: 20,
         referralBonus: 100,
-        referralRegistrantBonus: 50
+        referralRegistrantBonus: 50,
+        dailyBonusAmount: 50
     });
 
     const [loading, setLoading] = useState(true);
@@ -43,6 +45,12 @@ export default function ManageEconomy() {
 
         try {
             await setDoc(doc(db, "settings", "global"), settings, { merge: true });
+            
+            // Broadcast Email for price update
+            await mailService.broadcastEmail("coin_price_update", {
+                newRate: `1 ${settings.baseCurrencyLabel} = ${settings.coinToCurrencyRate} Coins`
+            });
+
             setMessage({ type: "success", text: "Global economy rates successfully updated." });
         } catch (err) {
             console.error(err);
@@ -172,6 +180,22 @@ export default function ManageEconomy() {
                                     <input type="number" className="w-full bg-slate-950 border border-white/10 rounded px-2 py-1 text-white text-center" 
                                         value={settings.pdfUnlockPrice || 0} 
                                         onChange={(e) => setSettings({...settings, pdfUnlockPrice: parseInt(e.target.value)})}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex items-center justify-between p-3 bg-slate-900/50 rounded-xl border border-white/5">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-amber-500/20 text-amber-400 rounded-lg"><Save size={18} /></div>
+                                    <div>
+                                        <h4 className="font-bold text-slate-200 text-sm m-0">Daily Login Bonus</h4>
+                                        <p className="text-xs text-slate-500 m-0">Reward for daily check-in (Coins)</p>
+                                    </div>
+                                </div>
+                                <div className="w-24">
+                                    <input type="number" className="w-full bg-slate-950 border border-white/10 rounded px-2 py-1 text-white text-center" 
+                                        value={settings.dailyBonusAmount || 0} 
+                                        onChange={(e) => setSettings({...settings, dailyBonusAmount: parseInt(e.target.value)})}
                                     />
                                 </div>
                             </div>

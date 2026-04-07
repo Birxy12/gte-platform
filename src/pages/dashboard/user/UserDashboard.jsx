@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate, Outlet } from "react-router-dom";
 import { useAuth } from "../../../context/AuthProvider";
 import { auth, db } from "../../../config/firebase";
 import { signOut } from "firebase/auth";
-import { doc, getDoc, collection, query, where, getDocs, updateDoc, increment } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, getDocs, updateDoc, increment, serverTimestamp } from "firebase/firestore";
 import { StatusFeed } from "../../../components/status/StatusSystem";
 import { progressService } from "../../../services/progressService";
 import CertificateModal from "./CertificateModal";
@@ -14,6 +14,7 @@ import { enrollmentService } from "../../../services/enrollmentService";
 import { courseService } from "../../../services/courseService";
 import { ARMY_RANKS, getArmyRank } from "../../../config/armyRanks";
 import TestimonyForm from "../../../components/social/TestimonyForm";
+import { mailService } from "../../../services/mailService";
 import "./UserDashboard.css";
 
 export default function UserDashboard() {
@@ -30,12 +31,16 @@ export default function UserDashboard() {
     // Level Tasks Stats
     const [friendsCount, setFriendsCount] = useState(0);
     const [reelsCount, setReelsCount] = useState(0);
+    const [referralCount, setReferralCount] = useState(0);
     
     // Reel Upload State
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [reelFile, setReelFile] = useState(null);
     const [reelDescription, setReelDescription] = useState("");
     const [uploading, setUploading] = useState(false);
+    const [claimingBonus, setClaimingBonus] = useState(false);
+    const [dailyBonusAmount, setDailyBonusAmount] = useState(50);
+    const [lastClaimDate, setLastClaimDate] = useState(null);
 
     useEffect(() => {
         if (!user) return;
@@ -43,7 +48,36 @@ export default function UserDashboard() {
             try {
                 const docRef = doc(db, "users", user.uid);
                 const snap = await getDoc(docRef);
-                if (snap.exists()) setProfile(snap.data());
+                if (snap.exists()) {
+                    const data = snap.data();
+                    setProfile(data);
+                    if (data.lastBonusClaimAt) {
+                        setLastClaimDate(data.lastBonusClaimAt.toDate());
+                    }
+
+                    // Check for low coins and trigger reminder email
+                    const coins = data.coins || 0;
+                    if (coins < 20) {
+                        const lastReminder = data.lastLowCoinEmailAt?.toDate();
+                        const now = new Date();
+                        // Send at most once every 7 days
+                        if (!lastReminder || (now - lastReminder) > 7 * 24 * 60 * 60 * 1000) {
+                            await mailService.sendEmail(user.uid, "low_balance_reminder", {
+                                currentBalance: coins
+                            });
+                            await updateDoc(docRef, {
+                                lastLowCoinEmailAt: serverTimestamp()
+                            });
+                        }
+                    }
+                }
+                
+                // Fetch daily bonus amount from settings
+                const settingsRef = doc(db, "settings", "global");
+                const settingsSnap = await getDoc(settingsRef);
+                if (settingsSnap.exists()) {
+                    setDailyBonusAmount(settingsSnap.data().dailyBonusAmount || 50);
+                }
             } catch (e) { console.error(e); }
         };
         const loadPostCount = async () => {
@@ -67,6 +101,10 @@ export default function UserDashboard() {
                 const reelsQuery = query(collection(db, "reels"), where("userId", "==", user.uid));
                 const reelsSnap = await getDocs(reelsQuery);
                 setReelsCount(reelsSnap.size);
+
+                const referralQuery = query(collection(db, "users"), where("referredBy", "==", user.uid));
+                const referralSnap = await getDocs(referralQuery);
+                setReferralCount(referralSnap.size);
             } catch (e) { console.error(e); }
         };
         const loadEnrollments = async () => {
@@ -131,6 +169,51 @@ export default function UserDashboard() {
     const handleLogout = async () => {
         await signOut(auth);
         navigate("/login");
+    };
+
+    const handleClaimBonus = async () => {
+        if (!user || claimingBonus) return;
+        
+        // Final check: Is it really 24h?
+        const now = new Date();
+        if (lastClaimDate && (now - lastClaimDate) < 24 * 60 * 60 * 1000) {
+            alert("Reward not ready yet, operative. Check back later.");
+            return;
+        }
+
+        setClaimingBonus(true);
+        try {
+            const userRef = doc(db, "users", user.uid);
+            await updateDoc(userRef, {
+                bonusWallet: increment(dailyBonusAmount),
+                lastBonusClaimAt: serverTimestamp()
+            });
+            
+            setProfile(prev => ({
+                ...prev,
+                bonusWallet: (prev?.bonusWallet || 0) + dailyBonusAmount
+            }));
+            setLastClaimDate(new Date());
+            alert(`🎖️ Daily bonus claimed! ${dailyBonusAmount} coins added to your Bonus Wallet.`);
+        } catch (err) {
+            console.error("Error claiming daily bonus:", err);
+            alert("Failed to secure daily bonus. Signal interference detected.");
+        } finally {
+            setClaimingBonus(false);
+        }
+    };
+
+    const getBonusStatus = () => {
+        if (!lastClaimDate) return { ready: true, text: "Ready to Claim" };
+        const now = new Date();
+        const diff = now - lastClaimDate;
+        const cooldown = 24 * 60 * 60 * 1000;
+        if (diff >= cooldown) return { ready: true, text: "Ready to Claim" };
+        
+        const remaining = cooldown - diff;
+        const hours = Math.floor(remaining / (60 * 60 * 1000));
+        const mins = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
+        return { ready: false, text: `${hours}h ${mins}m left` };
     };
 
     const [boosting, setBoosting] = useState(false);
@@ -256,20 +339,58 @@ export default function UserDashboard() {
                                         <p>Current Military Standing</p>
                                     </div>
                                 </div>
-                                <div className="flex gap-3">
-                                    <button 
-                                        className="ud-btn-purchase army-btn"
-                                        onClick={() => setShowUploadModal(true)}
+                                <div className="flex flex-col items-end gap-2">
+                                    <div className="ud-wallet-actions" style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <button 
+                                            className="ud-btn-purchase army-btn"
+                                            onClick={() => setShowUploadModal(true)}
+                                            style={{ padding: '0.5rem 1rem' }}
+                                        >
+                                            <Upload size={18} /> Deploy Reel
+                                        </button>
+                                        <button 
+                                            className="ud-btn-purchase"
+                                            onClick={handlePurchaseCoins}
+                                            disabled={purchasing}
+                                            style={{ padding: '0.5rem 1rem' }}
+                                        >
+                                            {purchasing ? "Processing..." : `Vault: ${coins} 🪙`}
+                                        </button>
+                                    </div>
+                                    <div 
+                                        className="bonus-wallet-pill"
+                                        style={{ 
+                                            background: 'rgba(16, 185, 129, 0.1)', 
+                                            border: '1px solid rgba(16, 185, 129, 0.2)',
+                                            padding: '0.25rem 0.75rem',
+                                            borderRadius: '20px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.5rem',
+                                            fontSize: '0.8rem',
+                                            color: '#10b981'
+                                        }}
                                     >
-                                        <Upload size={18} /> Upload Reel
-                                    </button>
-                                    <button 
-                                        className="ud-btn-purchase"
-                                        onClick={handlePurchaseCoins}
-                                        disabled={purchasing}
-                                    >
-                                        {purchasing ? "Processing..." : `Vault: ${coins} Coins`}
-                                    </button>
+                                        <Star size={14} fill="#10b981" />
+                                        <span>Bonus: {profile?.bonusWallet || 0} 🪙</span>
+                                        <button 
+                                            onClick={handleClaimBonus}
+                                            disabled={!getBonusStatus().ready || claimingBonus}
+                                            style={{
+                                                background: getBonusStatus().ready ? '#10b981' : 'transparent',
+                                                border: 'none',
+                                                color: getBonusStatus().ready ? 'white' : '#64748b',
+                                                padding: '2px 8px',
+                                                borderRadius: '4px',
+                                                marginLeft: '4px',
+                                                cursor: getBonusStatus().ready ? 'pointer' : 'default',
+                                                fontSize: '0.7rem',
+                                                fontWeight: 'bold'
+                                            }}
+                                        >
+                                            {claimingBonus ? "..." : getBonusStatus().text}
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
@@ -329,6 +450,11 @@ export default function UserDashboard() {
                                 <div className="ud-stat-icon">💬</div>
                                 <p className="ud-stat-value">0</p>
                                 <p className="ud-stat-label">Comments</p>
+                            </div>
+                            <div className="ud-stat">
+                                <div className="ud-stat-icon">🤝</div>
+                                <p className="ud-stat-value">{referralCount}</p>
+                                <p className="ud-stat-label">Referrals</p>
                             </div>
                         </div>
 

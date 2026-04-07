@@ -140,6 +140,7 @@ export default function Register() {
         phoneNumber: phoneNumber.trim(),
         role: "user",
         coins: initialCoins,
+        referredBy: referrerId || null,
         createdAt: serverTimestamp()
       });
 

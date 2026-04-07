@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { db } from "../../../config/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
+import { mailService } from "../../../services/mailService";
 
 export default function AdminSettings() {
     const [settings, setSettings] = useState({
@@ -22,6 +23,8 @@ export default function AdminSettings() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState({ type: "", text: "" });
+    const [broadcasting, setBroadcasting] = useState(false);
+    const [featureDetails, setFeatureDetails] = useState("");
 
     useEffect(() => {
         const fetchSettings = async () => {
@@ -55,6 +58,23 @@ export default function AdminSettings() {
             setMessage({ type: "error", text: "Priority transmission failed. Check connection." });
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleBroadcastFeatures = async () => {
+        if (!featureDetails.trim() || broadcasting) return;
+        setBroadcasting(true);
+        try {
+            await mailService.broadcastEmail("new_features_added", {
+                featureDetails: featureDetails.trim()
+            });
+            setMessage({ type: "success", text: "Global feature announcement broadcasted to all operatives." });
+            setFeatureDetails("");
+        } catch (err) {
+            console.error(err);
+            setMessage({ type: "error", text: "Failed to broadcast update." });
+        } finally {
+            setBroadcasting(false);
         }
     };
 
@@ -234,6 +254,28 @@ export default function AdminSettings() {
                             rows={3}
                             style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0.75rem', borderRadius: '8px' }}
                         />
+                    </div>
+
+                    {/* New Features Broadcast */}
+                    <div className="ad-settings-section" style={{ marginTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '2rem' }}>
+                        <h3 style={{ fontSize: '0.9rem', textTransform: 'uppercase', color: '#10b981', letterSpacing: '0.05em', marginBottom: '1rem' }}>Broadband Broadcast: New Features</h3>
+                        <p style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Announce new capabilities to all registered users via email.</p>
+                        <textarea 
+                            placeholder="Detail the new features here..."
+                            value={featureDetails}
+                            onChange={(e) => setFeatureDetails(e.target.value)}
+                            rows={4}
+                            style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0.75rem', borderRadius: '8px', marginBottom: '1rem' }}
+                        />
+                        <button 
+                            type="button"
+                            onClick={handleBroadcastFeatures}
+                            disabled={broadcasting || !featureDetails.trim()}
+                            className="ad-btn-secondary"
+                            style={{ background: '#10b981', color: 'white', border: 'none' }}
+                        >
+                            {broadcasting ? "Transmitting..." : "📡 Broadcast New Features"}
+                        </button>
                     </div>
 
                 </div>

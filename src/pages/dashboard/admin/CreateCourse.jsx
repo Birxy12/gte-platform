@@ -2,6 +2,7 @@ import { useState } from "react";
 import { db } from "../../../config/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
+import { mailService } from "../../../services/mailService";
 
 export default function CreateCourse() {
   const navigate = useNavigate();
@@ -33,6 +34,13 @@ export default function CreateCourse() {
         enrolledCount: 0,
         createdAt: serverTimestamp()
       });
+      
+      // Trigger Broadcast Email
+      await mailService.broadcastEmail("new_course_added", {
+        courseName: title.trim(),
+        courseDescription: description.trim()
+      });
+
       alert("Education course created successfully! 🎓");
       navigate("/admin/manage-courses");
     } catch (err) {
