@@ -75,13 +75,13 @@ export default function EditProfile() {
             if (file) {
                 const fileName = `avatars/${user.uid}_${Date.now()}`;
                 const { data, error: uploadError } = await supabase.storage
-                    .from('media')
+                    .from('reels')
                     .upload(fileName, file);
 
                 if (uploadError) throw uploadError;
 
                 const { data: { publicUrl } } = supabase.storage
-                    .from('media')
+                    .from('reels')
                     .getPublicUrl(fileName);
                 
                 newPhotoURL = publicUrl;
