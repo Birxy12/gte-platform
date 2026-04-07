@@ -166,6 +166,10 @@ export default function AdminDashboard() {
             <Star size={18} className="ad-nav-icon" />
             <span>Testimonies</span>
           </Link>
+          <Link to="/admin/mails" className={isActive("/admin/mails")}>
+            <MessageSquare size={18} className="ad-nav-icon" />
+            <span>Mails</span>
+          </Link>
           
           <div className="mx-4 my-6 h-px bg-slate-800/50" />
           

@@ -4,7 +4,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword
 } from "firebase/auth";
-import { doc, setDoc, serverTimestamp, updateDoc, increment, query, collection, where, getDocs } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp, updateDoc, increment, query, collection, where, getDocs, getDoc } from "firebase/firestore";
 import { useNavigate, Link } from "react-router-dom";
 import { User, Mail, Phone, Lock, ArrowRight, UserPlus } from "lucide-react";
 import { motion } from "framer-motion";
@@ -98,13 +98,33 @@ export default function Register() {
       // --- Referral & Initial Coins Logic ---
       let initialCoins = 0;
       let referrerId = null;
+      let referralBonus = 20; // Default Referrer bonus
+      let registrantBonus = 20; // Default Registrant bonus
 
-      if (referralCode.trim()) {
+      // Fetch global economy settings
+      try {
+        const settingsSnap = await getDoc(doc(db, "settings", "global"));
+        if (settingsSnap.exists()) {
+          const settings = settingsSnap.data();
+          if (settings.referralEnabled !== false) {
+             referralBonus = settings.referralBonus || 20;
+             registrantBonus = settings.referralRegistrantBonus || 20;
+          } else {
+             // System disabled, force 0
+             referralBonus = 0;
+             registrantBonus = 0;
+          }
+        }
+      } catch (err) {
+        console.error("Economy settings fetch error:", err);
+      }
+
+      if (referralCode.trim() && registrantBonus > 0) {
         try {
           const q = query(collection(db, "users"), where("username", "==", referralCode.trim()));
           const snap = await getDocs(q);
           if (!snap.empty) {
-            initialCoins = 20; // Registrant gets 20 bonus coins
+            initialCoins = registrantBonus;
             referrerId = snap.docs[0].id;
           }
         } catch (refErr) {
@@ -124,9 +144,9 @@ export default function Register() {
       });
 
       // Award Referrer if valid
-      if (referrerId) {
+      if (referrerId && referralBonus > 0) {
         await updateDoc(doc(db, "users", referrerId), {
-          coins: increment(20)
+          coins: increment(referralBonus)
         });
       }
 
