@@ -2,58 +2,63 @@ import React, { useState, useEffect } from 'react';
 import { Sparkles, RefreshCw, Share2, Clipboard, History, Video, Layers, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const PROMPT_CATEGORIES = {
-    "All": [
-        "Show your hidden talent in 15 seconds!",
-        "Create a dance using only your desk and chair.",
-        "Explain your favorite tech gadget in 10 seconds.",
-        "Turn your pet into the main character of a movie scene.",
-        "Make a before-and-after transformation clip.",
-        "React to the most recent photo in your gallery.",
-        "Do a 30-second rapid fire Q&A about your hobby.",
-        "Show us your workspace setup in cinematic shots.",
-        "Try to explain a complex concept using only emojis.",
-        "Film a 'Day in the life' but only with 1-second clips."
-    ],
-    "Tech": [
-        "Explain your favorite tech gadget in 10 seconds.",
-        "Show us your workspace setup in cinematic shots.",
-        "What's one tech tool you can't live without?",
-        "Review a piece of software in 30 seconds.",
-        "Show a quick 'Hello World' in a language you're learning."
-    ],
-    "Comedy": [
-        "Re-enact a famous movie scene with a funny twist.",
-        "Show your 'expectation vs reality' of a weekend project.",
-        "Try not to laugh challenge with your own jokes.",
-        "Do an impression of a famous tech CEO.",
-        "The struggle of debugging code in 15 seconds."
-    ],
-    "Lifestyle": [
-        "Show your morning routine in fast forward.",
-        "What's in your everyday carry (EDC) bag?",
-        "Quick healthy snack hack.",
-        "A 15-second tour of your favorite local spot.",
-        "Your top 3 productivity tips for creators."
-    ]
-};
+import { missionsService } from '../../services/missionsService';
 
 export default function ReelPrompt({ onDeployMission }) {
+    const [missions, setMissions] = useState([]);
+    const [categories, setCategories] = useState(["All"]);
     const [category, setCategory] = useState("All");
     const [currentPrompt, setCurrentPrompt] = useState("");
     const [history, setHistory] = useState([]);
     const [showHistory, setShowHistory] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        generatePrompt();
-    }, [category]);
+        const fetchMissions = async () => {
+            try {
+                const data = await missionsService.getMissions();
+                setMissions(data);
+                
+                // Extract unique categories
+                const uniqueCats = ["All", ...new Set(data.map(m => m.category || "General"))];
+                setCategories(uniqueCats);
+                
+                if (data.length > 0) {
+                    // Initial prompt
+                    const initial = data[Math.floor(Math.random() * data.length)];
+                    setCurrentPrompt(initial.prompt);
+                } else {
+                    setCurrentPrompt("No missions assigned by Command HQ yet.");
+                }
+            } catch (err) {
+                console.error("Error fetching missions:", err);
+                setCurrentPrompt("Error loading mission database.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchMissions();
+    }, []);
 
     const generatePrompt = () => {
+        if (missions.length === 0) return;
+        
         setIsGenerating(true);
-        const categoryPrompts = PROMPT_CATEGORIES[category];
-        const randomIndex = Math.floor(Math.random() * categoryPrompts.length);
-        const newPrompt = categoryPrompts[randomIndex];
+        
+        const filteredMissions = category === "All" 
+            ? missions 
+            : missions.filter(m => (m.category || "General") === category);
+
+        if (filteredMissions.length === 0) {
+            setCurrentPrompt(`No missions found for ${category}.`);
+            setIsGenerating(false);
+            return;
+        }
+
+        const randomIndex = Math.floor(Math.random() * filteredMissions.length);
+        const newPrompt = filteredMissions[randomIndex].prompt;
         
         setTimeout(() => {
             setCurrentPrompt(newPrompt);
@@ -61,6 +66,10 @@ export default function ReelPrompt({ onDeployMission }) {
             setIsGenerating(false);
         }, 400);
     };
+
+    useEffect(() => {
+        if (!loading) generatePrompt();
+    }, [category]);
 
     const copyToClipboard = () => {
         navigator.clipboard.writeText(currentPrompt);
@@ -81,7 +90,7 @@ export default function ReelPrompt({ onDeployMission }) {
                 </div>
                 
                 <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
-                    {Object.keys(PROMPT_CATEGORIES).map(cat => (
+                    {categories.map(cat => (
                         <button
                             key={cat}
                             onClick={() => setCategory(cat)}

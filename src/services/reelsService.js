@@ -56,20 +56,18 @@ export const reelsService = {
             videoUrl,
             description,
             storagePath,
-            likes: [],
-            comments: [],
-            shares: 0,
-            
-            // New Advanced Meta
+            // Meta
             music: options.music || "Original Audio",
             filter: options.filter || "none",
             textOverlays: options.textOverlays || [],
             stickers: options.stickers || [],
-            // Repost / Duet Meta
-            isRepost: options.isRepost || false,
-            originalReelId: options.originalReelId || null,
-            isDuet: options.isDuet || false,
-            duetVideoUrl: options.duetVideoUrl || null,
+            
+            // Interaction & Admin
+            isAd: options.isAd || false,
+            isPromotional: options.isPromotional || options.isAd || false,
+            likes: [],
+            comments: [],
+            shares: 0,
             
             createdAt: serverTimestamp()
         });

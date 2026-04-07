@@ -44,6 +44,7 @@ import DiscoverUsers from "../pages/social/DiscoverUsers";
 import Reels from "../pages/social/Reels";
 import Leaderboard from "../pages/social/Leaderboard";
 import PublicProfile from "../pages/social/PublicProfile";
+import CreateReel from "../pages/social/CreateReel";
 
 import ProtectedRoute from "../components/common/ProtectedRoute";
 import AdminRoute from "../routes/AdminRoute";
@@ -100,6 +101,12 @@ export default function Router() {
         <Route path="/reels" element={
           <ProtectedRoute>
             <Reels />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/reels/create" element={
+          <ProtectedRoute>
+            <CreateReel />
           </ProtectedRoute>
         } />
 

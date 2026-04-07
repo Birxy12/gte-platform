@@ -18,7 +18,10 @@ import {
   X, 
   Send,
   Play,
-  Pause
+  Pause,
+  Megaphone,
+  Plus,
+  Video
 } from 'lucide-react';
 import PropTypes from 'prop-types';
 import { reelsService } from '../../services/reelsService';
@@ -43,7 +46,7 @@ const throttle = (func, limit) => {
 
 // Individual Reel Component (memoized for performance)
 const Reel = memo(function Reel({ data, isActive, onDeleted }) {
-  const { user } = useAuth();
+  const { user, loading: authLoading, isAdmin } = useAuth();
   const videoRef = useRef(null);
   
   // State
@@ -138,6 +141,7 @@ const Reel = memo(function Reel({ data, isActive, onDeleted }) {
 
   const toggleLike = useCallback(async (e) => {
     e.stopPropagation();
+    if (authLoading) return;
     if (!user) {
       alert('Please log in to like this video');
       return;
@@ -260,6 +264,8 @@ const Reel = memo(function Reel({ data, isActive, onDeleted }) {
         playsInline
         muted={!isActive} // Mute when not active to prevent audio overlap
         onClick={togglePlay}
+        onContextMenu={(e) => e.preventDefault()}
+        controlsList="nodownload"
         preload="metadata"
         aria-label="Reel video"
       />
@@ -313,8 +319,13 @@ const Reel = memo(function Reel({ data, isActive, onDeleted }) {
               >
                 {data.authorName}
               </Link>
-              <span className="author-tag">Creator</span>
+              <span className="author-tag">{data.isAd ? 'Promoted' : 'Creator'}</span>
             </div>
+            {data.isAd && (
+              <div className="ad-badge-premium">
+                <Megaphone size={12} fill="currentColor" /> AD
+              </div>
+            )}
           </div>
           
           <p className="reel-description">{data.description}</p>
@@ -352,13 +363,15 @@ const Reel = memo(function Reel({ data, isActive, onDeleted }) {
             count={data.shares || 0}
           />
 
-          <ActionButton 
-            onClick={handleDownload}
-            icon={<Download size={28} />}
-            label="Save"
-          />
+          {(isOwner || isAdmin) && (
+            <ActionButton 
+              onClick={handleDownload}
+              icon={<Download size={28} />}
+              label="Save"
+            />
+          )}
 
-          {isOwner && (
+          {(isOwner || isAdmin) && (
             <ActionButton 
               onClick={handleDelete}
               icon={<Trash2 size={28} />}
@@ -676,7 +689,7 @@ export default function Reels() {
         {reels.length === 0 ? (
           <div className="no-reels">
             <p>No reels yet. Be the first to create one!</p>
-            <Link to="/create" className="create-btn">Create Reel</Link>
+            <Link to="/reels/create" className="create-btn">Create Reel</Link>
           </div>
         ) : (
           reels.map((reel, index) => (
@@ -689,6 +702,11 @@ export default function Reels() {
           ))
         )}
       </div>
+
+      {/* Primary Action Button (Create Reel) */}
+      <Link to="/reels/create" className="reels-fab" aria-label="Create New Reel">
+        <Plus size={32} />
+      </Link>
       
       {/* Progress Indicator */}
       {reels.length > 0 && (
