@@ -183,6 +183,9 @@ export default function UserDashboard() {
                     <Link to="/dashboard/enrolled" className={isActive("/dashboard/enrolled")}>
                         <span className="ud-nav-icon">🎓</span> Learning Journey
                     </Link>
+                    <Link to="/reels/create" className="ud-nav-item">
+                        <span className="ud-nav-icon">🎥</span> Deploy Reel
+                    </Link>
                     <Link to="/blog" className="ud-nav-item">
                         <span className="ud-nav-icon">📝</span> Blog
                     </Link>

@@ -1,6 +1,18 @@
 // Service to analyze user reports using OpenAI
 // Note: Ensure VITE_OPENAI_API_KEY is placed in your .env file
 
+const handleJsonResponse = async (response) => {
+    const contentType = response.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("AI Backend returned unexpected response format (non-JSON). Contact sysadmin.");
+    }
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.error || data.details || "AI Task failed");
+    }
+    return data;
+};
+
 export const openAiService = {
     async evaluateReport(reason, details, userMessages = []) {
         try {
@@ -9,12 +21,7 @@ export const openAiService = {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ reason, details, userMessages })
             });
-
-            if (!response.ok) {
-                const data = await response.json();
-                throw new Error(data.error || "Moderation failed");
-            }
-            return await response.json();
+            return await handleJsonResponse(response);
         } catch (error) {
             console.error("Moderation Error:", error);
             throw error;
@@ -28,13 +35,7 @@ export const openAiService = {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ messages })
             });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.details || "AI Backend failed");
-            }
-
-            const data = await response.json();
+            const data = await handleJsonResponse(response);
             return data.reply;
         } catch (error) {
             console.error("AI Assistant Error:", error);
@@ -49,12 +50,7 @@ export const openAiService = {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ text })
             });
-
-            if (!response.ok) {
-                const data = await response.json();
-                throw new Error(data.error || "Quiz generation failed");
-            }
-            return await response.json();
+            return await handleJsonResponse(response);
         } catch (error) {
             console.error("AI Quiz Parsing Error:", error);
             throw error;

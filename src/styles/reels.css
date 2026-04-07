@@ -4,11 +4,11 @@
   --reels-accent: #3b82f6;
   --reels-glass: rgba(15, 23, 42, 0.6);
   --reels-border: rgba(255, 255, 255, 0.1);
-  --font-xs: clamp(0.65rem, 2vw, 0.75rem);
-  --font-sm: clamp(0.75rem, 2vw, 0.875rem);
-  --font-base: clamp(0.875rem, 2.5vw, 1rem);
-  --font-lg: clamp(1rem, 3vw, 1.25rem);
-  --icon-size: clamp(24px, 5vw, 32px);
+  --font-xs: clamp(0.7rem, 2.2vw, 0.8rem);
+  --font-sm: clamp(0.8rem, 2.5vw, 0.95rem);
+  --font-base: clamp(0.9rem, 3vw, 1.1rem);
+  --font-lg: clamp(1.1rem, 4vw, 1.4rem);
+  --icon-size: clamp(28px, 6vw, 36px);
 }
 
 .reels-page-wrapper {
