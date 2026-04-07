@@ -191,7 +191,7 @@ export const chatService = {
                 statuses[doc.id] = doc.data().status;
             });
             callback(statuses);
-        });
+        }, (error) => console.error("Chat Status Subscription Error:", error));
     },
 
     // Delete message (Admins or sender)
