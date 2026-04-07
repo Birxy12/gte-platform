@@ -7,7 +7,6 @@ import {
   doc,
   updateDoc,
   setDoc,
-  setDoc,
   serverTimestamp,
   increment
 } from "firebase/firestore";
@@ -101,7 +100,16 @@ export default function ManageUsers() {
   };
 
   const allocateCoins = async (id, currentCoins) => {
-    const amountStr = window.prompt(`Allocate coins to user (Current: ${currentCoins || 0})\n\nReference Prices:\n- Intro Course: 100 Coins\n- Pro Pack: 500 Coins\n- Masterclass: 1000 Coins`, "100");
+    const amountStr = window.prompt(
+      `ALLOCATE VAULT COINS (Current: ${currentCoins || 0})\n\n` +
+      `Price Reference:\n` +
+      `- Intro Mission: 100 Coins\n` +
+      `- Advanced Operative Pack: 500 Coins\n` +
+      `- Elite Masterclass: 1000 Coins\n` +
+      `- Full Curriculum Access: 5000 Coins\n\n` +
+      `Enter exact amount to award:`, 
+      "100"
+    );
     
     if (amountStr === null) return;
     const amount = parseInt(amountStr);

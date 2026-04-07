@@ -95,6 +95,23 @@ export default function Register() {
       const randomId = Math.floor(1000 + Math.random() * 9000);
       const studentId = `GTE/${regYear}/${randomId}`;
 
+      // --- Referral & Initial Coins Logic ---
+      let initialCoins = 0;
+      let referrerId = null;
+
+      if (referralCode.trim()) {
+        try {
+          const q = query(collection(db, "users"), where("username", "==", referralCode.trim()));
+          const snap = await getDocs(q);
+          if (!snap.empty) {
+            initialCoins = 20; // Registrant gets 20 bonus coins
+            referrerId = snap.docs[0].id;
+          }
+        } catch (refErr) {
+          console.error("Referral check error:", refErr);
+        }
+      }
+
       await setDoc(doc(db, "users", user.uid), {
         uid: user.uid,
         studentId: studentId,
@@ -102,26 +119,15 @@ export default function Register() {
         email: normalizedEmail,
         phoneNumber: phoneNumber.trim(),
         role: "user",
-        coins: 0,
+        coins: initialCoins,
         createdAt: serverTimestamp()
       });
 
-      // --- Referral Reward Logic ---
-      if (referralCode.trim()) {
-        try {
-          const q = query(collection(db, "users"), where("username", "==", referralCode.trim()));
-          const snap = await getDocs(q);
-          if (!snap.empty) {
-            const referrerDoc = snap.docs[0];
-            await updateDoc(doc(db, "users", referrerDoc.id), {
-              coins: increment(20)
-            });
-            console.log(`Referral reward of 20 coins sent to ${referralCode}`);
-          }
-        } catch (refErr) {
-          console.error("Error awarding referral coins:", refErr);
-          // We don't block registration if referral award fails
-        }
+      // Award Referrer if valid
+      if (referrerId) {
+        await updateDoc(doc(db, "users", referrerId), {
+          coins: increment(20)
+        });
       }
 
       navigate("/home");
