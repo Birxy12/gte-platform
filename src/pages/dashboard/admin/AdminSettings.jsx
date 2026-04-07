@@ -25,6 +25,7 @@ export default function AdminSettings() {
     const [message, setMessage] = useState({ type: "", text: "" });
     const [broadcasting, setBroadcasting] = useState(false);
     const [featureDetails, setFeatureDetails] = useState("");
+    const [activeTab, setActiveTab] = useState("protocols"); // protocols, engagement, system
 
     useEffect(() => {
         const fetchSettings = async () => {
@@ -81,14 +82,16 @@ export default function AdminSettings() {
     if (loading) return <div className="ad-card">Synchronizing with Command Center...</div>;
 
     return (
-        <div className="ad-card" style={{ maxWidth: '800px', margin: '0 0' }}>
-            <h2>Global Web App Settings</h2>
-            <p style={{ color: '#94a3b8', marginBottom: '2rem' }}>
-                Control platform-wide features, maintenance status, and security configurations.
-            </p>
+        <div className="ad-container" style={{ maxWidth: '1000px', margin: '0' }}>
+            <div className="ad-page-header">
+                <div className="ad-header-title">
+                    <h1>Global System Settings</h1>
+                    <p>Configure platform-wide protocols and operational parameters</p>
+                </div>
+            </div>
 
             {message.text && (
-                <div style={{
+                <div className={`ad-alert ${message.type === 'error' ? 'alert-danger' : 'alert-success'}`} style={{
                     padding: '1rem',
                     marginBottom: '1.5rem',
                     borderRadius: '8px',
@@ -100,189 +103,219 @@ export default function AdminSettings() {
                 </div>
             )}
 
+            <div className="ad-tab-container mb-8">
+                <button 
+                    className={`ad-tab ${activeTab === 'protocols' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('protocols')}
+                >
+                    🛡️ Protocols
+                </button>
+                <button 
+                    className={`ad-tab ${activeTab === 'engagement' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('engagement')}
+                >
+                    🤝 Engagement
+                </button>
+                <button 
+                    className={`ad-tab ${activeTab === 'system' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('system')}
+                >
+                    ⚙️ System Ops
+                </button>
+            </div>
+
             <form onSubmit={handleSave}>
-                <div className="ad-form-grid" style={{ gridTemplateColumns: '1fr', gap: '1.5rem' }}>
-
-                    <div className="ad-field">
-                        <label>Application / Site Name</label>
-                        <input
-                            type="text"
-                            value={settings.siteName || ''}
-                            onChange={(e) => setSettings({ ...settings, siteName: e.target.value })}
-                        />
-                    </div>
-
-                    {/* Section: Access & Security */}
-                    <div className="ad-settings-section">
-                        <h3 style={{ fontSize: '0.9rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)', pb: '0.5rem' }}>Access & Security</h3>
-                        
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '0.75rem' }}>
-                            <div>
-                                <h4 style={{ margin: '0 0 0.25rem 0', color: '#f1f5f9' }}>Allow New Registrations</h4>
-                                <p style={{ margin: 0, fontSize: '0.85rem', color: '#94a3b8' }}>If disabled, new users will not be able to sign up.</p>
-                            </div>
-                            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                <div className="ad-content-area">
+                    {activeTab === 'protocols' && (
+                        <div className="ad-card" style={{ marginTop: 0 }}>
+                            <div className="ad-field mb-6">
+                                <label>Core System Identification (Site Name)</label>
                                 <input
-                                    type="checkbox"
-                                    style={{ width: '20px', height: '20px', accentColor: '#3b82f6' }}
-                                    checked={settings.allowRegistrations}
-                                    onChange={(e) => setSettings({ ...settings, allowRegistrations: e.target.checked })}
-                                />
-                            </label>
-                        </div>
-
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '0.75rem' }}>
-                            <div>
-                                <h4 style={{ margin: '0 0 0.25rem 0', color: '#f1f5f9' }}>Maintenance Mode</h4>
-                                <p style={{ margin: 0, fontSize: '0.85rem', color: '#94a3b8' }}>Shows a maintenance screen to all non-admin users.</p>
-                            </div>
-                            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                                <input
-                                    type="checkbox"
-                                    style={{ width: '20px', height: '20px', accentColor: '#f59e0b' }}
-                                    checked={settings.maintenanceMode}
-                                    onChange={(e) => setSettings({ ...settings, maintenanceMode: e.target.checked })}
-                                />
-                            </label>
-                        </div>
-                    </div>
-
-                    {/* Section: Referral System */}
-                    <div className="ad-settings-section">
-                        <h3 style={{ fontSize: '0.9rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)', pb: '0.5rem' }}>Referral System</h3>
-                        
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '1rem' }}>
-                            <div>
-                                <h4 style={{ margin: '0 0 0.25rem 0', color: '#f1f5f9' }}>Enable Referral Program</h4>
-                                <p style={{ margin: 0, fontSize: '0.85rem', color: '#94a3b8' }}>Toggle the global refer-a-friend system.</p>
-                            </div>
-                            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                                <input
-                                    type="checkbox"
-                                    style={{ width: '20px', height: '20px', accentColor: '#10b981' }}
-                                    checked={settings.referralEnabled}
-                                    onChange={(e) => setSettings({ ...settings, referralEnabled: e.target.checked })}
-                                />
-                            </label>
-                        </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                            <div className="ad-field">
-                                <label>Referrer Bonus (Coins)</label>
-                                <input
-                                    type="number"
-                                    value={settings.referralBonus || 0}
-                                    onChange={(e) => setSettings({ ...settings, referralBonus: parseInt(e.target.value) })}
+                                    type="text"
+                                    placeholder="GTE Portal"
+                                    className="ad-input"
+                                    value={settings.siteName || ''}
+                                    onChange={(e) => setSettings({ ...settings, siteName: e.target.value })}
                                 />
                             </div>
-                            <div className="ad-field">
-                                <label>Registrant Bonus (Coins)</label>
-                                <input
-                                    type="number"
-                                    value={settings.referralRegistrantBonus || 0}
-                                    onChange={(e) => setSettings({ ...settings, referralRegistrantBonus: parseInt(e.target.value) })}
-                                />
+
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between p-4 bg-slate-900/40 rounded-2xl border border-white/5">
+                                    <div>
+                                        <h4 className="font-bold text-slate-100 m-0">Open Enlistment (Registrations)</h4>
+                                        <p className="text-xs text-slate-500 m-0">Allow new operatives to join the platform</p>
+                                    </div>
+                                    <label className="switch">
+                                        <input
+                                            type="checkbox"
+                                            checked={settings.allowRegistrations}
+                                            onChange={(e) => setSettings({ ...settings, allowRegistrations: e.target.checked })}
+                                        />
+                                        <span className="slider round"></span>
+                                    </label>
+                                </div>
+
+                                <div className="flex items-center justify-between p-4 bg-slate-900/40 rounded-2xl border border-white/5">
+                                    <div>
+                                        <h4 className="font-bold text-amber-500 m-0">Security Lockdown (Maintenance)</h4>
+                                        <p className="text-xs text-slate-500 m-0">Restrict access during sensitive upgrades</p>
+                                    </div>
+                                    <label className="switch">
+                                        <input
+                                            type="checkbox"
+                                            checked={settings.maintenanceMode}
+                                            onChange={(e) => setSettings({ ...settings, maintenanceMode: e.target.checked })}
+                                        />
+                                        <span className="slider round"></span>
+                                    </label>
+                                </div>
+
+                                <div className="ad-field pt-2">
+                                    <label>Priority Mission Target (Featured Course ID)</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Enter Course ID..."
+                                        value={settings.featuredCourseId || ''}
+                                        onChange={(e) => setSettings({ ...settings, featuredCourseId: e.target.value })}
+                                    />
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    )}
 
-                    <div className="p-4 bg-slate-900/50 rounded-xl border border-white/5 mb-6 text-center">
-                        <p className="text-sm text-slate-400 m-0">
-                            <strong>Note:</strong> Economy, Pricing, and Coin Allocation have been moved to the <a href="/admin/economy" className="text-blue-400 hover:text-blue-300">Coin Settings</a> page.
-                        </p>
-                    </div>
+                    {activeTab === 'engagement' && (
+                        <div className="ad-card" style={{ marginTop: 0 }}>
+                            <div className="ad-settings-section mb-8">
+                                <div className="flex items-center justify-between p-4 bg-emerald-500/5 rounded-2xl border border-emerald-500/20 mb-6">
+                                    <div>
+                                        <h4 className="font-bold text-emerald-400 m-0">Referral Protocol Active</h4>
+                                        <p className="text-xs text-slate-500 m-0">Incentivize operative network expansion</p>
+                                    </div>
+                                    <label className="switch">
+                                        <input
+                                            type="checkbox"
+                                            checked={settings.referralEnabled}
+                                            onChange={(e) => setSettings({ ...settings, referralEnabled: e.target.checked })}
+                                        />
+                                        <span className="slider round"></span>
+                                    </label>
+                                </div>
 
-                    {/* Section: Platform Features */}
-                    <div className="ad-settings-section">
-                        <h3 style={{ fontSize: '0.9rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)', pb: '0.5rem' }}>Platform Features</h3>
-                        
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '0.75rem' }}>
-                            <div>
-                                <h4 style={{ margin: '0 0 0.25rem 0', color: '#f1f5f9' }}>OpenAI Auto-Moderation</h4>
-                                <p style={{ margin: 0, fontSize: '0.85rem', color: '#94a3b8' }}>Enable AI analysis buttons in Moderation panel.</p>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="ad-field">
+                                        <label>Recruiter Incentive (Coins)</label>
+                                        <input
+                                            type="number"
+                                            value={settings.referralBonus || 0}
+                                            onChange={(e) => setSettings({ ...settings, referralBonus: parseInt(e.target.value) })}
+                                        />
+                                    </div>
+                                    <div className="ad-field">
+                                        <label>New Enlist Incentive (Coins)</label>
+                                        <input
+                                            type="number"
+                                            value={settings.referralRegistrantBonus || 0}
+                                            onChange={(e) => setSettings({ ...settings, referralRegistrantBonus: parseInt(e.target.value) })}
+                                        />
+                                    </div>
+                                </div>
                             </div>
-                            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                                <input
-                                    type="checkbox"
-                                    style={{ width: '20px', height: '20px', accentColor: '#10b981' }}
-                                    checked={settings.autoModerationEnabled}
-                                    onChange={(e) => setSettings({ ...settings, autoModerationEnabled: e.target.checked })}
-                                />
-                            </label>
-                        </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '0.75rem' }}>
-                            <div>
-                                <h4 style={{ margin: '0 0 0.25rem 0', color: '#f1f5f9' }}>Social Platforms (Reels/Social)</h4>
-                                <p style={{ margin: 0, fontSize: '0.85rem', color: '#94a3b8' }}>Toggle vertical video feed and social dossiers.</p>
+                            <div className="ad-settings-section">
+                                <div className="flex items-center justify-between p-4 bg-slate-900/40 rounded-2xl border border-white/5 mb-4">
+                                    <div>
+                                        <h4 className="font-bold text-slate-100 m-0">Social Infrastructure</h4>
+                                        <p className="text-xs text-slate-500 m-0">Enable Reels, status updates, and social dossiers</p>
+                                    </div>
+                                    <label className="switch">
+                                        <input
+                                            type="checkbox"
+                                            checked={settings.socialFeaturesEnabled}
+                                            onChange={(e) => setSettings({ ...settings, socialFeaturesEnabled: e.target.checked })}
+                                        />
+                                        <span className="slider round"></span>
+                                    </label>
+                                </div>
+                                <p className="text-xs text-slate-500 italic px-2">
+                                    Note: Detailed bounty and reward configs are managed in the <a href="/admin/economy" className="text-blue-400">Finance Division</a>.
+                                </p>
                             </div>
-                            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                                <input
-                                    type="checkbox"
-                                    style={{ width: '20px', height: '20px', accentColor: '#ec4899' }}
-                                    checked={settings.socialFeaturesEnabled}
-                                    onChange={(e) => setSettings({ ...settings, socialFeaturesEnabled: e.target.checked })}
-                                />
-                            </label>
                         </div>
+                    )}
 
-                        <div className="ad-field">
-                            <label>Max Reel Upload Size (MB)</label>
-                            <input
-                                type="number"
-                                value={settings.maxReelUploadSize || 50}
-                                onChange={(e) => setSettings({ ...settings, maxReelUploadSize: parseInt(e.target.value) })}
-                            />
+                    {activeTab === 'system' && (
+                        <div className="space-y-6">
+                            <div className="ad-card" style={{ marginTop: 0 }}>
+                                <h3 style={{ fontSize: '0.9rem', textTransform: 'uppercase', color: '#3b82f6', letterSpacing: '0.1em', marginBottom: '1.5rem' }}>Automated Defense & Storage</h3>
+                                <div className="space-y-6">
+                                    <div className="flex items-center justify-between p-4 bg-blue-500/5 rounded-2xl border border-blue-500/20">
+                                        <div>
+                                            <h4 className="font-bold text-blue-400 m-0">AI Cognitive Moderation</h4>
+                                            <p className="text-xs text-slate-500 m-0">Analyze mission reports and media for policy violations</p>
+                                        </div>
+                                        <label className="switch">
+                                            <input
+                                                type="checkbox"
+                                                checked={settings.autoModerationEnabled}
+                                                onChange={(e) => setSettings({ ...settings, autoModerationEnabled: e.target.checked })}
+                                            />
+                                            <span className="slider round"></span>
+                                        </label>
+                                    </div>
+
+                                    <div className="ad-field">
+                                        <label>Dossier Data Limit (Max Upload Size MB)</label>
+                                        <input
+                                            type="number"
+                                            value={settings.maxReelUploadSize || 50}
+                                            onChange={(e) => setSettings({ ...settings, maxReelUploadSize: parseInt(e.target.value) })}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="ad-card">
+                                <h3 style={{ fontSize: '0.9rem', textTransform: 'uppercase', color: '#10b981', letterSpacing: '0.1em', marginBottom: '1.5rem' }}>Global Frequency (Broadcasting)</h3>
+                                <div className="space-y-4">
+                                    <div className="ad-field">
+                                        <label>Maintenance Directive (Message)</label>
+                                        <textarea
+                                            value={settings.maintenanceMessage || ''}
+                                            onChange={(e) => setSettings({ ...settings, maintenanceMessage: e.target.value })}
+                                            rows={2}
+                                            placeholder="System update in progress..."
+                                        />
+                                    </div>
+
+                                    <div className="ad-field pt-4 border-t border-white/5">
+                                        <label className="text-emerald-500">Operation Update: New Feature Blast</label>
+                                        <p className="text-xs text-slate-500 mb-4">Transmit a priority update to all active operatives via email.</p>
+                                        <textarea 
+                                            placeholder="Specify tactical enhancements..."
+                                            value={featureDetails}
+                                            onChange={(e) => setFeatureDetails(e.target.value)}
+                                            rows={4}
+                                            className="mb-4"
+                                        />
+                                        <button 
+                                            type="button"
+                                            onClick={handleBroadcastFeatures}
+                                            disabled={broadcasting || !featureDetails.trim()}
+                                            className="ad-btn-secondary w-full"
+                                            style={{ borderColor: 'rgba(16, 185, 129, 0.3)', background: 'rgba(16, 185, 129, 0.05)', color: '#10b981' }}
+                                        >
+                                            {broadcasting ? "Transmitting..." : "📡 Synchronize Global Briefing"}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-
-                        <div className="ad-field">
-                            <label>Featured Course ID (Dossier Highlight)</label>
-                            <input
-                                type="text"
-                                placeholder="Course Firestore ID..."
-                                value={settings.featuredCourseId || ''}
-                                onChange={(e) => setSettings({ ...settings, featuredCourseId: e.target.value })}
-                            />
-                        </div>
-                    </div>
-
-                    <div className="ad-field">
-                        <label>Maintenance Downtime Message</label>
-                        <textarea
-                            value={settings.maintenanceMessage || ''}
-                            onChange={(e) => setSettings({ ...settings, maintenanceMessage: e.target.value })}
-                            rows={3}
-                            style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0.75rem', borderRadius: '8px' }}
-                        />
-                    </div>
-
-                    {/* New Features Broadcast */}
-                    <div className="ad-settings-section" style={{ marginTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '2rem' }}>
-                        <h3 style={{ fontSize: '0.9rem', textTransform: 'uppercase', color: '#10b981', letterSpacing: '0.05em', marginBottom: '1rem' }}>Broadband Broadcast: New Features</h3>
-                        <p style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Announce new capabilities to all registered users via email.</p>
-                        <textarea 
-                            placeholder="Detail the new features here..."
-                            value={featureDetails}
-                            onChange={(e) => setFeatureDetails(e.target.value)}
-                            rows={4}
-                            style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0.75rem', borderRadius: '8px', marginBottom: '1rem' }}
-                        />
-                        <button 
-                            type="button"
-                            onClick={handleBroadcastFeatures}
-                            disabled={broadcasting || !featureDetails.trim()}
-                            className="ad-btn-secondary"
-                            style={{ background: '#10b981', color: 'white', border: 'none' }}
-                        >
-                            {broadcasting ? "Transmitting..." : "📡 Broadcast New Features"}
-                        </button>
-                    </div>
-
+                    )}
                 </div>
 
-                <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'flex-end' }}>
-                    <button type="submit" className="ad-btn-primary" disabled={saving}>
-                        {saving ? "Saving..." : "💾 Save Settings"}
+                <div className="mt-8 flex justify-end gap-4">
+                    <button type="submit" className="ad-btn-primary px-10" disabled={saving}>
+                        {saving ? "Transmitting..." : "💾 Secure Parameters"}
                     </button>
                 </div>
             </form>

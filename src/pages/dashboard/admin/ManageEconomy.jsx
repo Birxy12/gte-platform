@@ -19,6 +19,7 @@ export default function ManageEconomy() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState({ type: "", text: "" });
+    const [activeTab, setActiveTab] = useState("exchange"); // exchange, pricing, rewards
 
     useEffect(() => {
         const fetchSettings = async () => {
@@ -85,127 +86,183 @@ export default function ManageEconomy() {
             )}
 
             <form onSubmit={handleSave}>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* Bank Exchange Rate section */}
-                    <div className="ad-card" style={{ marginTop: 0 }}>
-                        <div className="flex items-center gap-3 mb-6 border-b border-white/5 pb-4">
-                            <TrendingUp className="text-amber-500" size={24} />
-                            <h3 className="text-xl font-bold text-white mb-0 mt-0">Central Exchange</h3>
-                        </div>
-                        
-                        <p className="text-sm text-slate-400 mb-6">
-                            Set the intrinsic value of GTE coins relative to real-world currency. Example: If $10 = 205 Coins, then set the rate to 20.5.
-                        </p>
+                <div className="ad-tab-container mb-8">
+                    <button 
+                        type="button" 
+                        className={`ad-tab ${activeTab === 'exchange' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('exchange')}
+                    >
+                        <TrendingUp size={16} /> Central Exchange
+                    </button>
+                    <button 
+                        type="button" 
+                        className={`ad-tab ${activeTab === 'pricing' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('pricing')}
+                    >
+                        <Coins size={16} /> Material Costs
+                    </button>
+                    <button 
+                        type="button" 
+                        className={`ad-tab ${activeTab === 'rewards' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('rewards')}
+                    >
+                        <Save size={16} /> Rewards & Bonuses
+                    </button>
+                </div>
 
-                        <div className="grid grid-cols-2 gap-4 mb-4">
-                            <div className="ad-field">
-                                <label>Base Currency</label>
-                                <input 
-                                    type="text"
-                                    value={settings.baseCurrencyLabel || "USD"}
-                                    onChange={(e) => setSettings({...settings, baseCurrencyLabel: e.target.value})}
-                                />
+                <div className="ad-content-area">
+                    {activeTab === 'exchange' && (
+                        <div className="ad-card" style={{ marginTop: 0 }}>
+                            <div className="flex items-center gap-3 mb-6 border-b border-white/5 pb-4">
+                                <TrendingUp className="text-amber-500" size={24} />
+                                <h3 className="text-xl font-bold text-white mb-0 mt-0">Bank Exchange Rate</h3>
                             </div>
-                            <div className="ad-field">
-                                <label>Exchange Rate (1 {settings.baseCurrencyLabel || "USD"} = ? Coins)</label>
-                                <input 
-                                    type="number"
-                                    step="0.01"
-                                    value={settings.coinToCurrencyRate || 1}
-                                    onChange={(e) => setSettings({...settings, coinToCurrencyRate: parseFloat(e.target.value)})}
-                                />
-                            </div>
-                        </div>
+                            
+                            <p className="text-sm text-slate-400 mb-6 font-medium">
+                                Configure the intrinsic value of GTE coins relative to global tactical currencies.
+                            </p>
 
-                        <div className="p-4 bg-slate-900 rounded-xl border border-white/5 flex items-center justify-between">
-                            <div className="flex items-center gap-2 font-bold text-slate-300">
-                                <span>10 {settings.baseCurrencyLabel || "USD"}</span>
-                                <ArrowRight size={16} className="text-slate-500 mx-2" />
-                                <span className="text-amber-400 flex items-center gap-1">
-                                    <Coins size={16}/> { ((settings.coinToCurrencyRate || 1) * 10).toFixed(1) } Coins
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Standard Pricing */}
-                    <div className="ad-card" style={{ marginTop: 0 }}>
-                        <div className="flex items-center gap-3 mb-6 border-b border-white/5 pb-4">
-                            <Coins className="text-amber-500" size={24} />
-                            <h3 className="text-xl font-bold text-white mb-0 mt-0">Material Costs</h3>
-                        </div>
-
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between p-3 bg-slate-900/50 rounded-xl border border-white/5">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-blue-500/20 text-blue-400 rounded-lg"><BookOpen size={18} /></div>
-                                    <div>
-                                        <h4 className="font-bold text-slate-200 text-sm m-0">Default Course Price</h4>
-                                        <p className="text-xs text-slate-500 m-0">For generic full modules</p>
-                                    </div>
+                            <div className="ad-form-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                                <div className="ad-field">
+                                    <label>Base Currency Label</label>
+                                    <input 
+                                        type="text"
+                                        placeholder="USD"
+                                        value={settings.baseCurrencyLabel || "USD"}
+                                        onChange={(e) => setSettings({...settings, baseCurrencyLabel: e.target.value})}
+                                    />
                                 </div>
-                                <div className="w-24">
-                                    <input type="number" className="w-full bg-slate-950 border border-white/10 rounded px-2 py-1 text-white text-center" 
-                                        value={settings.defaultCoursePrice || 0} 
-                                        onChange={(e) => setSettings({...settings, defaultCoursePrice: parseInt(e.target.value)})}
+                                <div className="ad-field">
+                                    <label>Exchange Rate (1 {settings.baseCurrencyLabel} = ? Coins)</label>
+                                    <input 
+                                        type="number"
+                                        step="0.01"
+                                        value={settings.coinToCurrencyRate || 1}
+                                        onChange={(e) => setSettings({...settings, coinToCurrencyRate: parseFloat(e.target.value)})}
                                     />
                                 </div>
                             </div>
 
-                            <div className="flex items-center justify-between p-3 bg-slate-900/50 rounded-xl border border-white/5">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-purple-500/20 text-purple-400 rounded-lg"><Film size={18} /></div>
-                                    <div>
-                                        <h4 className="font-bold text-slate-200 text-sm m-0">Premium Video Cost</h4>
-                                        <p className="text-xs text-slate-500 m-0">Cost to unlock tactical videos</p>
+                            <div className="mt-8 p-6 bg-slate-900/80 rounded-2xl border border-amber-500/20 shadow-inner">
+                                <div className="flex items-center justify-between">
+                                    <div className="text-slate-400 text-sm font-bold uppercase tracking-wider">Estimated Conversion</div>
+                                    <div className="flex items-center gap-3 font-black text-xl text-white">
+                                        <span className="text-slate-200">10 {settings.baseCurrencyLabel}</span>
+                                        <ArrowRight size={20} className="text-amber-500" />
+                                        <span className="text-amber-400 flex items-center gap-2 bg-amber-500/10 px-4 py-2 rounded-xl">
+                                            <Coins size={20}/> { ((settings.coinToCurrencyRate || 1) * 10).toFixed(1) } Coins
+                                        </span>
                                     </div>
-                                </div>
-                                <div className="w-24">
-                                    <input type="number" className="w-full bg-slate-950 border border-white/10 rounded px-2 py-1 text-white text-center" 
-                                        value={settings.videoUnlockPrice || 0} 
-                                        onChange={(e) => setSettings({...settings, videoUnlockPrice: parseInt(e.target.value)})}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="flex items-center justify-between p-3 bg-slate-900/50 rounded-xl border border-white/5">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-rose-500/20 text-rose-400 rounded-lg"><FileText size={18} /></div>
-                                    <div>
-                                        <h4 className="font-bold text-slate-200 text-sm m-0">PDF Download Cost</h4>
-                                        <p className="text-xs text-slate-500 m-0">Cost to access written dossiers</p>
-                                    </div>
-                                </div>
-                                <div className="w-24">
-                                    <input type="number" className="w-full bg-slate-950 border border-white/10 rounded px-2 py-1 text-white text-center" 
-                                        value={settings.pdfUnlockPrice || 0} 
-                                        onChange={(e) => setSettings({...settings, pdfUnlockPrice: parseInt(e.target.value)})}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="flex items-center justify-between p-3 bg-slate-900/50 rounded-xl border border-white/5">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-amber-500/20 text-amber-400 rounded-lg"><Save size={18} /></div>
-                                    <div>
-                                        <h4 className="font-bold text-slate-200 text-sm m-0">Daily Login Bonus</h4>
-                                        <p className="text-xs text-slate-500 m-0">Reward for daily check-in (Coins)</p>
-                                    </div>
-                                </div>
-                                <div className="w-24">
-                                    <input type="number" className="w-full bg-slate-950 border border-white/10 rounded px-2 py-1 text-white text-center" 
-                                        value={settings.dailyBonusAmount || 0} 
-                                        onChange={(e) => setSettings({...settings, dailyBonusAmount: parseInt(e.target.value)})}
-                                    />
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    )}
+
+                    {activeTab === 'pricing' && (
+                        <div className="ad-card" style={{ marginTop: 0 }}>
+                            <div className="flex items-center gap-3 mb-6 border-b border-white/5 pb-4">
+                                <Coins className="text-amber-500" size={24} />
+                                <h3 className="text-xl font-bold text-white mb-0 mt-0">Standard Material Pricing</h3>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between p-4 bg-slate-900/60 rounded-2xl border border-white/5 hover:border-white/10 transition-colors">
+                                    <div className="flex items-center gap-4">
+                                        <div className="p-3 bg-blue-500/10 text-blue-400 rounded-xl border border-blue-500/20"><BookOpen size={20} /></div>
+                                        <div>
+                                            <h4 className="font-bold text-slate-100 m-0">Default Course Price</h4>
+                                            <p className="text-xs text-slate-500 m-0">Standardized module costs in coins</p>
+                                        </div>
+                                    </div>
+                                    <div className="w-32">
+                                        <input type="number" className="ad-input text-center font-bold" 
+                                            value={settings.defaultCoursePrice || 0} 
+                                            onChange={(e) => setSettings({...settings, defaultCoursePrice: parseInt(e.target.value)})}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-between p-4 bg-slate-900/60 rounded-2xl border border-white/5 hover:border-white/10 transition-colors">
+                                    <div className="flex items-center gap-4">
+                                        <div className="p-3 bg-purple-500/10 text-purple-400 rounded-xl border border-purple-500/20"><Film size={20} /></div>
+                                        <div>
+                                            <h4 className="font-bold text-slate-100 m-0">Premium Video Cost</h4>
+                                            <p className="text-xs text-slate-500 m-0">Price per tactical video unlock</p>
+                                        </div>
+                                    </div>
+                                    <div className="w-32">
+                                        <input type="number" className="ad-input text-center font-bold" 
+                                            value={settings.videoUnlockPrice || 0} 
+                                            onChange={(e) => setSettings({...settings, videoUnlockPrice: parseInt(e.target.value)})}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-between p-4 bg-slate-900/60 rounded-2xl border border-white/5 hover:border-white/10 transition-colors">
+                                    <div className="flex items-center gap-4">
+                                        <div className="p-3 bg-rose-500/10 text-rose-400 rounded-xl border border-rose-500/20"><FileText size={20} /></div>
+                                        <div>
+                                            <h4 className="font-bold text-slate-100 m-0">PDF Download Cost</h4>
+                                            <p className="text-xs text-slate-500 m-0">Resources and documentation access</p>
+                                        </div>
+                                    </div>
+                                    <div className="w-32">
+                                        <input type="number" className="ad-input text-center font-bold" 
+                                            value={settings.pdfUnlockPrice || 0} 
+                                            onChange={(e) => setSettings({...settings, pdfUnlockPrice: parseInt(e.target.value)})}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'rewards' && (
+                        <div className="ad-card" style={{ marginTop: 0 }}>
+                            <div className="flex items-center gap-3 mb-6 border-b border-white/5 pb-4">
+                                <TrendingUp className="text-emerald-500" size={24} />
+                                <h3 className="text-xl font-bold text-white mb-0 mt-0">Rewards & Referral System</h3>
+                            </div>
+
+                            <div className="ad-form-grid" style={{ gap: '1.5rem' }}>
+                                <div className="ad-field">
+                                    <label>Referrer Bonus (Coins)</label>
+                                    <input 
+                                        type="number"
+                                        value={settings.referralBonus || 0}
+                                        onChange={(e) => setSettings({...settings, referralBonus: parseInt(e.target.value)})}
+                                    />
+                                </div>
+                                <div className="ad-field">
+                                    <label>Registrant Bonus (Coins)</label>
+                                    <input 
+                                        type="number"
+                                        value={settings.referralRegistrantBonus || 0}
+                                        onChange={(e) => setSettings({...settings, referralRegistrantBonus: parseInt(e.target.value)})}
+                                    />
+                                </div>
+                                <div className="ad-field full">
+                                    <label>Daily Login Bonus</label>
+                                    <div className="flex items-center gap-4">
+                                        <input 
+                                            type="number"
+                                            className="flex-1"
+                                            value={settings.dailyBonusAmount || 50}
+                                            onChange={(e) => setSettings({...settings, dailyBonusAmount: parseInt(e.target.value)})}
+                                        />
+                                        <div className="p-3 bg-slate-900/50 rounded-xl border border-white/5 text-slate-500 text-xs text-center w-1/2">
+                                            Awarded every 24 hours of active protocol status.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 <div className="mt-8 flex justify-end">
-                    <button type="submit" disabled={saving} className="px-6 py-3 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl shadow-lg shadow-amber-900/20 transition-all flex items-center gap-2">
-                        <Save size={18} /> {saving ? "Confirming..." : "Update Reserve"}
+                    <button type="submit" disabled={saving} className="ad-btn-primary flex items-center gap-3 px-8">
+                        <Save size={20} /> {saving ? "Confirming..." : "Update Reserve Strategy"}
                     </button>
                 </div>
             </form>
