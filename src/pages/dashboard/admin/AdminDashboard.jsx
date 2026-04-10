@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { db, auth } from "../../../config/firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { signOut } from "firebase/auth";
-import { Menu, X } from "lucide-react"; // Uber-style hamburger icons
+import { Menu, X, ChevronLeft, ChevronRight } from "lucide-react";
 import "./AdminDashboard.css";
 
 export default function AdminDashboard() {
@@ -15,9 +15,27 @@ export default function AdminDashboard() {
   const [postsCount, setPostsCount] = useState(0);
   const [error, setError] = useState(null);
   
-  // Sidebar collapse state
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  // Sidebar states
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile/desktop
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth <= 1024;
+      setIsMobile(mobile);
+      // Auto-collapse on mobile, keep open on desktop
+      if (mobile) {
+        setSidebarOpen(false);
+      } else {
+        setSidebarOpen(true);
+      }
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
@@ -28,7 +46,7 @@ export default function AdminDashboard() {
 
         setUsersCount(usersSnapshot.size);
         setCoursesCount(coursesSnapshot.size);
-        setPostsCount(postsSnapshot.size); 
+        setPostsCount(postsSnapshot.size);
       } catch (err) {
         console.error("Error fetching analytics:", err);
         if (err.code === "permission-denied") {
@@ -49,115 +67,119 @@ export default function AdminDashboard() {
   };
 
   const isActive = (path) => {
-    const baseClass = "ad-nav-item";
-    const activeClass = location.pathname === path ? " active" : "";
-    const collapsedClass = sidebarCollapsed ? " collapsed" : "";
-    return `${baseClass}${activeClass}${collapsedClass}`;
+    const isCurrent = location.pathname === path;
+    return `ad-nav-item ${isCurrent ? 'active' : ''}`;
   };
 
   const isOverview = location.pathname === "/admin";
 
-  // Close mobile menu on route change
-  useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [location.pathname]);
+  // Close sidebar when clicking nav link on mobile
+  const handleNavClick = () => {
+    if (isMobile) {
+      setSidebarOpen(false);
+    }
+  };
 
   return (
-    <div className="admin-dash">
-      {/* Mobile Header with Toggle */}
+    <div className={`admin-dash ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+      {/* Mobile Header */}
       <header className="ad-mobile-header">
         <button 
           className="ad-menu-toggle"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          onClick={() => setSidebarOpen(!sidebarOpen)}
           aria-label="Toggle menu"
         >
-          {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
         <span className="ad-mobile-brand">Admin Panel</span>
-        <div style={{ width: 40 }} /> {/* Spacer for alignment */}
+        <div style={{ width: 40 }} />
       </header>
 
-      {/* Sidebar Overlay for Mobile */}
-      {mobileMenuOpen && (
+      {/* Overlay for mobile */}
+      {isMobile && sidebarOpen && (
         <div 
-          className="ad-sidebar-overlay"
-          onClick={() => setMobileMenuOpen(false)}
+          className="ad-overlay"
+          onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
-      <aside className={`ad-sidebar ${sidebarCollapsed ? 'collapsed' : ''} ${mobileMenuOpen ? 'mobile-open' : ''}`}>
-        {/* Collapse Toggle Button (Desktop) */}
-        <button
-          className="ad-collapse-btn"
-          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          {sidebarCollapsed ? <Menu size={20} /> : <X size={20} />}
-        </button>
+      <aside className={`ad-sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
+        {/* Desktop Toggle Button */}
+        {!isMobile && (
+          <button
+            className="ad-sidebar-toggle"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+          >
+            {sidebarOpen ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
+          </button>
+        )}
 
-        <Link to="/home" className={`ad-brand ${sidebarCollapsed ? 'collapsed' : ''}`}>
-          <span className="ad-nav-icon">🛡️</span>
-          {!sidebarCollapsed && <span>Admin <b>Panel</b></span>}
+        {/* Brand */}
+        <Link 
+          to="/home" 
+          className="ad-brand"
+          onClick={handleNavClick}
+        >
+          <span className="ad-brand-icon">🛡️</span>
+          <span className="ad-brand-text">Admin <b>Panel</b></span>
         </Link>
 
+        {/* Navigation */}
         <nav className="ad-nav">
-          <Link to="/admin" className={isActive("/admin")} title="Analytics">
+          <Link to="/admin" className={isActive("/admin")} onClick={handleNavClick}>
             <span className="ad-nav-icon">📊</span>
-            {!sidebarCollapsed && <span>Analytics</span>}
+            <span className="ad-nav-text">Analytics</span>
           </Link>
-          <Link to="/admin/users" className={isActive("/admin/users")} title="Manage Users">
+          <Link to="/admin/users" className={isActive("/admin/users")} onClick={handleNavClick}>
             <span className="ad-nav-icon">👥</span>
-            {!sidebarCollapsed && <span>Manage Users</span>}
+            <span className="ad-nav-text">Manage Users</span>
           </Link>
-          <Link to="/admin/manage-courses" className={isActive("/admin/manage-courses")} title="Manage Courses">
+          <Link to="/admin/manage-courses" className={isActive("/admin/manage-courses")} onClick={handleNavClick}>
             <span className="ad-nav-icon">📚</span>
-            {!sidebarCollapsed && <span>Manage Courses</span>}
+            <span className="ad-nav-text">Manage Courses</span>
           </Link>
-          <Link to="/admin/manage-posts" className={isActive("/admin/manage-posts")} title="Manage Posts">
+          <Link to="/admin/manage-posts" className={isActive("/admin/manage-posts")} onClick={handleNavClick}>
             <span className="ad-nav-icon">📰</span>
-            {!sidebarCollapsed && <span>Manage Posts</span>}
+            <span className="ad-nav-text">Manage Posts</span>
           </Link>
-          <Link to="/admin/reports" className={isActive("/admin/reports")} title="Moderation">
+          <Link to="/admin/reports" className={isActive("/admin/reports")} onClick={handleNavClick}>
             <span className="ad-nav-icon">🛡️</span>
-            {!sidebarCollapsed && <span>Moderation</span>}
+            <span className="ad-nav-text">Moderation</span>
           </Link>
           
-          {!sidebarCollapsed && (
-            <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', margin: '1rem 0' }} />
-          )}
+          <div className="ad-nav-divider" />
           
-          <Link to="/admin/create-course" className={isActive("/admin/create-course")} title="New Course">
+          <Link to="/admin/create-course" className={isActive("/admin/create-course")} onClick={handleNavClick}>
             <span className="ad-nav-icon">✨</span>
-            {!sidebarCollapsed && <span>New Course</span>}
+            <span className="ad-nav-text">New Course</span>
           </Link>
-          <Link to="/admin/create-post" className={isActive("/admin/create-post")} title="New Post">
+          <Link to="/admin/create-post" className={isActive("/admin/create-post")} onClick={handleNavClick}>
             <span className="ad-nav-icon">🖋️</span>
-            {!sidebarCollapsed && <span>New Post</span>}
+            <span className="ad-nav-text">New Post</span>
           </Link>
           
-          {!sidebarCollapsed && (
-            <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', margin: '1rem 0' }} />
-          )}
+          <div className="ad-nav-divider" />
           
-          <Link to="/admin/settings" className={isActive("/admin/settings")} title="Settings">
+          <Link to="/admin/settings" className={isActive("/admin/settings")} onClick={handleNavClick}>
             <span className="ad-nav-icon">⚙️</span>
-            {!sidebarCollapsed && <span>Settings</span>}
+            <span className="ad-nav-text">Settings</span>
           </Link>
         </nav>
 
+        {/* Logout */}
         <button 
           onClick={handleLogout} 
-          className={`ad-logout ${sidebarCollapsed ? 'collapsed' : ''}`}
-          title="Sign Out"
+          className="ad-logout"
         >
           <span className="ad-nav-icon">🚪</span>
-          {!sidebarCollapsed && <span>Sign Out</span>}
+          <span className="ad-nav-text">Sign Out</span>
         </button>
       </aside>
 
-      {/* Main Content Area */}
-      <main className={`ad-main ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+      {/* Main Content - Expands to fill screen when sidebar closed */}
+      <main className="ad-main">
         {isOverview ? (
           <>
             <div className="ad-page-header">
@@ -168,8 +190,8 @@ export default function AdminDashboard() {
             </div>
 
             {error && (
-              <div className="ad-card" style={{ border: '1px solid #ef4444', background: 'rgba(239, 68, 68, 0.05)' }}>
-                <p style={{ color: '#fca5a5', margin: 0, fontSize: '0.9rem' }}>⚠️ {error}</p>
+              <div className="ad-card ad-error">
+                <p>⚠️ {error}</p>
               </div>
             )}
             
@@ -200,13 +222,13 @@ export default function AdminDashboard() {
             <div className="ad-card">
               <h3>Quick Actions</h3>
               <div className="ad-btn-row">
-                <Link to="/admin/create-course" className="ad-btn-primary" style={{ textDecoration: 'none' }}>
+                <Link to="/admin/create-course" className="ad-btn-primary">
                   ➕ Create New Course
                 </Link>
-                <Link to="/admin/create-post" className="ad-btn-primary" style={{ textDecoration: 'none' }}>
+                <Link to="/admin/create-post" className="ad-btn-primary">
                   ✍ Write New Blog Post
                 </Link>
-                <Link to="/admin/users" className="ad-btn-secondary" style={{ textDecoration: 'none' }}>
+                <Link to="/admin/users" className="ad-btn-secondary">
                   👥 Manage User Roles
                 </Link>
               </div>
@@ -214,18 +236,18 @@ export default function AdminDashboard() {
 
             <div className="ad-card">
               <h3>System Status</h3>
-              <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <div style={{ width: '10px', height: '10px', background: '#10b981', borderRadius: '50%' }} />
-                  <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Database: Online</span>
+              <div className="ad-status-row">
+                <div className="ad-status-item">
+                  <div className="ad-status-dot online" />
+                  <span>Database: Online</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <div style={{ width: '10px', height: '10px', background: '#10b981', borderRadius: '50%' }} />
-                  <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Storage: Online</span>
+                <div className="ad-status-item">
+                  <div className="ad-status-dot online" />
+                  <span>Storage: Online</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <div style={{ width: '10px', height: '10px', background: '#10b981', borderRadius: '50%' }} />
-                  <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Auth Service: Online</span>
+                <div className="ad-status-item">
+                  <div className="ad-status-dot online" />
+                  <span>Auth Service: Online</span>
                 </div>
               </div>
             </div>
