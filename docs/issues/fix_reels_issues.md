@@ -1,0 +1,2 @@
+## Issue: Fix reels issues - navigation, loading, and error states
+**Description:** Review and fix issues with reels feed functionality including scroll performance, error handling, and responsive behavior on mobile/desktop. Key files: src/pages/social/Reels.jsx, src/services/reelsService.js, src/styles/reels.css
