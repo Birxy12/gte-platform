@@ -28,7 +28,7 @@ export default function AdminDashboard() {
 
         setUsersCount(usersSnapshot.size);
         setCoursesCount(coursesSnapshot.size);
-        setPostsSnapshot.size);
+        setPostsCount(postsSnapshot.size); 
       } catch (err) {
         console.error("Error fetching analytics:", err);
         if (err.code === "permission-denied") {
