@@ -12,7 +12,8 @@ import {
     orderBy, 
     arrayUnion, 
     arrayRemove, 
-    serverTimestamp 
+    serverTimestamp,
+    limit
 } from "firebase/firestore";
 import { supabase } from "../config/supabase";
 
@@ -76,12 +77,102 @@ export const reelsService = {
     },
 
     /**
-     * Fetch all reels
+     * Fetch all reels - FIXED: No index required
      */
     async getAllReels() {
-        const q = query(collection(db, "reels"), orderBy("createdAt", "desc"));
+        try {
+            // Simple query without orderBy (no index needed)
+            const snapshot = await getDocs(collection(db, "reels"));
+            const reels = snapshot.docs.map(doc => ({ 
+                id: doc.id, 
+                ...doc.data() 
+            }));
+            
+            // Sort in JavaScript instead of Firestore to avoid index requirement
+            return reels.sort((a, b) => {
+                // Handle Firestore timestamps or ISO strings
+                const getTime = (item) => {
+                    if (!item.createdAt) return 0;
+                    // Firestore timestamp
+                    if (item.createdAt.toMillis) return item.createdAt.toMillis();
+                    // JavaScript Date or string
+                    return new Date(item.createdAt).getTime();
+                };
+                
+                return getTime(b) - getTime(a); // Descending order (newest first)
+            });
+        } catch (error) {
+            console.error("getAllReels error:", error);
+            throw error;
+        }
+    },
+
+    /**
+     * Fetch reels with pagination (for performance with large datasets)
+     */
+    async getReelsPaginated(lastDoc = null, pageSize = 10) {
+        try {
+            let q = query(
+                collection(db, "reels"), 
+                orderBy("createdAt", "desc"),
+                limit(pageSize)
+            );
+            
+            if (lastDoc) {
+                q = query(q, startAfter(lastDoc));
+            }
+            
+            const snapshot = await getDocs(q);
+            const reels = snapshot.docs.map(doc => ({ 
+                id: doc.id, 
+                ...doc.data() 
+            }));
+            
+            return {
+                reels,
+                lastDoc: snapshot.docs[snapshot.docs.length - 1],
+                hasMore: snapshot.docs.length === pageSize
+            };
+        } catch (error) {
+            // If index error, fall back to simple query
+            if (error.code === 'failed-precondition') {
+                console.warn('Index not found, using fallback query');
+                return this.getAllReels();
+            }
+            throw error;
+        }
+    },
+
+    /**
+     * Get single reel by ID
+     */
+    async getReelById(reelId) {
+        const docRef = doc(db, "reels", reelId);
+        const snapshot = await getDoc(docRef);
+        if (!snapshot.exists()) return null;
+        return { id: snapshot.id, ...snapshot.data() };
+    },
+
+    /**
+     * Get reels by user
+     */
+    async getReelsByUser(userId) {
+        const q = query(
+            collection(db, "reels"), 
+            where("userId", "==", userId)
+        );
         const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        return snapshot.docs.map(doc => ({ 
+            id: doc.id, 
+            ...doc.data() 
+        })).sort((a, b) => {
+            const getTime = (item) => {
+                if (!item.createdAt) return 0;
+                if (item.createdAt.toMillis) return item.createdAt.toMillis();
+                return new Date(item.createdAt).getTime();
+            };
+            return getTime(b) - getTime(a);
+        });
     },
 
     /**
@@ -120,6 +211,23 @@ export const reelsService = {
     },
 
     /**
+     * Delete a comment
+     */
+    async deleteComment(reelId, commentId, userId) {
+        const reelRef = doc(db, "reels", reelId);
+        const snapshot = await getDoc(reelRef);
+        const data = snapshot.data();
+        
+        const comment = data.comments?.find(c => c.id === commentId);
+        if (!comment) throw new Error("Comment not found");
+        if (comment.userId !== userId) throw new Error("Not authorized");
+        
+        await updateDoc(reelRef, {
+            comments: arrayRemove(comment)
+        });
+    },
+
+    /**
      * Delete a reel
      */
     async deleteReel(reelId, storagePath) {
@@ -146,5 +254,34 @@ export const reelsService = {
         const snapshot = await getDoc(reelRef);
         const currentShares = snapshot.data()?.shares || 0;
         await updateDoc(reelRef, { shares: currentShares + 1 });
+    },
+
+    /**
+     * Update reel description
+     */
+    async updateReel(reelId, updates, userId) {
+        const reelRef = doc(db, "reels", reelId);
+        const snapshot = await getDoc(reelRef);
+        const data = snapshot.data();
+        
+        if (data.userId !== userId) throw new Error("Not authorized");
+        
+        await updateDoc(reelRef, {
+            ...updates,
+            updatedAt: serverTimestamp()
+        });
+    },
+
+    /**
+     * Report a reel
+     */
+    async reportReel(reelId, reason, userId) {
+        await addDoc(collection(db, "reports"), {
+            reelId,
+            reason,
+            reportedBy: userId,
+            createdAt: serverTimestamp(),
+            status: "pending"
+        });
     }
 };
