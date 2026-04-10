@@ -3,7 +3,30 @@ import { useEffect, useState } from "react";
 import { db, auth } from "../../../config/firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { signOut } from "firebase/auth";
-import { Menu, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { 
+  Menu, 
+  X, 
+  ChevronLeft, 
+  ChevronRight,
+  LayoutDashboard,
+  Users,
+  GraduationCap,
+  BookOpen,
+  FileText,
+  Mail,
+  CheckSquare,
+  MessageSquare,
+  Award,
+  DollarSign,
+  Crown,
+  Flag,
+  Film,
+  HelpCircle,
+  PlusCircle,
+  PenTool,
+  Settings,
+  LogOut
+} from "lucide-react";
 import "./AdminDashboard.css";
 
 export default function AdminDashboard() {
@@ -13,6 +36,13 @@ export default function AdminDashboard() {
   const [usersCount, setUsersCount] = useState(0);
   const [coursesCount, setCoursesCount] = useState(0);
   const [postsCount, setPostsCount] = useState(0);
+  const [instructorsCount, setInstructorsCount] = useState(0);
+  const [certificatesCount, setCertificatesCount] = useState(0);
+  const [quizzesCount, setQuizzesCount] = useState(0);
+  const [reelsCount, setReelsCount] = useState(0);
+  const [tasksCount, setTasksCount] = useState(0);
+  const [mailsCount, setMailsCount] = useState(0);
+  const [reportsCount, setReportsCount] = useState(0);
   const [error, setError] = useState(null);
   
   // Sidebar states
@@ -24,7 +54,6 @@ export default function AdminDashboard() {
     const checkMobile = () => {
       const mobile = window.innerWidth <= 1024;
       setIsMobile(mobile);
-      // Auto-collapse on mobile, keep open on desktop
       if (mobile) {
         setSidebarOpen(false);
       } else {
@@ -40,13 +69,40 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const usersSnapshot = await getDocs(collection(db, "users"));
-        const coursesSnapshot = await getDocs(collection(db, "courses"));
-        const postsSnapshot = await getDocs(collection(db, "posts"));
+        const [
+          usersSnapshot, 
+          coursesSnapshot, 
+          postsSnapshot,
+          instructorsSnapshot,
+          certificatesSnapshot,
+          quizzesSnapshot,
+          reelsSnapshot,
+          tasksSnapshot,
+          mailsSnapshot,
+          reportsSnapshot
+        ] = await Promise.all([
+          getDocs(collection(db, "users")),
+          getDocs(collection(db, "courses")),
+          getDocs(collection(db, "posts")),
+          getDocs(collection(db, "instructors")),
+          getDocs(collection(db, "certificates")),
+          getDocs(collection(db, "quizzes")),
+          getDocs(collection(db, "reels")),
+          getDocs(collection(db, "tasks")),
+          getDocs(collection(db, "mails")),
+          getDocs(collection(db, "reports"))
+        ]);
 
         setUsersCount(usersSnapshot.size);
         setCoursesCount(coursesSnapshot.size);
         setPostsCount(postsSnapshot.size);
+        setInstructorsCount(instructorsSnapshot.size);
+        setCertificatesCount(certificatesSnapshot.size);
+        setQuizzesCount(quizzesSnapshot.size);
+        setReelsCount(reelsSnapshot.size);
+        setTasksCount(tasksSnapshot.size);
+        setMailsCount(mailsSnapshot.size);
+        setReportsCount(reportsSnapshot.size);
       } catch (err) {
         console.error("Error fetching analytics:", err);
         if (err.code === "permission-denied") {
@@ -67,18 +123,48 @@ export default function AdminDashboard() {
   };
 
   const isActive = (path) => {
-    const isCurrent = location.pathname === path;
+    const isCurrent = location.pathname === path || location.pathname.startsWith(`${path}/`);
     return `ad-nav-item ${isCurrent ? 'active' : ''}`;
   };
 
   const isOverview = location.pathname === "/admin";
 
-  // Close sidebar when clicking nav link on mobile
   const handleNavClick = () => {
     if (isMobile) {
       setSidebarOpen(false);
     }
   };
+
+  // ALL NAVIGATION ITEMS - Organized by category
+  const dashboardNavItems = [
+    { path: "/admin", label: "Dashboard", icon: <LayoutDashboard size={20} /> },
+  ];
+
+  const managementNavItems = [
+    { path: "/admin/users", label: "Manage Users", icon: <Users size={20} /> },
+    { path: "/admin/instructors", label: "Manage Instructors", icon: <GraduationCap size={20} /> },
+    { path: "/admin/manage-courses", label: "Manage Courses", icon: <BookOpen size={20} /> },
+    { path: "/admin/manage-posts", label: "Manage Posts", icon: <FileText size={20} /> },
+    { path: "/admin/manage-reels", label: "Manage Reels", icon: <Film size={20} /> },
+    { path: "/admin/manage-quizzes", label: "Manage Quizzes", icon: <HelpCircle size={20} /> },
+    { path: "/admin/manage-certificates", label: "Manage Certificates", icon: <Award size={20} /> },
+    { path: "/admin/manage-tasks", label: "Manage Tasks", icon: <CheckSquare size={20} /> },
+    { path: "/admin/manage-mails", label: "Manage Mails", icon: <Mail size={20} /> },
+    { path: "/admin/manage-economy", label: "Manage Economy", icon: <DollarSign size={20} /> },
+    { path: "/admin/manage-leadership", label: "Manage Leadership", icon: <Crown size={20} /> },
+    { path: "/admin/manage-testimonies", label: "Manage Testimonies", icon: <MessageSquare size={20} /> },
+    { path: "/admin/manage-reports", label: "Manage Reports", icon: <Flag size={20} /> },
+  ];
+
+  const createNavItems = [
+    { path: "/admin/create-course", label: "New Course", icon: <PlusCircle size={20} /> },
+    { path: "/admin/create-post", label: "New Post", icon: <PenTool size={20} /> },
+    { path: "/admin/create-quiz", label: "New Quiz", icon: <HelpCircle size={20} /> },
+  ];
+
+  const settingsNavItems = [
+    { path: "/admin/settings", label: "Settings", icon: <Settings size={20} /> },
+  ];
 
   return (
     <div className={`admin-dash ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
@@ -128,57 +214,92 @@ export default function AdminDashboard() {
 
         {/* Navigation */}
         <nav className="ad-nav">
-          <Link to="/admin" className={isActive("/admin")} onClick={handleNavClick}>
-            <span className="ad-nav-icon">📊</span>
-            <span className="ad-nav-text">Analytics</span>
-          </Link>
-          <Link to="/admin/users" className={isActive("/admin/users")} onClick={handleNavClick}>
-            <span className="ad-nav-icon">👥</span>
-            <span className="ad-nav-text">Manage Users</span>
-          </Link>
-          <Link to="/admin/manage-courses" className={isActive("/admin/manage-courses")} onClick={handleNavClick}>
-            <span className="ad-nav-icon">📚</span>
-            <span className="ad-nav-text">Manage Courses</span>
-          </Link>
-          <Link to="/admin/manage-posts" className={isActive("/admin/manage-posts")} onClick={handleNavClick}>
-            <span className="ad-nav-icon">📰</span>
-            <span className="ad-nav-text">Manage Posts</span>
-          </Link>
-          <Link to="/admin/reports" className={isActive("/admin/reports")} onClick={handleNavClick}>
-            <span className="ad-nav-icon">🛡️</span>
-            <span className="ad-nav-text">Moderation</span>
-          </Link>
-          
+          {/* Dashboard */}
+          <div className="ad-nav-section">
+            {sidebarOpen && <span className="ad-nav-section-title">Overview</span>}
+            {dashboardNavItems.map(item => (
+              <Link 
+                key={item.path} 
+                to={item.path} 
+                className={isActive(item.path)} 
+                onClick={handleNavClick}
+                title={!sidebarOpen ? item.label : undefined}
+              >
+                <span className="ad-nav-icon">{item.icon}</span>
+                {sidebarOpen && <span className="ad-nav-text">{item.label}</span>}
+              </Link>
+            ))}
+          </div>
+
           <div className="ad-nav-divider" />
-          
-          <Link to="/admin/create-course" className={isActive("/admin/create-course")} onClick={handleNavClick}>
-            <span className="ad-nav-icon">✨</span>
-            <span className="ad-nav-text">New Course</span>
-          </Link>
-          <Link to="/admin/create-post" className={isActive("/admin/create-post")} onClick={handleNavClick}>
-            <span className="ad-nav-icon">🖋️</span>
-            <span className="ad-nav-text">New Post</span>
-          </Link>
-          
+
+          {/* Management - ALL FEATURES */}
+          <div className="ad-nav-section">
+            {sidebarOpen && <span className="ad-nav-section-title">Management</span>}
+            {managementNavItems.map(item => (
+              <Link 
+                key={item.path} 
+                to={item.path} 
+                className={isActive(item.path)} 
+                onClick={handleNavClick}
+                title={!sidebarOpen ? item.label : undefined}
+              >
+                <span className="ad-nav-icon">{item.icon}</span>
+                {sidebarOpen && <span className="ad-nav-text">{item.label}</span>}
+              </Link>
+            ))}
+          </div>
+
           <div className="ad-nav-divider" />
-          
-          <Link to="/admin/settings" className={isActive("/admin/settings")} onClick={handleNavClick}>
-            <span className="ad-nav-icon">⚙️</span>
-            <span className="ad-nav-text">Settings</span>
-          </Link>
+
+          {/* Create */}
+          <div className="ad-nav-section">
+            {sidebarOpen && <span className="ad-nav-section-title">Create New</span>}
+            {createNavItems.map(item => (
+              <Link 
+                key={item.path} 
+                to={item.path} 
+                className={isActive(item.path)} 
+                onClick={handleNavClick}
+                title={!sidebarOpen ? item.label : undefined}
+              >
+                <span className="ad-nav-icon">{item.icon}</span>
+                {sidebarOpen && <span className="ad-nav-text">{item.label}</span>}
+              </Link>
+            ))}
+          </div>
+
+          <div className="ad-nav-divider" />
+
+          {/* Settings */}
+          <div className="ad-nav-section">
+            {settingsNavItems.map(item => (
+              <Link 
+                key={item.path} 
+                to={item.path} 
+                className={isActive(item.path)} 
+                onClick={handleNavClick}
+                title={!sidebarOpen ? item.label : undefined}
+              >
+                <span className="ad-nav-icon">{item.icon}</span>
+                {sidebarOpen && <span className="ad-nav-text">{item.label}</span>}
+              </Link>
+            ))}
+          </div>
         </nav>
 
         {/* Logout */}
         <button 
           onClick={handleLogout} 
           className="ad-logout"
+          title={!sidebarOpen ? "Sign Out" : undefined}
         >
-          <span className="ad-nav-icon">🚪</span>
-          <span className="ad-nav-text">Sign Out</span>
+          <span className="ad-nav-icon"><LogOut size={20} /></span>
+          {sidebarOpen && <span className="ad-nav-text">Sign Out</span>}
         </button>
       </aside>
 
-      {/* Main Content - Expands to fill screen when sidebar closed */}
+      {/* Main Content */}
       <main className="ad-main">
         {isOverview ? (
           <>
@@ -204,6 +325,13 @@ export default function AdminDashboard() {
                 </div>
               </div>
               <div className="ad-stat">
+                <div className="ad-stat-icon">🎓</div>
+                <div>
+                  <p className="ad-stat-value">{instructorsCount}</p>
+                  <p className="ad-stat-label">Instructors</p>
+                </div>
+              </div>
+              <div className="ad-stat">
                 <div className="ad-stat-icon">📚</div>
                 <div>
                   <p className="ad-stat-value">{coursesCount}</p>
@@ -217,6 +345,48 @@ export default function AdminDashboard() {
                   <p className="ad-stat-label">Blog Posts</p>
                 </div>
               </div>
+              <div className="ad-stat">
+                <div className="ad-stat-icon">🎬</div>
+                <div>
+                  <p className="ad-stat-value">{reelsCount}</p>
+                  <p className="ad-stat-label">Reels</p>
+                </div>
+              </div>
+              <div className="ad-stat">
+                <div className="ad-stat-icon">❓</div>
+                <div>
+                  <p className="ad-stat-value">{quizzesCount}</p>
+                  <p className="ad-stat-label">Quizzes</p>
+                </div>
+              </div>
+              <div className="ad-stat">
+                <div className="ad-stat-icon">🏆</div>
+                <div>
+                  <p className="ad-stat-value">{certificatesCount}</p>
+                  <p className="ad-stat-label">Certificates</p>
+                </div>
+              </div>
+              <div className="ad-stat">
+                <div className="ad-stat-icon">✅</div>
+                <div>
+                  <p className="ad-stat-value">{tasksCount}</p>
+                  <p className="ad-stat-label">Tasks</p>
+                </div>
+              </div>
+              <div className="ad-stat">
+                <div className="ad-stat-icon">📧</div>
+                <div>
+                  <p className="ad-stat-value">{mailsCount}</p>
+                  <p className="ad-stat-label">Mails</p>
+                </div>
+              </div>
+              <div className="ad-stat">
+                <div className="ad-stat-icon">🚩</div>
+                <div>
+                  <p className="ad-stat-value">{reportsCount}</p>
+                  <p className="ad-stat-label">Reports</p>
+                </div>
+              </div>
             </div>
 
             <div className="ad-card">
@@ -228,8 +398,11 @@ export default function AdminDashboard() {
                 <Link to="/admin/create-post" className="ad-btn-primary">
                   ✍ Write New Blog Post
                 </Link>
+                <Link to="/admin/create-quiz" className="ad-btn-primary">
+                  ❓ Create New Quiz
+                </Link>
                 <Link to="/admin/users" className="ad-btn-secondary">
-                  👥 Manage User Roles
+                  👥 Manage Users
                 </Link>
               </div>
             </div>
