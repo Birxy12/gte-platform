@@ -3,30 +3,7 @@ import { useEffect, useState } from "react";
 import { db, auth } from "../../../config/firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { signOut } from "firebase/auth";
-import { 
-  Menu, 
-  X, 
-  ChevronLeft, 
-  ChevronRight,
-  LayoutDashboard,
-  Users,
-  GraduationCap,
-  BookOpen,
-  FileText,
-  Mail,
-  CheckSquare,
-  MessageSquare,
-  Award,
-  DollarSign,
-  Crown,
-  Flag,
-  Film,
-  HelpCircle,
-  PlusCircle,
-  PenTool,
-  Settings,
-  LogOut
-} from "lucide-react";
+import { Menu, X, ChevronLeft, ChevronRight } from "lucide-react";
 import "./AdminDashboard.css";
 
 export default function AdminDashboard() {
@@ -36,20 +13,13 @@ export default function AdminDashboard() {
   const [usersCount, setUsersCount] = useState(0);
   const [coursesCount, setCoursesCount] = useState(0);
   const [postsCount, setPostsCount] = useState(0);
-  const [instructorsCount, setInstructorsCount] = useState(0);
-  const [certificatesCount, setCertificatesCount] = useState(0);
-  const [quizzesCount, setQuizzesCount] = useState(0);
-  const [reelsCount, setReelsCount] = useState(0);
-  const [tasksCount, setTasksCount] = useState(0);
-  const [mailsCount, setMailsCount] = useState(0);
-  const [reportsCount, setReportsCount] = useState(0);
   const [error, setError] = useState(null);
   
-  // Sidebar states
+  // Sidebar states - NEW
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
 
-  // Detect mobile/desktop
+  // Detect mobile/desktop - NEW
   useEffect(() => {
     const checkMobile = () => {
       const mobile = window.innerWidth <= 1024;
@@ -69,44 +39,17 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const [
-          usersSnapshot, 
-          coursesSnapshot, 
-          postsSnapshot,
-          instructorsSnapshot,
-          certificatesSnapshot,
-          quizzesSnapshot,
-          reelsSnapshot,
-          tasksSnapshot,
-          mailsSnapshot,
-          reportsSnapshot
-        ] = await Promise.all([
-          getDocs(collection(db, "users")),
-          getDocs(collection(db, "courses")),
-          getDocs(collection(db, "posts")),
-          getDocs(collection(db, "instructors")),
-          getDocs(collection(db, "certificates")),
-          getDocs(collection(db, "quizzes")),
-          getDocs(collection(db, "reels")),
-          getDocs(collection(db, "tasks")),
-          getDocs(collection(db, "mails")),
-          getDocs(collection(db, "reports"))
-        ]);
+        const usersSnapshot = await getDocs(collection(db, "users"));
+        const coursesSnapshot = await getDocs(collection(db, "courses"));
+        const postsSnapshot = await getDocs(collection(db, "posts"));
 
         setUsersCount(usersSnapshot.size);
         setCoursesCount(coursesSnapshot.size);
         setPostsCount(postsSnapshot.size);
-        setInstructorsCount(instructorsSnapshot.size);
-        setCertificatesCount(certificatesSnapshot.size);
-        setQuizzesCount(quizzesSnapshot.size);
-        setReelsCount(reelsSnapshot.size);
-        setTasksCount(tasksSnapshot.size);
-        setMailsCount(mailsSnapshot.size);
-        setReportsCount(reportsSnapshot.size);
       } catch (err) {
         console.error("Error fetching analytics:", err);
         if (err.code === "permission-denied") {
-          setError("Permission denied. Check Firestore rules.");
+          setError("Permission denied. Ensure Firestore rules from [implementation_plan.md] are applied.");
         }
       }
     };
@@ -123,52 +66,23 @@ export default function AdminDashboard() {
   };
 
   const isActive = (path) => {
-    const isCurrent = location.pathname === path || location.pathname.startsWith(`${path}/`);
-    return `ad-nav-item ${isCurrent ? 'active' : ''}`;
+    const baseClass = "ad-nav-item";
+    const activeClass = location.pathname === path ? " active" : "";
+    return `${baseClass}${activeClass}`;
   };
 
   const isOverview = location.pathname === "/admin";
 
+  // Close sidebar on mobile when clicking nav link - NEW
   const handleNavClick = () => {
     if (isMobile) {
       setSidebarOpen(false);
     }
   };
 
-  // ALL NAVIGATION ITEMS - Organized by category
-  const dashboardNavItems = [
-    { path: "/admin", label: "Dashboard", icon: <LayoutDashboard size={20} /> },
-  ];
-
-  const managementNavItems = [
-    { path: "/admin/users", label: "Manage Users", icon: <Users size={20} /> },
-    { path: "/admin/instructors", label: "Manage Instructors", icon: <GraduationCap size={20} /> },
-    { path: "/admin/manage-courses", label: "Manage Courses", icon: <BookOpen size={20} /> },
-    { path: "/admin/manage-posts", label: "Manage Posts", icon: <FileText size={20} /> },
-    { path: "/admin/manage-reels", label: "Manage Reels", icon: <Film size={20} /> },
-    { path: "/admin/manage-quizzes", label: "Manage Quizzes", icon: <HelpCircle size={20} /> },
-    { path: "/admin/manage-certificates", label: "Manage Certificates", icon: <Award size={20} /> },
-    { path: "/admin/manage-tasks", label: "Manage Tasks", icon: <CheckSquare size={20} /> },
-    { path: "/admin/manage-mails", label: "Manage Mails", icon: <Mail size={20} /> },
-    { path: "/admin/manage-economy", label: "Manage Economy", icon: <DollarSign size={20} /> },
-    { path: "/admin/manage-leadership", label: "Manage Leadership", icon: <Crown size={20} /> },
-    { path: "/admin/manage-testimonies", label: "Manage Testimonies", icon: <MessageSquare size={20} /> },
-    { path: "/admin/manage-reports", label: "Manage Reports", icon: <Flag size={20} /> },
-  ];
-
-  const createNavItems = [
-    { path: "/admin/create-course", label: "New Course", icon: <PlusCircle size={20} /> },
-    { path: "/admin/create-post", label: "New Post", icon: <PenTool size={20} /> },
-    { path: "/admin/create-quiz", label: "New Quiz", icon: <HelpCircle size={20} /> },
-  ];
-
-  const settingsNavItems = [
-    { path: "/admin/settings", label: "Settings", icon: <Settings size={20} /> },
-  ];
-
   return (
     <div className={`admin-dash ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
-      {/* Mobile Header */}
+      {/* Mobile Header - NEW */}
       <header className="ad-mobile-header">
         <button 
           className="ad-menu-toggle"
@@ -181,7 +95,7 @@ export default function AdminDashboard() {
         <div style={{ width: 40 }} />
       </header>
 
-      {/* Overlay for mobile */}
+      {/* Overlay for mobile - NEW */}
       {isMobile && sidebarOpen && (
         <div 
           className="ad-overlay"
@@ -191,7 +105,7 @@ export default function AdminDashboard() {
 
       {/* Sidebar */}
       <aside className={`ad-sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
-        {/* Desktop Toggle Button */}
+        {/* Desktop Toggle Button - NEW */}
         {!isMobile && (
           <button
             className="ad-sidebar-toggle"
@@ -202,104 +116,63 @@ export default function AdminDashboard() {
           </button>
         )}
 
-        {/* Brand */}
-        <Link 
-          to="/home" 
-          className="ad-brand"
-          onClick={handleNavClick}
-        >
-          <span className="ad-brand-icon">🛡️</span>
-          <span className="ad-brand-text">Admin <b>Panel</b></span>
+        <Link to="/home" className="ad-brand">
+          <span className="ad-nav-icon">🛡️</span>
+          {sidebarOpen && <span>Admin <b>Panel</b></span>}
         </Link>
 
-        {/* Navigation */}
         <nav className="ad-nav">
-          {/* Dashboard */}
-          <div className="ad-nav-section">
-            {sidebarOpen && <span className="ad-nav-section-title">Overview</span>}
-            {dashboardNavItems.map(item => (
-              <Link 
-                key={item.path} 
-                to={item.path} 
-                className={isActive(item.path)} 
-                onClick={handleNavClick}
-                title={!sidebarOpen ? item.label : undefined}
-              >
-                <span className="ad-nav-icon">{item.icon}</span>
-                {sidebarOpen && <span className="ad-nav-text">{item.label}</span>}
-              </Link>
-            ))}
-          </div>
-
-          <div className="ad-nav-divider" />
-
-          {/* Management - ALL FEATURES */}
-          <div className="ad-nav-section">
-            {sidebarOpen && <span className="ad-nav-section-title">Management</span>}
-            {managementNavItems.map(item => (
-              <Link 
-                key={item.path} 
-                to={item.path} 
-                className={isActive(item.path)} 
-                onClick={handleNavClick}
-                title={!sidebarOpen ? item.label : undefined}
-              >
-                <span className="ad-nav-icon">{item.icon}</span>
-                {sidebarOpen && <span className="ad-nav-text">{item.label}</span>}
-              </Link>
-            ))}
-          </div>
-
-          <div className="ad-nav-divider" />
-
-          {/* Create */}
-          <div className="ad-nav-section">
-            {sidebarOpen && <span className="ad-nav-section-title">Create New</span>}
-            {createNavItems.map(item => (
-              <Link 
-                key={item.path} 
-                to={item.path} 
-                className={isActive(item.path)} 
-                onClick={handleNavClick}
-                title={!sidebarOpen ? item.label : undefined}
-              >
-                <span className="ad-nav-icon">{item.icon}</span>
-                {sidebarOpen && <span className="ad-nav-text">{item.label}</span>}
-              </Link>
-            ))}
-          </div>
-
-          <div className="ad-nav-divider" />
-
-          {/* Settings */}
-          <div className="ad-nav-section">
-            {settingsNavItems.map(item => (
-              <Link 
-                key={item.path} 
-                to={item.path} 
-                className={isActive(item.path)} 
-                onClick={handleNavClick}
-                title={!sidebarOpen ? item.label : undefined}
-              >
-                <span className="ad-nav-icon">{item.icon}</span>
-                {sidebarOpen && <span className="ad-nav-text">{item.label}</span>}
-              </Link>
-            ))}
-          </div>
+          <Link to="/admin" className={isActive("/admin")} onClick={handleNavClick}>
+            <span className="ad-nav-icon">📊</span>
+            {sidebarOpen && <span>Analytics</span>}
+          </Link>
+          <Link to="/admin/users" className={isActive("/admin/users")} onClick={handleNavClick}>
+            <span className="ad-nav-icon">👥</span>
+            {sidebarOpen && <span>Manage Users</span>}
+          </Link>
+          <Link to="/admin/manage-courses" className={isActive("/admin/manage-courses")} onClick={handleNavClick}>
+            <span className="ad-nav-icon">📚</span>
+            {sidebarOpen && <span>Manage Courses</span>}
+          </Link>
+          <Link to="/admin/manage-posts" className={isActive("/admin/manage-posts")} onClick={handleNavClick}>
+            <span className="ad-nav-icon">📰</span>
+            {sidebarOpen && <span>Manage Posts</span>}
+          </Link>
+          <Link to="/admin/reports" className={isActive("/admin/reports")} onClick={handleNavClick}>
+            <span className="ad-nav-icon">🛡️</span>
+            {sidebarOpen && <span>Moderation</span>}
+          </Link>
+          
+          {sidebarOpen && (
+            <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', margin: '1rem 0' }} />
+          )}
+          
+          <Link to="/admin/create-course" className={isActive("/admin/create-course")} onClick={handleNavClick}>
+            <span className="ad-nav-icon">✨</span>
+            {sidebarOpen && <span>New Course</span>}
+          </Link>
+          <Link to="/admin/create-post" className={isActive("/admin/create-post")} onClick={handleNavClick}>
+            <span className="ad-nav-icon">🖋️</span>
+            {sidebarOpen && <span>New Post</span>}
+          </Link>
+          
+          {sidebarOpen && (
+            <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', margin: '1rem 0' }} />
+          )}
+          
+          <Link to="/admin/settings" className={isActive("/admin/settings")} onClick={handleNavClick}>
+            <span className="ad-nav-icon">⚙️</span>
+            {sidebarOpen && <span>Settings</span>}
+          </Link>
         </nav>
 
-        {/* Logout */}
-        <button 
-          onClick={handleLogout} 
-          className="ad-logout"
-          title={!sidebarOpen ? "Sign Out" : undefined}
-        >
-          <span className="ad-nav-icon"><LogOut size={20} /></span>
-          {sidebarOpen && <span className="ad-nav-text">Sign Out</span>}
+        <button onClick={handleLogout} className="ad-logout">
+          <span className="ad-nav-icon">🚪</span>
+          {sidebarOpen && <span>Sign Out</span>}
         </button>
       </aside>
 
-      {/* Main Content */}
+      {/* Main Content Area */}
       <main className="ad-main">
         {isOverview ? (
           <>
@@ -310,12 +183,12 @@ export default function AdminDashboard() {
               </div>
             </div>
 
+            {/* Analytics Stats */}
             {error && (
-              <div className="ad-card ad-error">
-                <p>⚠️ {error}</p>
+              <div className="ad-card" style={{ border: '1px solid #ef4444', background: 'rgba(239, 68, 68, 0.05)' }}>
+                <p style={{ color: '#fca5a5', margin: 0, fontSize: '0.9rem' }}>⚠️ {error}</p>
               </div>
             )}
-            
             <div className="ad-stats">
               <div className="ad-stat">
                 <div className="ad-stat-icon">👥</div>
@@ -324,13 +197,7 @@ export default function AdminDashboard() {
                   <p className="ad-stat-label">Total Users</p>
                 </div>
               </div>
-              <div className="ad-stat">
-                <div className="ad-stat-icon">🎓</div>
-                <div>
-                  <p className="ad-stat-value">{instructorsCount}</p>
-                  <p className="ad-stat-label">Instructors</p>
-                </div>
-              </div>
+
               <div className="ad-stat">
                 <div className="ad-stat-icon">📚</div>
                 <div>
@@ -338,6 +205,7 @@ export default function AdminDashboard() {
                   <p className="ad-stat-label">Total Courses</p>
                 </div>
               </div>
+
               <div className="ad-stat">
                 <div className="ad-stat-icon">📰</div>
                 <div>
@@ -345,82 +213,37 @@ export default function AdminDashboard() {
                   <p className="ad-stat-label">Blog Posts</p>
                 </div>
               </div>
-              <div className="ad-stat">
-                <div className="ad-stat-icon">🎬</div>
-                <div>
-                  <p className="ad-stat-value">{reelsCount}</p>
-                  <p className="ad-stat-label">Reels</p>
-                </div>
-              </div>
-              <div className="ad-stat">
-                <div className="ad-stat-icon">❓</div>
-                <div>
-                  <p className="ad-stat-value">{quizzesCount}</p>
-                  <p className="ad-stat-label">Quizzes</p>
-                </div>
-              </div>
-              <div className="ad-stat">
-                <div className="ad-stat-icon">🏆</div>
-                <div>
-                  <p className="ad-stat-value">{certificatesCount}</p>
-                  <p className="ad-stat-label">Certificates</p>
-                </div>
-              </div>
-              <div className="ad-stat">
-                <div className="ad-stat-icon">✅</div>
-                <div>
-                  <p className="ad-stat-value">{tasksCount}</p>
-                  <p className="ad-stat-label">Tasks</p>
-                </div>
-              </div>
-              <div className="ad-stat">
-                <div className="ad-stat-icon">📧</div>
-                <div>
-                  <p className="ad-stat-value">{mailsCount}</p>
-                  <p className="ad-stat-label">Mails</p>
-                </div>
-              </div>
-              <div className="ad-stat">
-                <div className="ad-stat-icon">🚩</div>
-                <div>
-                  <p className="ad-stat-value">{reportsCount}</p>
-                  <p className="ad-stat-label">Reports</p>
-                </div>
-              </div>
             </div>
 
             <div className="ad-card">
               <h3>Quick Actions</h3>
               <div className="ad-btn-row">
-                <Link to="/admin/create-course" className="ad-btn-primary">
+                <Link to="/admin/create-course" className="ad-btn-primary" style={{ textDecoration: 'none' }}>
                   ➕ Create New Course
                 </Link>
-                <Link to="/admin/create-post" className="ad-btn-primary">
+                <Link to="/admin/create-post" className="ad-btn-primary" style={{ textDecoration: 'none' }}>
                   ✍ Write New Blog Post
                 </Link>
-                <Link to="/admin/create-quiz" className="ad-btn-primary">
-                  ❓ Create New Quiz
-                </Link>
-                <Link to="/admin/users" className="ad-btn-secondary">
-                  👥 Manage Users
+                <Link to="/admin/users" className="ad-btn-secondary" style={{ textDecoration: 'none' }}>
+                  👥 Manage User Roles
                 </Link>
               </div>
             </div>
 
             <div className="ad-card">
               <h3>System Status</h3>
-              <div className="ad-status-row">
-                <div className="ad-status-item">
-                  <div className="ad-status-dot online" />
-                  <span>Database: Online</span>
+              <div style={{ display: 'flex', gap: '2rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <div style={{ width: '10px', height: '10px', background: '#10b981', borderRadius: '50%' }} />
+                  <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Database: Online</span>
                 </div>
-                <div className="ad-status-item">
-                  <div className="ad-status-dot online" />
-                  <span>Storage: Online</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <div style={{ width: '10px', height: '10px', background: '#10b981', borderRadius: '50%' }} />
+                  <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Storage: Online</span>
                 </div>
-                <div className="ad-status-item">
-                  <div className="ad-status-dot online" />
-                  <span>Auth Service: Online</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <div style={{ width: '10px', height: '10px', background: '#10b981', borderRadius: '50%' }} />
+                  <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Auth Service: Online</span>
                 </div>
               </div>
             </div>
