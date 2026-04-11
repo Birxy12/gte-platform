@@ -93,7 +93,7 @@ export default function AdminDashboard() {
 
   const isActive = (path) => {
     const baseClass = "ad-nav-item";
-    const activeClass = location.pathname === path ? " active" : "";
+    const activeClass = location.pathname === path || location.pathname.startsWith(`${path}/`) ? " active" : "";
     return `${baseClass}${activeClass}`;
   };
 
@@ -155,7 +155,7 @@ export default function AdminDashboard() {
 
           {sidebarOpen && <div className="ad-nav-divider" />}
 
-          {/* Management - All Features */}
+          {/* Management - All Features with CORRECT ROUTES */}
           <Link to="/admin/users" className={isActive("/admin/users")} onClick={handleNavClick}>
             <span className="ad-nav-icon">👥</span>
             {sidebarOpen && <span>Manage Users</span>}
@@ -180,7 +180,7 @@ export default function AdminDashboard() {
             <span className="ad-nav-icon">❓</span>
             {sidebarOpen && <span>Manage Quizzes</span>}
           </Link>
-          <Link to="/admin/manage-certificates" className={isActive("/admin/manage-certificates")} onClick={handleNavClick}>
+          <Link to="/admin/certificates" className={isActive("/admin/certificates")} onClick={handleNavClick}>
             <span className="ad-nav-icon">🏆</span>
             {sidebarOpen && <span>Manage Certificates</span>}
           </Link>
@@ -188,11 +188,11 @@ export default function AdminDashboard() {
             <span className="ad-nav-icon">✅</span>
             {sidebarOpen && <span>Manage Tasks</span>}
           </Link>
-          <Link to="/admin/manage-mails" className={isActive("/admin/manage-mails")} onClick={handleNavClick}>
+          <Link to="/admin/mails" className={isActive("/admin/mails")} onClick={handleNavClick}>
             <span className="ad-nav-icon">📧</span>
             {sidebarOpen && <span>Manage Mails</span>}
           </Link>
-          <Link to="/admin/manage-economy" className={isActive("/admin/manage-economy")} onClick={handleNavClick}>
+          <Link to="/admin/economy" className={isActive("/admin/economy")} onClick={handleNavClick}>
             <span className="ad-nav-icon">💰</span>
             {sidebarOpen && <span>Manage Economy</span>}
           </Link>
@@ -200,7 +200,7 @@ export default function AdminDashboard() {
             <span className="ad-nav-icon">👑</span>
             {sidebarOpen && <span>Manage Leadership</span>}
           </Link>
-          <Link to="/admin/manage-testimonies" className={isActive("/admin/manage-testimonies")} onClick={handleNavClick}>
+          <Link to="/admin/testimonies" className={isActive("/admin/testimonies")} onClick={handleNavClick}>
             <span className="ad-nav-icon">💬</span>
             {sidebarOpen && <span>Manage Testimonies</span>}
           </Link>
