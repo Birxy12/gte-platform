@@ -15,11 +15,11 @@ export default function AdminDashboard() {
   const [postsCount, setPostsCount] = useState(0);
   const [error, setError] = useState(null);
   
-  // Sidebar states - NEW
+  // Sidebar states
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
 
-  // Detect mobile/desktop - NEW
+  // Detect mobile/desktop
   useEffect(() => {
     const checkMobile = () => {
       const mobile = window.innerWidth <= 1024;
@@ -73,16 +73,40 @@ export default function AdminDashboard() {
 
   const isOverview = location.pathname === "/admin";
 
-  // Close sidebar on mobile when clicking nav link - NEW
+  // Close sidebar on mobile when clicking nav link
   const handleNavClick = () => {
     if (isMobile) {
       setSidebarOpen(false);
     }
   };
 
+  // List of admin pages to be added
+  const adminPages = [
+    "AdminDashboard.css",
+    "AdminDashboard.jsx",
+    "AdminSettings.jsx",
+    "CreateCourse.jsx",
+    "CreatePost.jsx",
+    "CreateQuiz.jsx",
+    "EditCourse.jsx",
+    "ManageCertificates.jsx",
+    "ManageCourses.jsx",
+    "ManageEconomy.jsx",
+    "ManageInstructors.jsx",
+    "ManageLeadership.jsx",
+    "ManageMails.jsx",
+    "ManagePosts.jsx",
+    "ManageQuizzes.jsx",
+    "ManageReels.jsx",
+    "ManageReports.jsx",
+    "ManageTasks.jsx",
+    "ManageTestimonies.jsx",
+    "ManageUsers.jsx",
+  ];
+
   return (
     <div className={`admin-dash ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
-      {/* Mobile Header - NEW */}
+      {/* Mobile Header */}
       <header className="ad-mobile-header">
         <button 
           className="ad-menu-toggle"
@@ -95,7 +119,7 @@ export default function AdminDashboard() {
         <div style={{ width: 40 }} />
       </header>
 
-      {/* Overlay for mobile - NEW */}
+      {/* Overlay for mobile */}
       {isMobile && sidebarOpen && (
         <div 
           className="ad-overlay"
@@ -105,7 +129,7 @@ export default function AdminDashboard() {
 
       {/* Sidebar */}
       <aside className={`ad-sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
-        {/* Desktop Toggle Button - NEW */}
+        {/* Desktop Toggle Button */}
         {!isMobile && (
           <button
             className="ad-sidebar-toggle"
@@ -122,6 +146,22 @@ export default function AdminDashboard() {
         </Link>
 
         <nav className="ad-nav">
+          {/* Admin Pages List */}
+          <div className="ad-nav-section">
+            <h3 className="ad-nav-heading">Admin Pages</h3>
+            {adminPages.map((page, index) => (
+              <Link 
+                key={index} 
+                to={`/admin/${page.replace(".jsx", "").toLowerCase()}`} 
+                className={isActive(`/admin/${page.replace(".jsx", "").toLowerCase()}`)} 
+                onClick={handleNavClick}
+              >
+                <span className="ad-nav-icon">📄</span>
+                {sidebarOpen && <span>{page}</span>}
+              </Link>
+            ))}
+          </div>
+
           <Link to="/admin" className={isActive("/admin")} onClick={handleNavClick}>
             <span className="ad-nav-icon">📊</span>
             {sidebarOpen && <span>Analytics</span>}
@@ -134,32 +174,8 @@ export default function AdminDashboard() {
             <span className="ad-nav-icon">📚</span>
             {sidebarOpen && <span>Manage Courses</span>}
           </Link>
-          <Link to="/admin/manage-posts" className={isActive("/admin/manage-posts")} onClick={handleNavClick}>
-            <span className="ad-nav-icon">📰</span>
-            {sidebarOpen && <span>Manage Posts</span>}
-          </Link>
-          <Link to="/admin/reports" className={isActive("/admin/reports")} onClick={handleNavClick}>
-            <span className="ad-nav-icon">🛡️</span>
-            {sidebarOpen && <span>Moderation</span>}
-          </Link>
-          
-          {sidebarOpen && (
-            <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', margin: '1rem 0' }} />
-          )}
-          
-          <Link to="/admin/create-course" className={isActive("/admin/create-course")} onClick={handleNavClick}>
-            <span className="ad-nav-icon">✨</span>
-            {sidebarOpen && <span>New Course</span>}
-          </Link>
-          <Link to="/admin/create-post" className={isActive("/admin/create-post")} onClick={handleNavClick}>
-            <span className="ad-nav-icon">🖋️</span>
-            {sidebarOpen && <span>New Post</span>}
-          </Link>
-          
-          {sidebarOpen && (
-            <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', margin: '1rem 0' }} />
-          )}
-          
+
+          {/* Additional Navigation Links */}
           <Link to="/admin/settings" className={isActive("/admin/settings")} onClick={handleNavClick}>
             <span className="ad-nav-icon">⚙️</span>
             {sidebarOpen && <span>Settings</span>}
@@ -227,24 +243,6 @@ export default function AdminDashboard() {
                 <Link to="/admin/users" className="ad-btn-secondary" style={{ textDecoration: 'none' }}>
                   👥 Manage User Roles
                 </Link>
-              </div>
-            </div>
-
-            <div className="ad-card">
-              <h3>System Status</h3>
-              <div style={{ display: 'flex', gap: '2rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <div style={{ width: '10px', height: '10px', background: '#10b981', borderRadius: '50%' }} />
-                  <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Database: Online</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <div style={{ width: '10px', height: '10px', background: '#10b981', borderRadius: '50%' }} />
-                  <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Storage: Online</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <div style={{ width: '10px', height: '10px', background: '#10b981', borderRadius: '50%' }} />
-                  <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Auth Service: Online</span>
-                </div>
               </div>
             </div>
           </>
