@@ -4,7 +4,7 @@ import { db, auth } from "../../../config/firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { Menu, X, ChevronLeft, ChevronRight } from "lucide-react";
-import "./AdminDashboard.css";
+import "./AdminDashboard.css"; // Keep this if you still want styles, else remove it
 
 export default function AdminDashboard() {
   const location = useLocation();
@@ -14,7 +14,7 @@ export default function AdminDashboard() {
   const [coursesCount, setCoursesCount] = useState(0);
   const [postsCount, setPostsCount] = useState(0); // Corrected state for posts count
   const [error, setError] = useState(null);
-  
+
   // Sidebar states
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
@@ -82,8 +82,6 @@ export default function AdminDashboard() {
 
   // List of admin pages to be added
   const adminPages = [
-    "AdminDashboard.css",
-    "AdminDashboard.jsx",
     "AdminSettings.jsx",
     "CreateCourse.jsx",
     "CreatePost.jsx",
