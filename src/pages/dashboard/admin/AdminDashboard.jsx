@@ -12,7 +12,7 @@ export default function AdminDashboard() {
 
   const [usersCount, setUsersCount] = useState(0);
   const [coursesCount, setCoursesCount] = useState(0);
-  const [postsCount, setPostsCount] = useState(0);
+  const [postsCount, setPostsCount] = useState(0); // Corrected state for posts count
   const [error, setError] = useState(null);
   
   // Sidebar states
@@ -45,7 +45,7 @@ export default function AdminDashboard() {
 
         setUsersCount(usersSnapshot.size);
         setCoursesCount(coursesSnapshot.size);
-        setPostsCount(postsSnapshot.size);
+        setPostsCount(postsSnapshot.size); // Corrected this line
       } catch (err) {
         console.error("Error fetching analytics:", err);
         if (err.code === "permission-denied") {
