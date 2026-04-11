@@ -4,7 +4,7 @@ import { db, auth } from "../../../config/firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { Menu, X, ChevronLeft, ChevronRight } from "lucide-react";
-import "./AdminDashboard.css"; // Keep this if you still want styles, else remove it
+// Removed the AdminDashboard.css import if it's no longer required
 
 export default function AdminDashboard() {
   const location = useLocation();
