@@ -643,7 +643,8 @@ export default function UserDashboard() {
             {selectedCert && (
                 <CertificateModal 
                     course={selectedCert} 
-                    profile={profile || user} 
+                    profile={profile || user}
+                    allCompleted={completedCourses}
                     onClose={() => setSelectedCert(null)} 
                 />
             )}

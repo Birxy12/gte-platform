@@ -11,6 +11,7 @@ import {
   increment
 } from "firebase/firestore";
 import { Coins, Plus, TrendingUp } from "lucide-react";
+import { mailService } from "../../../services/mailService";
 
 export default function ManageUsers() {
   const [users, setUsers] = useState([]);
@@ -118,19 +119,27 @@ export default function ManageUsers() {
     );
     
     if (amountStr === null) return;
-    const amount = parseInt(amountStr);
+    const amountToAdd = parseInt(amountStr);
     
-    if (isNaN(amount) || amount <= 0) {
+    if (isNaN(amountToAdd) || amountToAdd <= 0) {
       alert("Please enter a valid positive number of coins.");
       return;
     }
 
     try {
-      await updateDoc(doc(db, "users", id), {
-        coins: increment(amount)
-      });
-      setUsers(users.map(u => u.id === id ? { ...u, coins: (u.coins || 0) + amount } : u));
-      alert(`Successfully allocated ${amount} coins to user record.`);
+      if (amountToAdd > 0) {
+        await updateDoc(doc(db, "users", id), {
+          coins: increment(amountToAdd)
+        });
+        setUsers(users.map(u => u.id === id ? { ...u, coins: (u.coins || 0) + amountToAdd } : u));
+        alert(`Successfully allocated ${amountToAdd} Vault Coins!`);
+
+        // Send Email Notification
+        await mailService.sendEmail(id, "coin_credit", { amount: amountToAdd }, {
+            subject: "Vault Coins Credited to Your Account 🪙",
+            body: `Hello {{username}},\n\nYour account has been officially credited with ${amountToAdd} Vault Coins by the academy administration.\nKeep up the good work and continue unlocking premium course access and reels.\n\nBest Regards,\nGLOBIXTECH ACADEMY`
+        });
+      }
     } catch (err) {
       console.error("Error allocating coins:", err);
       alert("Failed to allocate coins. Access Denied?");
@@ -148,6 +157,13 @@ export default function ManageUsers() {
         });
         setUsers(users.map(u => u.id === selectedUserForTask.id ? { ...u, level: (u.level || 1) + reward } : u));
         alert(`Successfully boosted ${selectedUserForTask.username} by ${reward} levels!`);
+        
+        // Send Email
+        await mailService.sendEmail(selectedUserForTask.id, "level_up", { reward, taskTitle: task.title }, {
+            subject: "Mission Accomplished: Level Up! 🚀",
+            body: `Hello {{username}},\n\nYou have been awarded for completing the objective: "${task.title}".\nYour rank has increased by +${reward} Levels!\n\nKeep pushing the boundaries of your education.\n\nBest Regards,\nGLOBIXTECH ACADEMY`
+        });
+        
         setSelectedUserForTask(null);
       } catch (err) {
         console.error("Error awarding task", err);

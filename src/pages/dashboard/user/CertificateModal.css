@@ -125,19 +125,38 @@
   margin: 1.5rem 0;
 }
 
-.cert-course {
-  font-family: 'Georgia', serif;
-  font-size: 2rem;
+.cert-grade-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 2rem 0;
+  text-align: left;
+}
+
+.cert-grade-table th {
+  background: #f1f5f9;
+  padding: 0.75rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  color: #64748b;
+  border-bottom: 2px solid #cbd5e1;
+}
+
+.cert-grade-table td {
+  padding: 1rem 0.75rem;
+  border-bottom: 1px solid #e2e8f0;
   color: #1e293b;
-  font-weight: bold;
-  margin: 1.5rem 0;
+}
+
+.cert-grade-table tfoot td {
+  padding-top: 1.5rem;
+  border-bottom: none;
 }
 
 .cert-footer {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  margin-top: 4rem;
+  margin-top: 2rem;
   padding: 0 2rem;
   position: relative;
   z-index: 1;
@@ -148,18 +167,9 @@
 }
 
 .cert-signature-line {
-  width: 200px;
-  border-bottom: 1px solid #1e293b;
+  width: 250px;
   margin-bottom: 0.5rem;
   height: 40px;
-}
-
-.cert-signature p {
-  color: #64748b;
-  font-size: 0.9rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin: 0;
 }
 
 .cert-seal {

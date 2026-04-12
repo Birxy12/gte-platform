@@ -5,8 +5,8 @@ export const mailService = {
     /**
      * Send a templated email to a specific user
      */
-    async sendEmail(userId, templateId, extraData = {}) {
-        if (!userId || !templateId) return;
+    async sendEmail(userId, templateId, extraData = {}, directPayload = null) {
+        if (!userId) return;
 
         try {
             // 1. Get User Info
@@ -14,13 +14,26 @@ export const mailService = {
             if (!userSnap.exists()) return;
             const userData = userSnap.data();
 
-            // 2. Get Template
-            const templateSnap = await getDoc(doc(db, "mailTemplates", templateId));
-            if (!templateSnap.exists()) {
-                console.error(`Template ${templateId} not found.`);
+            let subject = "";
+            let body = "";
+
+            // 2. Get Template or Direct Payload
+            if (directPayload) {
+                subject = directPayload.subject;
+                body = directPayload.body;
+            } else if (templateId) {
+                const templateSnap = await getDoc(doc(db, "mailTemplates", templateId));
+                if (templateSnap.exists()) {
+                    const template = templateSnap.data();
+                    subject = template.subject;
+                    body = template.body;
+                } else {
+                    console.error(`Template ${templateId} not found, and no fallback provided.`);
+                    return;
+                }
+            } else {
                 return;
             }
-            const template = templateSnap.data();
 
             // 3. Prepare Payload
             const placeholders = {
@@ -28,9 +41,6 @@ export const mailService = {
                 email: userData.email,
                 ...extraData
             };
-
-            let subject = template.subject;
-            let body = template.body;
 
             // Replace placeholders {{variable}}
             Object.keys(placeholders).forEach(key => {
@@ -59,13 +69,13 @@ export const mailService = {
     /**
      * Broadcast a templated email to all users
      */
-    async broadcastEmail(templateId, extraData = {}) {
-        if (!templateId) return;
+    async broadcastEmail(templateId, extraData = {}, directPayload = null) {
+        if (!templateId && !directPayload) return;
         try {
             // Get all active users
             const usersSnap = await getDocs(collection(db, "users"));
             const sendPromises = usersSnap.docs.map(userDoc => 
-                this.sendEmail(userDoc.id, templateId, extraData)
+                this.sendEmail(userDoc.id, templateId, extraData, directPayload)
             );
             await Promise.all(sendPromises);
         } catch (error) {
