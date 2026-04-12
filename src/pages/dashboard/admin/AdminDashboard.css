@@ -81,7 +81,7 @@
 
 /* Sidebar closed state - slides to left */
 .ad-sidebar.closed {
-  transform: translateX(-100%);
+  transform: translateX(calc(-100% + 28px));
 }
 
 .ad-sidebar.open {
@@ -654,8 +654,12 @@
 
 /* Desktop sidebar closed state */
 @media (min-width: 1025px) {
+  .ad-overlay {
+    display: none !important;
+  }
+
   .ad-sidebar.closed {
-    transform: translateX(-100%);
+    transform: translateX(calc(-100% + 28px));
   }
 
   .ad-sidebar.open {
