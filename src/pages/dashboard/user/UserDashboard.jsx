@@ -7,7 +7,7 @@ import { doc, getDoc, collection, query, where, getDocs, updateDoc, increment, s
 import { StatusFeed } from "../../../components/status/StatusSystem";
 import { progressService } from "../../../services/progressService";
 import CertificateModal from "./CertificateModal";
-import { Award, FileText, Zap, Coins, Shield, Star, Upload, X, ChevronRight } from "lucide-react";
+import { Award, FileText, Zap, Coins, Shield, Star, Upload, X, ChevronRight, Menu } from "lucide-react";
 import { reelsService } from "../../../services/reelsService";
 import { socialService } from "../../../services/socialService";
 import { enrollmentService } from "../../../services/enrollmentService";
@@ -21,6 +21,24 @@ export default function UserDashboard() {
     const { user } = useAuth();
     const location = useLocation();
     const navigate = useNavigate();
+
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+        if (typeof window !== 'undefined') return window.innerWidth < 1024;
+        return false;
+    });
+
+    useEffect(() => {
+        const handleResize = () => {
+            if (window.innerWidth < 1024) {
+                setSidebarCollapsed(true);
+            } else {
+                setSidebarCollapsed(false);
+            }
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     const [profile, setProfile] = useState(null);
     const [postCount, setPostCount] = useState(0);
     const [completedCourses, setCompletedCourses] = useState([]);
@@ -263,9 +281,27 @@ export default function UserDashboard() {
     const totalProgress = (friendProgress + reelProgress + bioProgress) / 3;
 
     return (
-        <div className="user-dash">
+        <div className={`user-dash ${sidebarCollapsed ? 'sidebar-closed' : ''}`}>
+            {/* Mobile Header */}
+            <div className="ud-mobile-header">
+                <div className="ud-mobile-brand">
+                    <span>GTE</span> Portal
+                </div>
+                <button className="ud-menu-toggle" onClick={() => setSidebarCollapsed(!sidebarCollapsed)}>
+                    <Menu size={24} />
+                </button>
+            </div>
+
+            {/* Overlay */}
+            {!sidebarCollapsed && (
+                <div className="ud-overlay" onClick={() => setSidebarCollapsed(true)} />
+            )}
+
             {/* Sidebar */}
-            <aside className="ud-sidebar">
+            <aside className={`ud-sidebar ${sidebarCollapsed ? 'closed' : 'open'}`}>
+                <button className="ud-sidebar-toggle" onClick={() => setSidebarCollapsed(!sidebarCollapsed)}>
+                    <ChevronRight size={16} style={{ transform: sidebarCollapsed ? "rotate(0deg)" : "rotate(180deg)", transition: "0.2s" }} />
+                </button>
                 <Link to="/home" className="ud-brand"><span>GTE</span> Portal</Link>
                 <nav className="ud-nav">
                     <Link to="/dashboard" className={isActive("/dashboard")}>

@@ -9,13 +9,31 @@ import {
   Users, BookOpen, Newspaper, Film, Layout, 
   Settings, LogOut, PlusCircle, PenTool, 
   CheckCircle, Shield, Star, HelpCircle, 
-  MessageSquare, Award, Clock, UserCheck, Coins
+  MessageSquare, Award, Clock, UserCheck, Coins,
+  Menu, ChevronRight
 } from "lucide-react";
 import "./AdminDashboard.css";
 
 export default function AdminDashboard() {
   const location = useLocation();
   const navigate = useNavigate();
+
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') return window.innerWidth < 1024;
+    return false;
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 1024) {
+        setSidebarCollapsed(true);
+      } else {
+        setSidebarCollapsed(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const [usersCount, setUsersCount] = useState(0);
   const [coursesCount, setCoursesCount] = useState(0);
@@ -107,9 +125,29 @@ export default function AdminDashboard() {
   const isOverview = location.pathname === "/admin";
 
   return (
-    <div className="admin-dash">
+    <div className={`admin-dash ${sidebarCollapsed ? 'sidebar-closed' : ''}`}>
+      {/* Mobile Header */}
+      <div className="ad-mobile-header">
+        <div className="ad-mobile-brand">
+          <Shield className="text-blue-500 inline mr-2" size={20} />
+          <span>Admin <b>Panel</b></span>
+        </div>
+        <button className="ad-menu-toggle" onClick={() => setSidebarCollapsed(!sidebarCollapsed)}>
+          <Menu size={24} />
+        </button>
+      </div>
+
+      {/* Overlay */}
+      {!sidebarCollapsed && (
+        <div className="ad-overlay" onClick={() => setSidebarCollapsed(true)} />
+      )}
+
       {/* Sidebar */}
-      <aside className="ad-sidebar">
+      <aside className={`ad-sidebar ${sidebarCollapsed ? "closed" : "open"}`}>
+        <button className="ad-sidebar-toggle" onClick={() => setSidebarCollapsed(!sidebarCollapsed)}>
+          <ChevronRight size={16} style={{ transform: sidebarCollapsed ? "rotate(0deg)" : "rotate(180deg)", transition: "0.2s" }} />
+        </button>
+
         <Link to="/home" className="ad-brand">
           <Shield className="text-blue-500" size={24} />
           <span>Admin <b>Panel</b></span>
