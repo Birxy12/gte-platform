@@ -9,7 +9,7 @@ export default function ManageTasks() {
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [newTask, setNewTask] = useState({ title: "", description: "", priority: "medium", status: "pending" });
+  const [newTask, setNewTask] = useState({ title: "", description: "", priority: "medium", status: "pending", levelReward: 1 });
 
   const fetchTasks = useCallback(async () => {
     try {
@@ -34,14 +34,16 @@ export default function ManageTasks() {
           description: newTask.description,
           priority: newTask.priority,
           status: newTask.status,
+          levelReward: Number(newTask.levelReward) || 1,
         });
       } else {
         await addDoc(collection(db, "tasks"), {
           ...newTask,
+          levelReward: Number(newTask.levelReward) || 1,
           createdAt: serverTimestamp(),
         });
       }
-      setNewTask({ title: "", description: "", priority: "medium", status: "pending" });
+      setNewTask({ title: "", description: "", priority: "medium", status: "pending", levelReward: 1 });
       setShowAdd(false);
       setEditingId(null);
       fetchTasks();
@@ -51,7 +53,7 @@ export default function ManageTasks() {
   };
 
   const handleEdit = (task) => {
-    setNewTask({ title: task.title, description: task.description, priority: task.priority, status: task.status });
+    setNewTask({ title: task.title, description: task.description, priority: task.priority, status: task.status, levelReward: task.levelReward || 1 });
     setEditingId(task.id);
     setShowAdd(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -60,7 +62,7 @@ export default function ManageTasks() {
   const handleCancel = () => {
     setShowAdd(false);
     setEditingId(null);
-    setNewTask({ title: "", description: "", priority: "medium", status: "pending" });
+    setNewTask({ title: "", description: "", priority: "medium", status: "pending", levelReward: 1 });
   };
 
   const toggleStatus = async (task) => {
@@ -97,7 +99,7 @@ export default function ManageTasks() {
           <h1>Mission Objectives</h1>
           <p>Assign and track platform-wide operational tasks</p>
         </div>
-        <button onClick={() => { setEditingId(null); setNewTask({ title: "", description: "", priority: "medium", status: "pending" }); setShowAdd(true); }} className="ad-btn-primary">
+        <button onClick={() => { setEditingId(null); setNewTask({ title: "", description: "", priority: "medium", status: "pending", levelReward: 1 }); setShowAdd(true); }} className="ad-btn-primary">
           <Plus size={18} /> New Objective
         </button>
       </div>
@@ -144,6 +146,18 @@ export default function ManageTasks() {
                </select>
             </div>
             <div>
+               <label className="ad-label">Level Boost Reward (+)</label>
+               <input 
+                type="number"
+                min="0"
+                max="100"
+                value={newTask.levelReward} 
+                onChange={e => setNewTask({...newTask, levelReward: parseInt(e.target.value) || 0})}
+                placeholder="Levels granted..."
+                className="ad-input text-amber-500 font-bold"
+               />
+            </div>
+            <div className="col-span-2">
                <label className="ad-label">Status</label>
                <select
                 value={newTask.status}
@@ -169,6 +183,7 @@ export default function ManageTasks() {
             <thead>
               <tr>
                 <th>Objective Details</th>
+                <th>Level Reward</th>
                 <th>Priority</th>
                 <th>Status</th>
                 <th>Actions</th>
@@ -187,6 +202,9 @@ export default function ManageTasks() {
                     <td>
                       <div className="font-bold text-white mb-1">{task.title}</div>
                       <div className="text-xs text-slate-500 max-w-[350px] line-clamp-1">{task.description}</div>
+                    </td>
+                    <td>
+                      <div className="font-black text-amber-500">+{task.levelReward || 0} LVL</div>
                     </td>
                     <td>
                       <span className={`badge badge-${task.priority}`}>

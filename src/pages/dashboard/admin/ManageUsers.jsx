@@ -10,18 +10,21 @@ import {
   serverTimestamp,
   increment
 } from "firebase/firestore";
-import { Coins, Plus } from "lucide-react";
+import { Coins, Plus, TrendingUp } from "lucide-react";
 
 export default function ManageUsers() {
   const [users, setUsers] = useState([]);
+  const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [newUser, setNewUser] = useState({ username: "", email: "", role: "user" });
   const [addingUser, setAddingUser] = useState(false);
+  
+  const [selectedUserForTask, setSelectedUserForTask] = useState(null);
 
-  const fetchUsers = async () => {
+  const fetchUsersAndTasks = async () => {
     try {
       setLoading(true);
       const snapshot = await getDocs(collection(db, "users"));
@@ -30,16 +33,19 @@ export default function ManageUsers() {
         id: doc.id
       }));
       setUsers(usersList);
+
+      const taskSnap = await getDocs(collection(db, "tasks"));
+      setTasks(taskSnap.docs.map(t => ({ id: t.id, ...t.data() })));
     } catch (err) {
       console.error(err);
-      setError("Failed to load users");
+      setError("Failed to load users or tasks");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchUsers();
+    fetchUsersAndTasks();
   }, []);
 
   const changeRole = async (id, currentRole) => {
@@ -131,6 +137,25 @@ export default function ManageUsers() {
     }
   };
 
+  const grantTaskToUser = async (task) => {
+    if (!selectedUserForTask) return;
+    const reward = Number(task.levelReward) || 1;
+    
+    if (window.confirm(`Award '${task.title}' to ${selectedUserForTask.username}? This will boost their level by +${reward}.`)) {
+      try {
+        await updateDoc(doc(db, "users", selectedUserForTask.id), {
+          level: increment(reward)
+        });
+        setUsers(users.map(u => u.id === selectedUserForTask.id ? { ...u, level: (u.level || 1) + reward } : u));
+        alert(`Successfully boosted ${selectedUserForTask.username} by ${reward} levels!`);
+        setSelectedUserForTask(null);
+      } catch (err) {
+        console.error("Error awarding task", err);
+        alert("Failed to update user level. Check Firestore permissions.");
+      }
+    }
+  };
+
   const handleAddUser = async (e) => {
     e.preventDefault();
     if (!newUser.username || !newUser.email) return;
@@ -155,7 +180,7 @@ export default function ManageUsers() {
       alert("User manually added to records! 👥");
       setShowAddForm(false);
       setNewUser({ username: "", email: "", role: "user" });
-      fetchUsers();
+      fetchUsersAndTasks();
     } catch (err) {
       console.error(err);
       alert("Failed to add user.");
@@ -235,6 +260,7 @@ export default function ManageUsers() {
                 <th>Username</th>
                 <th>Email</th>
                 <th>Role</th>
+                <th>Level</th>
                 <th>Vault Balance</th>
                 <th>Created/Login</th>
                 <th>Actions</th>
@@ -249,6 +275,11 @@ export default function ManageUsers() {
                     <span className={`role-badge role-${user.role || 'user'}`}>
                       {user.role || "user"}
                     </span>
+                  </td>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '800', color: '#10b981' }}>
+                      LVL {user.level || 1}
+                    </div>
                   </td>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600', color: '#fbbf24' }}>
@@ -273,7 +304,14 @@ export default function ManageUsers() {
                         style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', background: 'linear-gradient(135deg, #fbbf24 0%, #d97706 100%)', border: 'none' }}
                         onClick={() => allocateCoins(user.id, user.coins || 0)}
                       >
-                        <Plus size={14} style={{ marginRight: '4px' }} /> Add Coins
+                        <Plus size={14} style={{ marginRight: '4px' }} /> MINT
+                      </button>
+                      <button
+                        className="ad-btn-secondary"
+                        style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', border: 'none', color: '#fff' }}
+                        onClick={() => setSelectedUserForTask(user)}
+                      >
+                        <TrendingUp size={14} style={{ marginRight: '4px' }} /> AWARD TASK
                       </button>
                       {user.role !== "admin" && (
                         <>
@@ -300,6 +338,43 @@ export default function ManageUsers() {
           </table>
         </div>
       </div>
+
+      {/* Task Awarding Modal */}
+      {selectedUserForTask && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="ad-card" style={{ maxWidth: '500px', width: '100%', position: 'relative' }}>
+             <h3 style={{ marginBottom: '1.5rem', color: 'white', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '1rem' }}>
+                Award Task to {selectedUserForTask.username}
+             </h3>
+             
+             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '60vh', overflowY: 'auto', marginBottom: '1.5rem' }}>
+               {tasks.length === 0 ? (
+                  <p style={{ color: '#94a3b8', textAlign: 'center' }}>No tasks created yet.</p>
+               ) : (
+                 tasks.map(t => (
+                    <button 
+                      key={t.id}
+                      onClick={() => grantTaskToUser(t)} 
+                      className="ad-btn-secondary"
+                      style={{ width: '100%', display: 'flex', justifyContent: 'space-between', padding: '1rem' }}
+                    >
+                       <span style={{ fontWeight: '600' }}>{t.title}</span> 
+                       <span style={{ color: '#f59e0b', fontWeight: '800' }}>+{t.levelReward || 1} LVL</span>
+                    </button>
+                 ))
+               )}
+             </div>
+
+             <button 
+                onClick={() => setSelectedUserForTask(null)} 
+                className="ad-btn-primary w-full"
+                style={{ background: '#334155', border: '1px solid #475569' }}
+             >
+               Cancel
+             </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }
