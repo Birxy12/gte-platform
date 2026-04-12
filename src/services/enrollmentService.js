@@ -54,6 +54,14 @@ export const enrollmentService = {
       });
     });
 
+    // Notify User via Mail
+    import('./mailService').then(({ mailService }) => {
+        mailService.sendEmail(userId, "coin_debit", { cost: coinCost }, {
+            subject: "Vault Coins Spent: Course Enrollment 🪙",
+            body: `Hello {{username}},\n\nYou have successfully enrolled in a new course. This transaction deducted ${coinCost} Vault Coins from your balance.\n\nEnjoy the classified intel!\n\nBest,\nGLOBIXTECH ACADEMY`
+        });
+    }).catch(err => console.error("Mail dispatch failing:", err));
+
     return enrollmentId;
   },
 
@@ -208,6 +216,15 @@ export const enrollmentService = {
           coinsPaid: coinCost
         });
       });
+      
+      // Notify User via Mail
+      import('./mailService').then(({ mailService }) => {
+          mailService.sendEmail(userId, "coin_debit", { cost: coinCost }, {
+              subject: "Vault Coins Spent: Asset Unlocked 🪙",
+              body: `Hello {{username}},\n\nYou have successfully unlocked access to a classified asset (${itemType}). This transaction deducted ${coinCost} Vault Coins from your balance.\n\nEnjoy the intel!\n\nBest,\nGLOBIXTECH ACADEMY`
+          });
+      }).catch(err => console.error("Mail dispatch failing:", err));
+      
     } else {
       // Free item
       await setDoc(unlockRef, {

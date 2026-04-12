@@ -42,6 +42,14 @@ export default function ManageTasks() {
           levelReward: Number(newTask.levelReward) || 1,
           createdAt: serverTimestamp(),
         });
+        
+        // Broadcast new task email
+        import('../../../services/mailService').then(({ mailService }) => {
+            mailService.broadcastEmail("new_task_alert", { taskTitle: newTask.title }, {
+                subject: "New Mission Objective Available 🎯",
+                body: `Hello {{username}},\n\nA new global objective has been posted by the administration:\n\nMission: ${newTask.title}\nReward: +${Number(newTask.levelReward) || 1} Levels\n\nLog in to the portal to review the complete mission briefing and begin execution.\n\nBest Regards,\nGLOBIXTECH ACADEMY`
+            });
+        }).catch(err => console.error("Mail service import error", err));
       }
       setNewTask({ title: "", description: "", priority: "medium", status: "pending", levelReward: 1 });
       setShowAdd(false);
