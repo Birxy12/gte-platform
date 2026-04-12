@@ -25,6 +25,84 @@ export default function CourseDetails() {
     const { user, role } = useAuth();
     const navigate = useNavigate();
 
+    const MaterialItem = ({ m, idx, enrolled, courseId }) => {
+        const [isUnlocked, setIsUnlocked] = useState(enrolled);
+        const [unlocking, setUnlocking] = useState(false);
+
+        useEffect(() => {
+            if (enrolled) setIsUnlocked(true);
+            else if (m.coinCost > 0 && user) {
+                enrollmentService.hasUnlockedItem(user.uid, m.id).then(setIsUnlocked);
+            }
+        }, [enrolled, m.id, m.coinCost]);
+
+        const handleUnlock = async (e) => {
+            e.stopPropagation();
+            if (!user) {
+                alert("Please login first.");
+                return;
+            }
+            if (window.confirm(`Deploy ${m.coinCost} Vault Coins to unlock this specific material?`)) {
+                setUnlocking(true);
+                try {
+                    await enrollmentService.unlockItem(user.uid, m.id, 'material', m.coinCost);
+                    setIsUnlocked(true);
+                    alert("Material unlocked successfully!");
+                } catch (err) {
+                    alert(err.message || "Financial transaction failed.");
+                } finally {
+                    setUnlocking(false);
+                }
+            }
+        };
+
+        const canAccess = enrolled || isUnlocked || m.coinCost === 0;
+
+        return (
+            <div 
+                className={`curriculum-item p-6 rounded-2xl border transition-all flex items-center gap-6 ${canAccess ? 'bg-slate-800/40 border-slate-700/50 hover:bg-slate-800' : 'bg-slate-900/50 border-slate-800 opacity-60'}`}
+            >
+                <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 font-bold">
+                    {idx + 1}
+                </div>
+                <div className="flex-1">
+                    <h4 className="text-white font-bold mb-1 flex items-center gap-2">
+                        {m.title}
+                        {!canAccess && <Lock size={14} className="text-slate-600" />}
+                    </h4>
+                    <div className="flex items-center gap-4 text-xs font-bold text-slate-500 uppercase tracking-widest">
+                        <span className="flex items-center gap-1">
+                            {m.type === 'video' ? <Play size={10} /> : <FileText size={10} />} {m.type}
+                        </span>
+                        {m.coinCost > 0 && !enrolled && (
+                            <span className="flex items-center gap-1 text-amber-500">
+                                • {m.coinCost} Coins
+                            </span>
+                        )}
+                    </div>
+                </div>
+                {canAccess ? (
+                    <button 
+                        onClick={() => navigate(`/courses/${courseId}/lessons/${m.id}`)}
+                        className="bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white px-4 py-2 rounded-xl text-xs font-black transition-all"
+                    >
+                        START
+                    </button>
+                ) : (
+                    m.coinCost > 0 && (
+                        <button
+                            onClick={handleUnlock}
+                            disabled={unlocking}
+                            className="bg-amber-600/20 hover:bg-amber-600 text-amber-500 hover:text-slate-900 px-4 py-2 rounded-xl text-xs font-black transition-all"
+                        >
+                            {unlocking ? "UNLOCKING..." : `UNLOCK (${m.coinCost})`}
+                        </button>
+                    )
+                )}
+            </div>
+        );
+    };
+
     const [course, setCourse] = useState(null);
     const [materials, setMaterials] = useState([]);
     const [enrolled, setEnrolled] = useState(false);
@@ -227,34 +305,7 @@ export default function CourseDetails() {
                                     </div>
                                 ) : (
                                     materials.map((m, idx) => (
-                                        <div 
-                                            key={m.id} 
-                                            className={`curriculum-item p-6 rounded-2xl border transition-all flex items-center gap-6 ${enrolled ? 'bg-slate-800/40 border-slate-700/50 hover:bg-slate-800' : 'bg-slate-900/50 border-slate-800 opacity-60'}`}
-                                        >
-                                            <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 font-bold">
-                                                {idx + 1}
-                                            </div>
-                                            <div className="flex-1">
-                                                <h4 className="text-white font-bold mb-1 flex items-center gap-2">
-                                                    {m.title}
-                                                    {!enrolled && <Lock size={14} className="text-slate-600" />}
-                                                </h4>
-                                                <div className="flex items-center gap-4 text-xs font-bold text-slate-500 uppercase tracking-widest">
-                                                    <span className="flex items-center gap-1">
-                                                        {m.type === 'video' ? <Play size={10} /> : <FileText size={10} />} {m.type}
-                                                    </span>
-                                                    <span>• {m.duration || "10m"}</span>
-                                                </div>
-                                            </div>
-                                            {enrolled && (
-                                                <button 
-                                                    onClick={() => navigate(`/courses/${courseId}/lessons/${m.id}`)}
-                                                    className="bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white px-4 py-2 rounded-xl text-xs font-black transition-all"
-                                                >
-                                                    START
-                                                </button>
-                                            )}
-                                        </div>
+                                        <MaterialItem key={m.id} m={m} idx={idx} enrolled={enrolled} courseId={courseId} />
                                     ))
                                 )}
                             </div>

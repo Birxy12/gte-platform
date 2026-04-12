@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Fragment } from "react";
 import { db } from "../../../config/firebase";
 import { 
   collection, 
@@ -43,6 +43,7 @@ export default function ManageCourses() {
   const [annualPrice, setAnnualPrice] = useState("");
   const [coinCost, setCoinCost] = useState("100");
   const [category, setCategory] = useState("Beginner");
+  const [parentCourseId, setParentCourseId] = useState("");
   const [thumbnailUrl, setThumbnailUrl] = useState("");
   const [creating, setCreating] = useState(false);
   
@@ -51,6 +52,7 @@ export default function ManageCourses() {
   const [materialType, setMaterialType] = useState("pdf");
   const [materialTitle, setMaterialTitle] = useState("");
   const [materialUrl, setMaterialUrl] = useState("");
+  const [materialCoinCost, setMaterialCoinCost] = useState("0");
   const [materialFile, setMaterialFile] = useState(null);
   const [expandedCourse, setExpandedCourse] = useState(null);
 
@@ -91,6 +93,7 @@ export default function ManageCourses() {
         annualPrice: annualPrice.trim() || "0",
         coinCost: parseInt(coinCost) || 100,
         category: category,
+        parentCourseId: parentCourseId || null,
         thumbnailUrl: thumbnailUrl.trim() || "",
         enrolledCount: 0,
         materials: [],
@@ -118,6 +121,7 @@ export default function ManageCourses() {
     setAnnualPrice("");
     setCoinCost("100");
     setCategory("Beginner");
+    setParentCourseId("");
     setThumbnailUrl("");
   };
 
@@ -135,6 +139,7 @@ export default function ManageCourses() {
         type: materialType,
         title: materialTitle.trim(),
         url: materialUrl.trim(),
+        coinCost: parseInt(materialCoinCost) || 0,
         addedAt: new Date().toISOString()
       };
 
@@ -145,6 +150,7 @@ export default function ManageCourses() {
       alert(`${materialType.toUpperCase()} material added successfully!`);
       setMaterialTitle("");
       setMaterialUrl("");
+      setMaterialCoinCost("0");
       setMaterialFile(null);
       fetchCourses();
     } catch (err) {
@@ -242,11 +248,16 @@ export default function ManageCourses() {
                     </tr>
                   ) : (
                     courses.map(course => (
-                      <>
-                        <tr key={course.id}>
+                      <Fragment key={course.id}>
+                        <tr>
                           <td>
                             <div style={{ fontWeight: '700', color: 'white', marginBottom: '4px' }}>{course.title}</div>
                             <div className="flex items-center gap-2">
+                              {course.parentCourseId && (
+                                <span className="font-mono text-[10px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                                  SUB-COURSE
+                                </span>
+                              )}
                               <span className="font-mono text-[10px] text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
                                 {course.category}
                               </span>
@@ -314,13 +325,18 @@ export default function ManageCourses() {
                                 <h4 className="text-xs uppercase text-slate-500 font-bold mb-2">Course Materials</h4>
                                 {course.materials?.length > 0 ? (
                                   course.materials.map(material => (
-                                    <div 
-                                      key={material.id}
-                                      className={`flex items-center gap-3 p-2 rounded-lg border ${getMaterialColor(material.type)}`}
-                                    >
-                                      {getMaterialIcon(material.type)}
-                                      <span className="text-sm font-medium flex-1">{material.title}</span>
-                                      <a 
+                                      <div 
+                                        key={material.id}
+                                        className={`flex items-center gap-3 p-2 rounded-lg border ${getMaterialColor(material.type)}`}
+                                      >
+                                        {getMaterialIcon(material.type)}
+                                        <span className="text-sm font-medium flex-1">{material.title}</span>
+                                        {material.coinCost > 0 && (
+                                          <span className="text-xs font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded mr-2">
+                                            {material.coinCost} Coins
+                                          </span>
+                                        )}
+                                        <a 
                                         href={material.url} 
                                         target="_blank" 
                                         rel="noopener noreferrer"
@@ -347,7 +363,7 @@ export default function ManageCourses() {
                             </td>
                           </tr>
                         )}
-                      </>
+                      </Fragment>
                     ))
                   )}
                 </tbody>
@@ -407,6 +423,16 @@ export default function ManageCourses() {
                     <option>Business</option>
                     <option>Marketing</option>
                     <option>Finance</option>
+                  </select>
+                </div>
+
+                <div className="ad-field">
+                  <label>Parent Course (Make this a Sub-Course)</label>
+                  <select value={parentCourseId} onChange={(e) => setParentCourseId(e.target.value)}>
+                    <option value="">-- None (Top Level Course) --</option>
+                    {courses.filter(c => !c.parentCourseId).map(c => (
+                      <option key={c.id} value={c.id}>{c.title}</option>
+                    ))}
                   </select>
                 </div>
 
@@ -535,6 +561,20 @@ export default function ManageCourses() {
                     onChange={(e) => setMaterialTitle(e.target.value)}
                     required
                   />
+                </div>
+
+                <div className="ad-field">
+                  <label>🪙 Coin Cost (Optional Vault Unlock)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="0 = Free within course"
+                    value={materialCoinCost}
+                    onChange={(e) => setMaterialCoinCost(e.target.value)}
+                  />
+                  <small style={{ color: '#64748b', fontSize: '0.75rem' }}>
+                    Setting > 0 individually charges users coins to access.
+                  </small>
                 </div>
 
                 <div className="ad-field full">

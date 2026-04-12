@@ -25,6 +25,7 @@ export default function CreateReel() {
   const [file, setFile] = useState(null);
   const [description, setDescription] = useState("");
   const [music, setMusic] = useState("Original Audio");
+  const [coinCost, setCoinCost] = useState("0");
   const [missions, setMissions] = useState([]);
   const [selectedMission, setSelectedMission] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -75,6 +76,7 @@ export default function CreateReel() {
 
       await reelsService.uploadReel(file, description, user, {
         music,
+        coinCost: parseInt(coinCost) || 0,
         missionId: selectedMission?.id || null,
         missionPrompt: selectedMission?.prompt || null
       });
@@ -158,6 +160,21 @@ export default function CreateReel() {
               onChange={(e) => setMusic(e.target.value)}
               placeholder="Original Audio"
             />
+          </div>
+
+          {/* Coin Cost */}
+          <div className="field-group">
+            <label><Target size={16} /> 🪙 Coin Cost (Optional Vault Unlock)</label>
+            <input 
+              type="number"
+              min="0"
+              value={coinCost}
+              onChange={(e) => setCoinCost(e.target.value)}
+              placeholder="0 = Free to view"
+            />
+            <small style={{ color: '#64748b', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>
+               Charge users Vault coins to unlock and view this reel.
+            </small>
           </div>
 
           {/* Mission Picker */}

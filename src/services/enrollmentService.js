@@ -174,5 +174,60 @@ export const enrollmentService = {
     const q = query(collection(db, "enrollments"), where("courseId", "==", courseId));
     const snap = await getDocs(q);
     return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  },
+
+  /**
+   * Unlock an individual gated item (material, reel, etc) using Vault Coins
+   */
+  async unlockItem(userId, itemId, itemType, coinCost) {
+    const unlockId = `${userId}_${itemId}`;
+    const unlockRef = doc(db, "unlockedItems", unlockId);
+    const userRef = doc(db, "users", userId);
+
+    const existingSnap = await getDoc(unlockRef);
+    if (existingSnap.exists()) {
+      return unlockId; // Already unlocked
+    }
+
+    if (coinCost > 0) {
+      await runTransaction(db, async (tx) => {
+        const userSnap = await tx.get(userRef);
+        if (!userSnap.exists()) throw new Error("User not found");
+
+        const currentCoins = userSnap.data().coins || 0;
+        if (currentCoins < coinCost) {
+          throw new Error(`Insufficient Vault Coins. You have ${currentCoins}, need ${coinCost}.`);
+        }
+
+        tx.update(userRef, { coins: increment(-coinCost) });
+        tx.set(unlockRef, {
+          userId,
+          itemId,
+          itemType,
+          unlockedAt: serverTimestamp(),
+          coinsPaid: coinCost
+        });
+      });
+    } else {
+      // Free item
+      await setDoc(unlockRef, {
+        userId,
+        itemId,
+        itemType,
+        unlockedAt: serverTimestamp(),
+        coinsPaid: 0
+      });
+    }
+    
+    return unlockId;
+  },
+
+  /**
+   * Check if a user has unlocked an individual gated item
+   */
+  async hasUnlockedItem(userId, itemId) {
+    if (!userId || !itemId) return false;
+    const snap = await getDoc(doc(db, "unlockedItems", `${userId}_${itemId}`));
+    return snap.exists();
   }
 };

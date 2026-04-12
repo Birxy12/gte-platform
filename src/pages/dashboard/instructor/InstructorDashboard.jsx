@@ -7,7 +7,7 @@ import {
 import {
   LayoutDashboard, BookOpen, Users, MessageSquare, Settings, Plus, MoreVertical,
   TrendingUp, Star, Clock, CheckCircle, AlertCircle, ChevronRight, Search, Filter,
-  Download, Calendar, Award, Eye, FileText, HelpCircle, Shield, X, Upload, Trash2, Edit3, Menu
+  Download, Calendar, Award, Eye, FileText, HelpCircle, Shield, X, Upload, Trash2, Edit3, Menu, Play
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import "./InstructorDashboard.css";
@@ -50,6 +50,7 @@ export default function InstructorDashboard() {
   const [selectedCourseId, setSelectedCourseId] = useState("");
   const [materialTitle, setMaterialTitle] = useState("");
   const [materialUrl, setMaterialUrl] = useState("");
+  const [materialCoinCost, setMaterialCoinCost] = useState("0");
   const [materialType, setMaterialType] = useState("pdf");
   const [materialDesc, setMaterialDesc] = useState("");
   const [savingMaterial, setSavingMaterial] = useState(false);
@@ -150,6 +151,7 @@ export default function InstructorDashboard() {
         title: materialTitle,
         url: materialUrl,
         type: materialType,
+        coinCost: parseInt(materialCoinCost) || 0,
         description: materialDesc,
         order: Date.now(),
         addedBy: user.uid,
@@ -157,7 +159,7 @@ export default function InstructorDashboard() {
       });
       alert("Material added successfully! 📎");
       setShowMaterialForm(false);
-      setMaterialTitle(""); setMaterialUrl(""); setMaterialDesc(""); setMaterialType("pdf");
+      setMaterialTitle(""); setMaterialUrl(""); setMaterialDesc(""); setMaterialType("pdf"); setMaterialCoinCost("0");
       
       // Refresh local materials state
       const { courseService } = await import("../../../services/courseService");
@@ -602,6 +604,10 @@ export default function InstructorDashboard() {
                           <div className="form-group">
                             <label>URL / Link</label>
                             <input placeholder="https://..." value={materialUrl} onChange={e => setMaterialUrl(e.target.value)} required />
+                          </div>
+                          <div className="form-group">
+                            <label>🪙 Coin Cost</label>
+                            <input type="number" min="0" placeholder="0 = Free" value={materialCoinCost} onChange={e => setMaterialCoinCost(e.target.value)} />
                           </div>
                         </div>
                         <div className="form-group">

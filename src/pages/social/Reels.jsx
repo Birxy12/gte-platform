@@ -20,10 +20,12 @@ import {
   Play,
   Pause,
   Megaphone,
-  Plus
+  Plus,
+  Target
 } from 'lucide-react';
 import PropTypes from 'prop-types';
 import { reelsService } from '../../services/reelsService';
+import { enrollmentService } from '../../services/enrollmentService';
 import { useAuth } from '../../context/AuthProvider';
 import { db } from '../../config/firebase';
 import { updateDoc, doc, increment } from 'firebase/firestore';
@@ -60,6 +62,8 @@ const Reel = memo(function Reel({ data, isActive, onDeleted }) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [unlocked, setUnlocked] = useState(true);
+  const [unlocking, setUnlocking] = useState(false);
 
   // Initialize state from props
   useEffect(() => {
@@ -67,6 +71,18 @@ const Reel = memo(function Reel({ data, isActive, onDeleted }) {
     setLikesCount(data.likes?.length ?? 0);
     setComments(data.comments ?? []);
   }, [data, user?.uid]);
+
+  // Check if locked reel is unlocked
+  useEffect(() => {
+    if ((data.coinCost || 0) > 0 && user && !isAdmin && data.userId !== user.uid) {
+      setUnlocked(false);
+      enrollmentService.hasUnlockedItem(user.uid, data.id).then(status => {
+        setUnlocked(status);
+      });
+    } else {
+      setUnlocked(true);
+    }
+  }, [data, user, isAdmin]);
 
   // Handle video playback based on active state
   useEffect(() => {
@@ -77,7 +93,7 @@ const Reel = memo(function Reel({ data, isActive, onDeleted }) {
 
     const handlePlayback = async () => {
       try {
-        if (isActive) {
+        if (isActive && unlocked) {
           setIsLoading(true);
           await video.play();
           if (isMounted) {
@@ -130,7 +146,7 @@ const Reel = memo(function Reel({ data, isActive, onDeleted }) {
   // Handlers
   const togglePlay = useCallback(() => {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video || !unlocked) return;
 
     if (isPlaying) {
       video.pause();
@@ -142,7 +158,7 @@ const Reel = memo(function Reel({ data, isActive, onDeleted }) {
 
   const toggleLike = useCallback(async (e) => {
     e.stopPropagation();
-    if (authLoading) return;
+    if (authLoading || !unlocked) return;
     if (!user) {
       alert('Please log in to like this video');
       return;
@@ -165,7 +181,7 @@ const Reel = memo(function Reel({ data, isActive, onDeleted }) {
 
   const handleComment = useCallback(async (e) => {
     e.preventDefault();
-    if (!newComment.trim() || !user) return;
+    if (!newComment.trim() || !user || !unlocked) return;
 
     const commentText = newComment.trim();
     setNewComment('');
@@ -242,6 +258,26 @@ const Reel = memo(function Reel({ data, isActive, onDeleted }) {
     }
   }, [data.id]);
 
+  const handleUnlockReel = async (e) => {
+    e.stopPropagation();
+    if (!user) {
+      alert("Please log in to unlock this reel.");
+      return;
+    }
+    if (window.confirm(`Deploy ${data.coinCost} Coins to unlock this Reel permanently?`)) {
+      setUnlocking(true);
+      try {
+        await enrollmentService.unlockItem(user.uid, data.id, 'reel', data.coinCost);
+        setUnlocked(true);
+        if (isActive) togglePlay();
+      } catch (err) {
+        alert(err.message || "Financial transaction failed.");
+      } finally {
+        setUnlocking(false);
+      }
+    }
+  };
+
   // Memoized values
   const authorAvatar = useMemo(() => 
     data.authorPhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.authorName || 'User')}&background=random`,
@@ -257,19 +293,34 @@ const Reel = memo(function Reel({ data, isActive, onDeleted }) {
       aria-label={`Reel by ${data.authorName}`}
     >
       {/* Video Element */}
-      <video
-        ref={videoRef}
-        src={data.videoUrl}
-        className="reel-video"
-        loop
-        playsInline
-        muted={!isActive}
-        onClick={togglePlay}
-        onContextMenu={(e) => e.preventDefault()}
-        controlsList="nodownload"
-        preload="metadata"
-        aria-label="Reel video"
-      />
+      {unlocked ? (
+        <video
+          ref={videoRef}
+          src={data.videoUrl}
+          className="reel-video"
+          loop
+          playsInline
+          muted={!isActive}
+          onClick={togglePlay}
+          onContextMenu={(e) => e.preventDefault()}
+          controlsList="nodownload"
+          preload="metadata"
+          aria-label="Reel video"
+        />
+      ) : (
+        <div className="reel-locked-placeholder flex flex-col items-center justify-center bg-slate-900 w-full h-full absolute inset-0 z-20">
+          <Target size={48} className="text-amber-500 mb-4 opacity-50" />
+          <h3 className="text-white font-bold text-xl mb-2">Classified Intel</h3>
+          <p className="text-slate-400 text-sm mb-6 text-center px-8">This Reel requires Vault Coins to decrypt.</p>
+          <button 
+            className="bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold px-6 py-3 rounded-full flex items-center gap-2"
+            onClick={handleUnlockReel}
+            disabled={unlocking}
+          >
+            {unlocking ? "Decrypting..." : `Unlock for ${data.coinCost} Coins`}
+          </button>
+        </div>
+      )}
 
       {/* Loading Indicator */}
       {isLoading && (

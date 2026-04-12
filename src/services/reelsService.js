@@ -59,6 +59,7 @@ export const reelsService = {
             storagePath,
             // Meta
             music: options.music || "Original Audio",
+            coinCost: options.coinCost || 0,
             filter: options.filter || "none",
             textOverlays: options.textOverlays || [],
             stickers: options.stickers || [],
