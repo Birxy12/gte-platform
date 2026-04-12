@@ -7,7 +7,7 @@ import {
 import {
   LayoutDashboard, BookOpen, Users, MessageSquare, Settings, Plus, MoreVertical,
   TrendingUp, Star, Clock, CheckCircle, AlertCircle, ChevronRight, Search, Filter,
-  Download, Calendar, Award, Eye, FileText, HelpCircle, Shield, X, Upload, Trash2, Edit3
+  Download, Calendar, Award, Eye, FileText, HelpCircle, Shield, X, Upload, Trash2, Edit3, Menu
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import "./InstructorDashboard.css";
@@ -15,7 +15,23 @@ import "./InstructorDashboard.css";
 export default function InstructorDashboard() {
   const { user, isAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') return window.innerWidth < 968;
+    return false;
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 968) {
+        setSidebarCollapsed(true);
+      } else {
+        setSidebarCollapsed(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Real data state
   const [courses, setCourses] = useState([]);
@@ -244,15 +260,31 @@ export default function InstructorDashboard() {
   );
 
   return (
-    <div className="instructor-dashboard">
+    <div className={`instructor-dashboard ${sidebarCollapsed ? 'sidebar-closed' : ''}`}>
+      {/* Mobile Header */}
+      <div className="id-mobile-header">
+        <div className="id-mobile-brand">
+          <Award size={20} className="text-blue-500 inline mr-2" />
+          <span>GTE {isAdmin ? "Admin" : "Instructor"}</span>
+        </div>
+        <button className="id-menu-toggle" onClick={() => setSidebarCollapsed(!sidebarCollapsed)}>
+          <Menu size={24} />
+        </button>
+      </div>
+
+      {/* Overlay */}
+      {!sidebarCollapsed && (
+        <div className="id-overlay" onClick={() => setSidebarCollapsed(true)} />
+      )}
+
       {/* Sidebar */}
-      <aside className={`sidebar ${sidebarCollapsed ? "collapsed" : ""}`}>
+      <aside className={`sidebar ${sidebarCollapsed ? "closed" : "open"}`}>
         <div className="sidebar-header">
           <div className="logo">
             <Award size={32} className="logo-icon" />
             {!sidebarCollapsed && <span className="logo-text">GTE {isAdmin ? "Admin" : "Instructor"}</span>}
           </div>
-          <button className="collapse-btn" onClick={() => setSidebarCollapsed(!sidebarCollapsed)}>
+          <button className="collapse-btn id-sidebar-toggle" onClick={() => setSidebarCollapsed(!sidebarCollapsed)}>
             <ChevronRight size={20} className={sidebarCollapsed ? "rotated" : ""} />
           </button>
         </div>
