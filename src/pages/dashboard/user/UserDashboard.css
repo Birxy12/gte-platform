@@ -956,8 +956,12 @@
 }
 
 @media (min-width: 1025px) {
+    .ud-overlay {
+        display: none !important;
+    }
+
     .ud-sidebar.closed {
-        transform: translateX(-100%);
+        transform: translateX(calc(-100% + 28px));
         position: absolute;
         z-index: 10;
         height: 100vh;

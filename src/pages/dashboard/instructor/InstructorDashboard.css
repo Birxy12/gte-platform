@@ -1308,6 +1308,12 @@
 }
 
 /* Responsive */
+@media (min-width: 969px) {
+  .id-overlay {
+    display: none !important;
+  }
+}
+
 @media (max-width: 1200px) {
   .dashboard-grid {
     grid-template-columns: 1fr;
