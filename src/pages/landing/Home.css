@@ -379,9 +379,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .hero-title {
-  font-size: clamp(2.5rem, 8vw, 5rem);
+  font-size: clamp(2rem, 8vw, 5rem);
   font-weight: 800;
-  line-height: 1.1;
+  line-height: 1.15;
   margin-bottom: var(--space-md);
   letter-spacing: -0.03em;
 }
@@ -1563,6 +1563,10 @@ h1, h2, h3, h4, h5, h6 {
     --space-xl: 1.5rem;
     --space-2xl: 2rem;
     --space-3xl: 3rem;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
   }
   
   .stat-card {

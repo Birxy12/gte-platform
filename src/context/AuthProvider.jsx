@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, getRedirectResult } from "firebase/auth";
 import { auth, db } from "../config/firebase";
-import { doc, getDoc, onSnapshot } from "firebase/firestore";
+import { doc, getDoc, onSnapshot, setDoc } from "firebase/firestore";
 import { presenceService } from "../services/presenceService";
 
 const AuthContext = createContext();
@@ -13,6 +13,25 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Handle Google redirect result (for mobile sign-in)
+    getRedirectResult(auth).then(async (result) => {
+      if (result?.user) {
+        // Ensure user doc exists in Firestore after redirect
+        const userRef = doc(db, "users", result.user.uid);
+        const snap = await getDoc(userRef);
+        if (!snap.exists()) {
+          await setDoc(userRef, {
+            uid: result.user.uid,
+            email: result.user.email,
+            displayName: result.user.displayName,
+            photoURL: result.user.photoURL,
+            role: "student",
+            createdAt: new Date(),
+          });
+        }
+      }
+    }).catch((err) => console.error("Redirect result error:", err));
+
     // Listen to global settings in real-time
     const unsubscribeSettings = onSnapshot(doc(db, "settings", "global"), (snap) => {
       if (snap.exists()) {
@@ -65,6 +84,7 @@ export function AuthProvider({ children }) {
       }
     };
   }, []);
+
 
   const value = {
     user,

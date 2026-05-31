@@ -36,6 +36,11 @@ export { analytics };
 
 // Providers
 export const googleProvider = new GoogleAuthProvider();
+// Always prompt account selection — prevents stale credential / invalid-credential errors
+googleProvider.setCustomParameters({ prompt: 'select_account' });
+googleProvider.addScope('email');
+googleProvider.addScope('profile');
+
 export const phoneProvider = new PhoneAuthProvider(auth);
 
 export default app;

@@ -66,13 +66,21 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%) rotate(-45deg);
-  font-size: 6rem;
-  font-weight: 900;
-  color: rgba(30, 41, 59, 0.03);
-  white-space: nowrap;
+  transform: translate(-50%, -50%);
+  width: 65%;
+  height: auto;
+  opacity: 0.05;
   pointer-events: none;
   z-index: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cert-watermark img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
 }
 
 .cert-header {
@@ -204,4 +212,55 @@
     border: none;
   }
   .cert-actions { display: none; }
+}
+
+@media (max-width: 768px) {
+  .cert-modal-overlay {
+    padding: 0.5rem;
+    align-items: flex-start;
+    overflow-y: auto;
+  }
+
+  .cert-modal-content {
+    max-width: 100%;
+    border-radius: 6px;
+  }
+
+  .cert-document {
+    padding: 1.5rem;
+    border-width: 10px;
+    outline-offset: -7px;
+  }
+
+  .cert-header h1 {
+    font-size: 1.5rem;
+    letter-spacing: 1px;
+  }
+
+  .cert-name {
+    font-size: 2rem;
+    padding: 0 1rem 0.5rem;
+  }
+
+  .cert-grade-table th,
+  .cert-grade-table td {
+    padding: 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .cert-footer {
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 0;
+  }
+
+  .cert-signature-line {
+    width: 180px;
+  }
+
+  .cert-seal {
+    width: 75px;
+    height: 75px;
+  }
 }

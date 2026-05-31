@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { auth, db, googleProvider } from "../../config/firebase";
-import { signInWithEmailAndPassword, signInWithPopup, createUserWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, getRedirectResult, createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { useNavigate, Link } from "react-router-dom";
 import "./Login.css";
@@ -53,12 +53,12 @@ export default function LoginAccount() {
       navigate("/home");
     } catch (err) {
       console.error("Login error:", err);
-      if (err.code === "auth/invalid-credential") {
-        setError("Invalid credentials. Please double-check your email and password.");
-      } else if (err.code === "auth/user-not-found") {
-        setError("Account not found. Please sign up instead.");
-      } else if (err.code === "auth/wrong-password") {
-        setError("Incorrect password. Please try again.");
+      if (err.code === "auth/invalid-credential" || err.code === "auth/wrong-password" || err.code === "auth/user-not-found") {
+        setError("Incorrect email or password. Please check your credentials and try again.");
+      } else if (err.code === "auth/too-many-requests") {
+        setError("Too many failed attempts. Account temporarily locked. Try again later or reset your password.");
+      } else if (err.code === "auth/network-request-failed") {
+        setError("Network error. Please check your internet connection.");
       } else {
         setError(err.message || "An error occurred during login. Please try again later.");
       }
@@ -70,11 +70,26 @@ export default function LoginAccount() {
   const googleLogin = async () => {
     setError("");
     try {
+      // On mobile, popups are often blocked — use redirect instead
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      if (isMobile) {
+        await signInWithRedirect(auth, googleProvider);
+        // Redirect will handle navigation automatically
+        return;
+      }
       await signInWithPopup(auth, googleProvider);
       navigate("/home");
     } catch (err) {
-      console.error(err);
-      setError("Google sign-in was cancelled or failed.");
+      console.error("Google sign-in error:", err);
+      if (err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request") {
+        setError("Google sign-in was cancelled. Please try again.");
+      } else if (err.code === "auth/popup-blocked") {
+        setError("Popup was blocked by your browser. Trying redirect sign-in...");
+        // Fallback to redirect if popup blocked
+        await signInWithRedirect(auth, googleProvider);
+      } else {
+        setError("Google sign-in failed. Please try again or use email/password.");
+      }
     }
   };
 

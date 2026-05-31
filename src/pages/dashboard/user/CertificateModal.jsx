@@ -43,9 +43,15 @@ export default function CertificateModal({ course, profile, allCompleted = [], o
         </div>
 
         <div className="cert-document" ref={certRef}>
-          <div className="cert-watermark">GLOBIXTECH ACADEMY</div>
+          <div className="cert-watermark">
+            <img src="/GlobixTech-watermark.png" alt="GlobixTech Watermark" 
+                 onError={(e) => { e.target.style.display = 'none'; }} />
+          </div>
           
           <div className="cert-header">
+            <img src="/GlobixTech-logo.png" alt="GlobixTech Academy Logo" className="cert-logo" 
+                 style={{ height: '80px', margin: '0 auto 1rem', display: 'block', objectFit: 'contain' }} 
+                 onError={(e) => { e.target.style.display = 'none'; }} />
             <h1 style={{ color: '#1e293b', fontSize: '2.5rem', fontWeight: 900, marginBottom: '0.25rem' }}>GLOBIXTECH ACADEMY</h1>
             <p style={{ marginTop: 0, fontWeight: 'bold', color: '#d4af37', letterSpacing: '2px', textTransform: 'uppercase' }}>Academic Excellence & Certification</p>
             <h2 style={{ fontSize: '2rem', marginTop: '1.5rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Official Academic Transcript</h2>

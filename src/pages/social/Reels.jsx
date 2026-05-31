@@ -94,6 +94,9 @@ const Reel = memo(function Reel({ data, isActive, onDeleted }) {
     const handlePlayback = async () => {
       try {
         if (isActive && unlocked) {
+          if (!data.videoUrl) {
+              throw new Error("Mission Intel corrupted: No video source found.");
+          }
           setIsLoading(true);
           await video.play();
           if (isMounted) {
