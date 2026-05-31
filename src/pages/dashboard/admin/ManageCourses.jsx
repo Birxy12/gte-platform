@@ -573,7 +573,7 @@ export default function ManageCourses() {
                     onChange={(e) => setMaterialCoinCost(e.target.value)}
                   />
                   <small style={{ color: '#64748b', fontSize: '0.75rem' }}>
-                    Setting > 0 individually charges users coins to access.
+                    Setting &gt; 0 individually charges users coins to access.
                   </small>
                 </div>
 

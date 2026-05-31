@@ -21,7 +21,9 @@ import {
   Pause,
   Megaphone,
   Plus,
-  Target
+  Target,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 import PropTypes from 'prop-types';
 import { reelsService } from '../../services/reelsService';
@@ -54,6 +56,7 @@ const Reel = memo(function Reel({ data, isActive, onDeleted }) {
   
   // State
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(true); // Always start muted — browser autoplay policy requires this
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
   const [showComments, setShowComments] = useState(false);
@@ -98,6 +101,9 @@ const Reel = memo(function Reel({ data, isActive, onDeleted }) {
               throw new Error("Mission Intel corrupted: No video source found.");
           }
           setIsLoading(true);
+          // Always mute before autoplay — browser policy requires user gesture for unmuted play
+          video.muted = true;
+          setIsMuted(true);
           await video.play();
           if (isMounted) {
             setIsPlaying(true);
@@ -113,7 +119,12 @@ const Reel = memo(function Reel({ data, isActive, onDeleted }) {
       } catch (err) {
         if (isMounted) {
           console.error('Playback error:', err);
-          setError('Autoplay prevented. Tap to play.');
+          if (err.name === 'NotAllowedError') {
+            // Autoplay blocked — show tap-to-play prompt, video will play on first user tap
+            setError('Tap to play');
+          } else {
+            setError('Failed to load video');
+          }
           setIsLoading(false);
         }
       }
@@ -158,6 +169,15 @@ const Reel = memo(function Reel({ data, isActive, onDeleted }) {
       video.play().then(() => setIsPlaying(true)).catch(console.error);
     }
   }, [isPlaying]);
+
+  const toggleMute = useCallback((e) => {
+    e.stopPropagation();
+    const video = videoRef.current;
+    if (!video) return;
+    const newMuted = !isMuted;
+    video.muted = newMuted;
+    setIsMuted(newMuted);
+  }, [isMuted]);
 
   const toggleLike = useCallback(async (e) => {
     e.stopPropagation();
@@ -303,7 +323,7 @@ const Reel = memo(function Reel({ data, isActive, onDeleted }) {
           className="reel-video"
           loop
           playsInline
-          muted={!isActive}
+          muted={isMuted}
           onClick={togglePlay}
           onContextMenu={(e) => e.preventDefault()}
           controlsList="nodownload"
@@ -395,6 +415,15 @@ const Reel = memo(function Reel({ data, isActive, onDeleted }) {
 
         {/* Action Buttons */}
         <div className="reel-actions" role="toolbar" aria-label="Reel actions">
+          {/* Mute/Unmute — always visible so user can opt into sound after first interaction */}
+          <ActionButton
+            onClick={toggleMute}
+            icon={isMuted ? <VolumeX size={28} /> : <Volume2 size={28} />}
+            active={!isMuted}
+            activeColor="#10b981"
+            label={isMuted ? 'Unmute' : 'Mute'}
+          />
+
           <ActionButton 
             onClick={toggleLike}
             icon={<Heart size={28} />}
