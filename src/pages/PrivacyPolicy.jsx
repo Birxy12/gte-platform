@@ -138,7 +138,7 @@ export default function PrivacyPolicy() {
           viewport={{ once: true }}
           className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-32"
         >
-          {sections.map((section, idx) => (
+          {sections.map((section) => (
             <motion.div
               key={section.id}
               variants={itemVariants}

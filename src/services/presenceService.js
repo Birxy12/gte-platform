@@ -1,5 +1,5 @@
-import { db, auth } from "../config/firebase";
-import { doc, setDoc, onSnapshot, serverTimestamp, updateDoc } from "firebase/firestore";
+import { db } from "../config/firebase";
+import { doc, setDoc, onSnapshot, serverTimestamp } from "firebase/firestore";
 
 export const presenceService = {
     // Basic presence based on app focus state

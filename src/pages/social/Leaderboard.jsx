@@ -46,7 +46,14 @@ export default function Leaderboard() {
                     {podium[1] && (
                         <div className="podium-item silver" onClick={() => navigate(`/profile/${podium[1].id}`)}>
                             <div className="podium-avatar-wrapper">
-                                <img src={podium[1].photoURL || `https://ui-avatars.com/api/?name=${podium[1].displayName}&background=334155&color=fff`} alt="Silver" />
+                                <img 
+                                    src={podium[1].photoURL && !podium[1].photoURL.includes("njhbnqyamkwlsobqplvm.supabase.co") ? podium[1].photoURL : `https://ui-avatars.com/api/?name=${encodeURIComponent(podium[1].displayName || 'User')}&background=334155&color=fff`} 
+                                    alt="Silver" 
+                                    onError={(e) => {
+                                        e.currentTarget.onerror = null;
+                                        e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(podium[1].displayName || 'User')}&background=334155&color=fff`;
+                                    }}
+                                />
                                 <div className="podium-badge">2</div>
                             </div>
                             <div className="podium-info">
@@ -61,7 +68,14 @@ export default function Leaderboard() {
                     {podium[0] && (
                         <div className="podium-item gold" onClick={() => navigate(`/profile/${podium[0].id}`)}>
                             <div className="podium-avatar-wrapper">
-                                <img src={podium[0].photoURL || `https://ui-avatars.com/api/?name=${podium[0].displayName}&background=eab308&color=0f172a`} alt="Gold" />
+                                <img 
+                                    src={podium[0].photoURL && !podium[0].photoURL.includes("njhbnqyamkwlsobqplvm.supabase.co") ? podium[0].photoURL : `https://ui-avatars.com/api/?name=${encodeURIComponent(podium[0].displayName || 'User')}&background=eab308&color=0f172a`} 
+                                    alt="Gold" 
+                                    onError={(e) => {
+                                        e.currentTarget.onerror = null;
+                                        e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(podium[0].displayName || 'User')}&background=eab308&color=0f172a`;
+                                    }}
+                                />
                                 <div className="podium-badge"><Award size={24} /></div>
                             </div>
                             <div className="podium-info">
@@ -76,7 +90,14 @@ export default function Leaderboard() {
                     {podium[2] && (
                         <div className="podium-item bronze" onClick={() => navigate(`/profile/${podium[2].id}`)}>
                             <div className="podium-avatar-wrapper">
-                                <img src={podium[2].photoURL || `https://ui-avatars.com/api/?name=${podium[2].displayName}&background=7c2d12&color=fff`} alt="Bronze" />
+                                <img 
+                                    src={podium[2].photoURL && !podium[2].photoURL.includes("njhbnqyamkwlsobqplvm.supabase.co") ? podium[2].photoURL : `https://ui-avatars.com/api/?name=${encodeURIComponent(podium[2].displayName || 'User')}&background=7c2d12&color=fff`} 
+                                    alt="Bronze" 
+                                    onError={(e) => {
+                                        e.currentTarget.onerror = null;
+                                        e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(podium[2].displayName || 'User')}&background=7c2d12&color=fff`;
+                                    }}
+                                />
                                 <div className="podium-badge">3</div>
                             </div>
                             <div className="podium-info">
@@ -96,20 +117,27 @@ export default function Leaderboard() {
                         <span>Standing</span>
                         <span>Intelligence (XP)</span>
                     </div>
-                    {others.map((user, index) => (
-                        <div key={user.id} className="list-item" onClick={() => navigate(`/profile/${user.id}`)}>
+                    {others.map((u, index) => (
+                        <div key={u.id} className="list-item" onClick={() => navigate(`/profile/${u.id}`)}>
                             <div className="item-rank">{index + 4}</div>
                             <div className="item-user">
-                                <img src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}&background=1e293b&color=94a3b8`} alt="Avatar" />
+                                <img 
+                                    src={u.photoURL && !u.photoURL.includes("njhbnqyamkwlsobqplvm.supabase.co") ? u.photoURL : `https://ui-avatars.com/api/?name=${encodeURIComponent(u.displayName || 'User')}&background=1e293b&color=94a3b8`} 
+                                    alt="Avatar" 
+                                    onError={(e) => {
+                                        e.currentTarget.onerror = null;
+                                        e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(u.displayName || 'User')}&background=1e293b&color=94a3b8`;
+                                    }}
+                                />
                                 <div>
-                                    <div className="item-name">{user.displayName || user.username || "Private"}</div>
-                                    <div className="item-level">Training Status: Level {Math.floor((user.coins || 0) / 100) + 1}</div>
+                                    <div className="item-name">{u.displayName || u.username || "Private"}</div>
+                                    <div className="item-level">Training Status: Level {Math.floor((u.coins || 0) / 100) + 1}</div>
                                 </div>
                             </div>
                             <div className="item-status">
                                 <Shield size={16} /> <span>Active Duty</span>
                             </div>
-                            <div className="item-score">{user.coins}</div>
+                            <div className="item-score">{u.coins}</div>
                         </div>
                     ))}
                 </div>

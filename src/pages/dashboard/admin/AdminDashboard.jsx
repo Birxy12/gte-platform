@@ -4,7 +4,6 @@ import { db, auth } from "../../../config/firebase";
 import { collection, getDocs, writeBatch, query, where } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { presenceService } from "../../../services/presenceService";
-import { motion, AnimatePresence } from "framer-motion";
 import { 
   Users, BookOpen, Newspaper, Film, Layout, 
   Settings, LogOut, PlusCircle, PenTool, 
@@ -12,6 +11,7 @@ import {
   MessageSquare, Award, Clock, UserCheck, Coins,
   Menu, ChevronRight
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import "./AdminDashboard.css";
 
 export default function AdminDashboard() {

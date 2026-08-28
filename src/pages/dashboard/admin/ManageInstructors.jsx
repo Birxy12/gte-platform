@@ -5,9 +5,7 @@ import {
   getDocs,
   doc,
   updateDoc,
-  serverTimestamp,
-  query,
-  where
+  serverTimestamp
 } from "firebase/firestore";
 import { 
   Users, 
@@ -147,9 +145,6 @@ export default function ManageInstructors() {
     if (filterRole === "student") return matchesSearch && (u.role === "student" || !u.role);
     return matchesSearch;
   });
-
-  const instructors = users.filter(u => u.role === "instructor" || u.role === "admin");
-  const pendingUsers = users.filter(u => !u.role || u.role === "student");
 
   const getRoleBadge = (role) => {
     if (role === "admin") return { label: "Admin (Instructor)", color: "purple", icon: Crown };

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Sparkles, RefreshCw, Share2, Clipboard, History, Video, Layers, X } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Sparkles, RefreshCw, Clipboard, History, Video, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { missionsService } from '../../services/missionsService';
@@ -42,7 +42,7 @@ export default function ReelPrompt({ onDeployMission }) {
         fetchMissions();
     }, []);
 
-    const generatePrompt = () => {
+    const generatePrompt = useCallback(() => {
         if (missions.length === 0) return;
         
         setIsGenerating(true);
@@ -65,11 +65,11 @@ export default function ReelPrompt({ onDeployMission }) {
             setHistory(prev => [newPrompt, ...prev.slice(0, 9)]);
             setIsGenerating(false);
         }, 400);
-    };
+    }, [category, missions]);
 
     useEffect(() => {
         if (!loading) generatePrompt();
-    }, [category]);
+    }, [loading, generatePrompt]);
 
     const copyToClipboard = () => {
         navigator.clipboard.writeText(currentPrompt);

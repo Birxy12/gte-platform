@@ -22,7 +22,7 @@ import "./Courses.css";
 
 export default function CourseDetails() {
     const { courseId } = useParams();
-    const { user, role } = useAuth();
+    const { user } = useAuth();
     const navigate = useNavigate();
 
     const MaterialItem = ({ m, idx, enrolled, courseId }) => {

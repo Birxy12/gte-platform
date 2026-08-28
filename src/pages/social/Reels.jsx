@@ -135,7 +135,7 @@ const Reel = memo(function Reel({ data, isActive, onDeleted }) {
     return () => {
       isMounted = false;
     };
-  }, [isActive]);
+  }, [isActive, data.videoUrl, unlocked]);
 
   // Video event listeners
   useEffect(() => {
@@ -168,7 +168,7 @@ const Reel = memo(function Reel({ data, isActive, onDeleted }) {
     } else {
       video.play().then(() => setIsPlaying(true)).catch(console.error);
     }
-  }, [isPlaying]);
+  }, [isPlaying, unlocked]);
 
   const toggleMute = useCallback((e) => {
     e.stopPropagation();
@@ -200,7 +200,7 @@ const Reel = memo(function Reel({ data, isActive, onDeleted }) {
       setLikesCount(prev => newLikedState ? prev - 1 : prev + 1);
       console.error('Like error:', err);
     }
-  }, [isLiked, user, authLoading, data.id]);
+  }, [isLiked, user, authLoading, data.id, unlocked]);
 
   const handleComment = useCallback(async (e) => {
     e.preventDefault();
@@ -226,7 +226,7 @@ const Reel = memo(function Reel({ data, isActive, onDeleted }) {
       console.error('Comment error:', err);
       alert('Failed to post comment');
     }
-  }, [newComment, user, data.id]);
+  }, [newComment, user, data.id, unlocked]);
 
   const handleDelete = useCallback(async () => {
     if (!window.confirm('Delete this reel permanently?')) return;
@@ -684,17 +684,18 @@ export default function Reels() {
   }, [reels.length]);
 
   // Throttled scroll handler
-  const handleScroll = useCallback(
-    throttle(() => {
-      if (!containerRef.current) return;
-      
-      const { scrollTop, clientHeight } = containerRef.current;
-      const newIndex = Math.round(scrollTop / clientHeight);
-      
-      if (newIndex !== activeReelIndex && newIndex >= 0 && newIndex < reels.length) {
-        setActiveReelIndex(newIndex);
-      }
-    }, SCROLL_THROTTLE_MS),
+  const handleScroll = useMemo(
+    () =>
+      throttle(() => {
+        if (!containerRef.current) return;
+        
+        const { scrollTop, clientHeight } = containerRef.current;
+        const newIndex = Math.round(scrollTop / clientHeight);
+        
+        if (newIndex !== activeReelIndex && newIndex >= 0 && newIndex < reels.length) {
+          setActiveReelIndex(newIndex);
+        }
+      }, SCROLL_THROTTLE_MS),
     [activeReelIndex, reels.length]
   );
 

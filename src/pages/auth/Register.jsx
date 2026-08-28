@@ -7,7 +7,6 @@ import {
 import { doc, setDoc, serverTimestamp, updateDoc, increment, query, collection, where, getDocs, getDoc } from "firebase/firestore";
 import { useNavigate, Link } from "react-router-dom";
 import { User, Mail, Phone, Lock, ArrowRight, UserPlus } from "lucide-react";
-import { motion } from "framer-motion";
 
 import "./Login.css";
 

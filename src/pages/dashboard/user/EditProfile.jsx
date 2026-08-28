@@ -74,7 +74,7 @@ export default function EditProfile() {
             const file = fileRef.current?.files[0];
             if (file) {
                 const fileName = `avatars/${user.uid}_${Date.now()}`;
-                const { data, error: uploadError } = await supabase.storage
+                const { error: uploadError } = await supabase.storage
                     .from('reels')
                     .upload(fileName, file);
 
@@ -137,7 +137,8 @@ export default function EditProfile() {
     };
 
     const initials = username?.substring(0, 2).toUpperCase() || user?.email?.substring(0, 2).toUpperCase() || "U";
-    const displayPhoto = previewURL || photoURL;
+    const rawDisplayPhoto = previewURL || photoURL;
+    const displayPhoto = rawDisplayPhoto && !rawDisplayPhoto.includes("njhbnqyamkwlsobqplvm.supabase.co") ? rawDisplayPhoto : null;
 
     return (
         <>
@@ -153,7 +154,16 @@ export default function EditProfile() {
                 <h3>Profile Picture</h3>
                 <div className="ud-avatar-section">
                     <div className="ud-avatar">
-                        {displayPhoto ? <img src={displayPhoto} alt="avatar" /> : initials}
+                        {displayPhoto ? (
+                            <img 
+                                src={displayPhoto} 
+                                alt="avatar" 
+                                onError={(e) => {
+                                    e.currentTarget.onerror = null;
+                                    e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(username || user?.email || 'User')}&background=0D8ABC&color=fff`;
+                                }}
+                            />
+                        ) : initials}
                     </div>
                     <div className="ud-avatar-info">
                         <h4>{username || "Your Name"}</h4>

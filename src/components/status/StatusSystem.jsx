@@ -45,7 +45,15 @@ export function StatusFeed() {
                     <div className="relative">
                         <div className="w-14 h-14 md:w-16 md:h-16 rounded-full border-2 border-wa-border p-0.5 group-active:scale-95 transition-transform">
                             <div className="w-full h-full rounded-full bg-wa-bg-light overflow-hidden">
-                                <img src={user?.photoURL || "https://ui-avatars.com/api/?name=" + (user?.displayName || "U")} className="w-full h-full object-cover" alt="Me" />
+                                <img 
+                                    src={user?.photoURL && !user.photoURL.includes("njhbnqyamkwlsobqplvm.supabase.co") ? user.photoURL : "https://ui-avatars.com/api/?name=" + encodeURIComponent(user?.displayName || user?.email || "User")} 
+                                    className="w-full h-full object-cover" 
+                                    alt="Me" 
+                                    onError={(e) => {
+                                        e.currentTarget.onerror = null;
+                                        e.currentTarget.src = "https://ui-avatars.com/api/?name=" + encodeURIComponent(user?.displayName || user?.email || "User");
+                                    }}
+                                />
                             </div>
                         </div>
                         <div className="absolute bottom-0 right-0 bg-wa-green text-white rounded-full p-1 border-2 border-white shadow-sm">

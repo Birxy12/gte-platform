@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthProvider";
 import { courseService } from "../../services/courseService";
@@ -22,13 +22,12 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export default function LessonView() {
     const { courseId, materialId } = useParams();
-    const { user, loading: authLoading } = useAuth();
+    const { user, isAdmin, isInstructor, loading: authLoading } = useAuth();
     const navigate = useNavigate();
 
     const [course, setCourse] = useState(null);
     const [materials, setMaterials] = useState([]);
     const [currentMaterial, setCurrentMaterial] = useState(null);
-    const [enrolled, setEnrolled] = useState(false);
     const [loading, setLoading] = useState(true);
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [error, setError] = useState(null);
@@ -44,16 +43,13 @@ export default function LessonView() {
             try {
                 // 1. Verify Enrollment First
                 const isE = await enrollmentService.isEnrolled(user.uid, courseId);
-                // Allow instructors/admins anyway
-                const { role } = (await (await import("../../services/userService")).userService.getUser(user.uid)) || {};
-                const hasAccess = isE || role === 'admin' || role === 'instructor';
+                const hasAccess = isE || isAdmin || isInstructor;
 
                 if (!hasAccess) {
                     setError("UNAUTHORIZED ACCESS: MISSION ENROLLMENT REQUIRED.");
                     setLoading(false);
                     return;
                 }
-                setEnrolled(true);
 
                 // 2. Fetch Course & Materials
                 const [c, m] = await Promise.all([
@@ -79,7 +75,7 @@ export default function LessonView() {
             }
         };
         load();
-    }, [courseId, materialId, user, authLoading, navigate]);
+    }, [courseId, materialId, user, isAdmin, isInstructor, authLoading, navigate]);
 
     const handleNext = () => {
         const idx = materials.findIndex(m => m.id === currentMaterial?.id);

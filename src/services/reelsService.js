@@ -1,4 +1,4 @@
-import { db, auth } from "../config/firebase";
+import { db } from "../config/firebase";
 import { 
     collection, 
     addDoc, 
@@ -13,7 +13,8 @@ import {
     arrayUnion, 
     arrayRemove, 
     serverTimestamp,
-    limit
+    limit,
+    startAfter
 } from "firebase/firestore";
 import { supabase } from "../config/supabase";
 
@@ -33,7 +34,7 @@ export const reelsService = {
             const fileExtension = file.name.split('.').pop();
             storagePath = `${user.uid}_${Date.now()}.${fileExtension}`;
             
-            const { data, error } = await supabase.storage
+            const { error } = await supabase.storage
                 .from('reels')
                 .upload(storagePath, file, {
                     contentType: file.type,

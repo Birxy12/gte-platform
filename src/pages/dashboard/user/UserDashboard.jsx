@@ -277,8 +277,6 @@ export default function UserDashboard() {
     const friendProgress = Math.min(100, (friendsCount / nextLevelReq.friends) * 100);
     const reelProgress = Math.min(100, (reelsCount / nextLevelReq.reels) * 100);
     const bioProgress = hasBio ? 100 : 0;
-    
-    const totalProgress = (friendProgress + reelProgress + bioProgress) / 3;
 
     return (
         <div className={`user-dash ${sidebarCollapsed ? 'sidebar-closed' : ''}`}>
@@ -587,7 +585,16 @@ export default function UserDashboard() {
                             <h3>Profile Summary</h3>
                             <div className="ud-avatar-section">
                                 <div className="ud-avatar">
-                                    {profile?.photoURL ? <img src={profile.photoURL} alt="avatar" /> : initials}
+                                    {profile?.photoURL && !profile.photoURL.includes("njhbnqyamkwlsobqplvm.supabase.co") ? (
+                                        <img 
+                                            src={profile.photoURL} 
+                                            alt="avatar" 
+                                            onError={(e) => {
+                                                e.currentTarget.onerror = null;
+                                                e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(profile?.username || user?.displayName || user?.email || 'User')}&background=0D8ABC&color=fff`;
+                                            }}
+                                        />
+                                    ) : initials}
                                 </div>
                                 <div className="ud-avatar-info">
                                     <h4>{profile?.username || "Not set"}</h4>

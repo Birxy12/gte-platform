@@ -3,71 +3,71 @@ import { db } from "../../../config/firebase";
 import { collection, getDocs, doc, setDoc, updateDoc } from "firebase/firestore";
 import { Mail, Save, RotateCcw, AlertTriangle } from "lucide-react";
 
+const defaultTemplates = [
+    {
+        id: "welcome_email",
+        name: "Welcome Email",
+        description: "Sent to new operatives upon registration.",
+        subject: "Welcome to GTE, {{username}}",
+        body: "Operational Command welcomes you to the Global Tactical Environment. Your student ID is {{studentId}}. Prepare for your first mission.",
+        placeholders: ["username", "studentId", "email"]
+    },
+    {
+        id: "course_enrollment",
+        name: "Course Enrollment",
+        description: "Sent when a user enrolls in a new module.",
+        subject: "Mission Assigned: {{courseName}}",
+        body: "You have been successfully enrolled in {{courseName}}. Complete the objectives and report back with your findings.",
+        placeholders: ["username", "courseName", "enrollmentDate"]
+    },
+    {
+        id: "mission_complete",
+        name: "Mission Completion",
+        description: "Sent when a user completes all lessons in a course.",
+        subject: "Objective Secured: {{courseName}}",
+        body: "Congratulations, {{username}}. You have successfully completed the {{courseName}} mission. Check your dossier for the new clearance level.",
+        placeholders: ["username", "courseName", "completionDate"]
+    },
+    {
+        id: "new_course_added",
+        name: "New Course Alert",
+        description: "Broadcast to all users when a new module is published.",
+        subject: "Intelligence Update: New Tactical Module - {{courseName}}",
+        body: "Operational Command has released a new training module: {{courseName}}.\n\nDescription: {{courseDescription}}\n\nAccess the portal now to begin your briefing.",
+        placeholders: ["username", "courseName", "courseDescription"]
+    },
+    {
+        id: "new_features_added",
+        name: "Platform Upgrade",
+        description: "Broadcast to all users when new features are deployed.",
+        subject: "System Upgrade: New Platform Capabilities Active",
+        body: "Attention Operative,\n\nOur technical division has deployed new capabilities to the GTE Portal.\n\nChanges: {{featureDetails}}\n\nCheck your dashboard for new tools and mission objectives.",
+        placeholders: ["username", "featureDetails"]
+    },
+    {
+        id: "coin_price_update",
+        name: "Economy Adjustment",
+        description: "Broadcast when coin rates or pricing changes.",
+        subject: "Economic Alert: Currency Exchange Rates Adjusted",
+        body: "The Central Bank has adjusted coin exchange rates.\n\nNew Rate: {{newRate}}\n\nVerify your budget in the Vault before your next mission.",
+        placeholders: ["username", "newRate"]
+    },
+    {
+        id: "low_balance_reminder",
+        name: "Low Balance Alert",
+        description: "Sent to users when their coin reserves drop below a threshold.",
+        subject: "Resource Alert: Your Vault Reserves are Low",
+        body: "Operative {{username}},\n\nYour current coin reserves are critically low ({{currentBalance}}). You may be unable to unlock vital mission dossiers or course materials.\n\nVisit the Vault to secure more resources.",
+        placeholders: ["username", "currentBalance"]
+    }
+];
+
 export default function ManageMails() {
     const [templates, setTemplates] = useState([]);
     const [selectedTemplate, setSelectedTemplate] = useState(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState({ type: "", text: "" });
-
-    const defaultTemplates = [
-        {
-            id: "welcome_email",
-            name: "Welcome Email",
-            description: "Sent to new operatives upon registration.",
-            subject: "Welcome to GTE, {{username}}",
-            body: "Operational Command welcomes you to the Global Tactical Environment. Your student ID is {{studentId}}. Prepare for your first mission.",
-            placeholders: ["username", "studentId", "email"]
-        },
-        {
-            id: "course_enrollment",
-            name: "Course Enrollment",
-            description: "Sent when a user enrolls in a new module.",
-            subject: "Mission Assigned: {{courseName}}",
-            body: "You have been successfully enrolled in {{courseName}}. Complete the objectives and report back with your findings.",
-            placeholders: ["username", "courseName", "enrollmentDate"]
-        },
-        {
-            id: "mission_complete",
-            name: "Mission Completion",
-            description: "Sent when a user completes all lessons in a course.",
-            subject: "Objective Secured: {{courseName}}",
-            body: "Congratulations, {{username}}. You have successfully completed the {{courseName}} mission. Check your dossier for the new clearance level.",
-            placeholders: ["username", "courseName", "completionDate"]
-        },
-        {
-            id: "new_course_added",
-            name: "New Course Alert",
-            description: "Broadcast to all users when a new module is published.",
-            subject: "Intelligence Update: New Tactical Module - {{courseName}}",
-            body: "Operational Command has released a new training module: {{courseName}}.\n\nDescription: {{courseDescription}}\n\nAccess the portal now to begin your briefing.",
-            placeholders: ["username", "courseName", "courseDescription"]
-        },
-        {
-            id: "new_features_added",
-            name: "Platform Upgrade",
-            description: "Broadcast to all users when new features are deployed.",
-            subject: "System Upgrade: New Platform Capabilities Active",
-            body: "Attention Operative,\n\nOur technical division has deployed new capabilities to the GTE Portal.\n\nChanges: {{featureDetails}}\n\nCheck your dashboard for new tools and mission objectives.",
-            placeholders: ["username", "featureDetails"]
-        },
-        {
-            id: "coin_price_update",
-            name: "Economy Adjustment",
-            description: "Broadcast when coin rates or pricing changes.",
-            subject: "Economic Alert: Currency Exchange Rates Adjusted",
-            body: "The Central Bank has adjusted coin exchange rates.\n\nNew Rate: {{newRate}}\n\nVerify your budget in the Vault before your next mission.",
-            placeholders: ["username", "newRate"]
-        },
-        {
-            id: "low_balance_reminder",
-            name: "Low Balance Alert",
-            description: "Sent to users when their coin reserves drop below a threshold.",
-            subject: "Resource Alert: Your Vault Reserves are Low",
-            body: "Operative {{username}},\n\nYour current coin reserves are critically low ({{currentBalance}}). You may be unable to unlock vital mission dossiers or course materials.\n\nVisit the Vault to secure more resources.",
-            placeholders: ["username", "currentBalance"]
-        }
-    ];
 
     useEffect(() => {
         const fetchTemplates = async () => {

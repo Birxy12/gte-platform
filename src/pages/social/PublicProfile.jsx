@@ -65,8 +65,12 @@ export default function PublicProfile() {
                 <div className="dossier-header">
                     <div className="dossier-avatar-wrapper">
                         <img 
-                            src={profile.photoURL || `https://ui-avatars.com/api/?name=${profile.displayName || profile.username}&background=0f172a&color=eab308&size=256`} 
+                            src={profile.photoURL && !profile.photoURL.includes("njhbnqyamkwlsobqplvm.supabase.co") ? profile.photoURL : `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.displayName || profile.username || 'User')}&background=0f172a&color=eab308&size=256`} 
                             alt="Profile" 
+                            onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.displayName || profile.username || 'User')}&background=0f172a&color=eab308&size=256`;
+                            }}
                             className="dossier-avatar"
                         />
                         <div className="dossier-rank-badge">

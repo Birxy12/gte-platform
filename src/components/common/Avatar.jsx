@@ -1,10 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Users } from 'lucide-react';
 
 const Avatar = ({ src, name, size = 'medium', isOnline = false, className = '' }) => {
+  const [hasError, setHasError] = useState(false);
   const initial = name?.charAt(0).toUpperCase() || '?';
-  const isGroup = name?.toLowerCase().includes('group') || !name; // Heuristic for group icons
-  
+  const isGroup = name?.toLowerCase().includes('group') || !name;
+
+  const isValidUrl = (url) => {
+    if (!url || typeof url !== 'string') return false;
+    if (url.includes("njhbnqyamkwlsobqplvm.supabase.co") || url.includes("null") || url.includes("undefined")) return false;
+    return url.startsWith("http://") || url.startsWith("https://") || url.startsWith("/") || url.startsWith("data:");
+  };
+
+  const validSrc = isValidUrl(src) ? src : null;
+
   const sizeClasses = {
     mini: 'w-6 h-6 text-[8px]',
     small: 'w-8 h-8 text-[10px]',
@@ -14,14 +23,19 @@ const Avatar = ({ src, name, size = 'medium', isOnline = false, className = '' }
   };
 
   return (
-    <div className={`avatar-container relative rounded-full overflow-hidden ${sizeClasses[size]} ${className}`}>
-      <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center bg-[#2a3942]">
-        {src ? (
-          <img src={src} alt={name} className="w-full h-full object-cover block" />
+    <div className={`avatar-container relative rounded-full overflow-hidden shrink-0 ${sizeClasses[size]} ${className}`}>
+      <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center bg-[#1e293b]">
+        {validSrc && !hasError ? (
+          <img 
+            src={validSrc} 
+            alt={name || 'Avatar'} 
+            className="w-full h-full object-cover block" 
+            onError={() => setHasError(true)}
+          />
         ) : (
           <div
             className="w-full h-full flex items-center justify-center text-white font-bold"
-            style={{ background: 'linear-gradient(135deg, #00a884, #005c4b)' }}
+            style={{ background: 'linear-gradient(135deg, #3b82f6, #6366f1)' }}
           >
             {isGroup ? <Users size={size === 'small' ? 14 : 18} /> : initial}
           </div>

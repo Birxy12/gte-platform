@@ -16,7 +16,8 @@ export default function CertificateModal({ course, profile, allCompleted = [], o
   const studentName = profile?.username || profile?.displayName || "Student";
   
   const regYear = profile?.createdAt?.toDate ? profile.createdAt.toDate().getFullYear() : new Date().getFullYear();
-  const regNo = `GTE/${regYear}/${(profile?.uid || Math.random().toString(36).substring(2)).substring(0, 4).toUpperCase()}`;
+  const regIdSuffix = (profile?.uid || course?.id || "8888").substring(0, 4).toUpperCase();
+  const regNo = `GTE/${regYear}/${regIdSuffix}`;
 
   // Use allCompleted if available (Master Transcript), otherwise just the single course
   const coursesList = allCompleted.length > 0 ? allCompleted : [course];

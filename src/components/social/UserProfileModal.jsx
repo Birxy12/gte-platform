@@ -16,7 +16,6 @@ export default function UserProfileModal({ profileUser, onClose, onMessage, onFo
 
     if (!profileUser) return null;
 
-    const initials = profileUser.displayName ? profileUser.displayName.substring(0, 2).toUpperCase() : "U";
     const joinDate = profileUser.createdAt?.toDate
         ? profileUser.createdAt.toDate().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
         : "Recently";
@@ -32,8 +31,12 @@ export default function UserProfileModal({ profileUser, onClose, onMessage, onFo
                     </button>
                     <div className="profile-avatar-container">
                         <img
-                            src={profileUser.photoURL || `https://ui-avatars.com/api/?name=${profileUser.displayName || profileUser.email}&background=0D8ABC&color=fff&size=256`}
+                            src={profileUser.photoURL && !profileUser.photoURL.includes("njhbnqyamkwlsobqplvm.supabase.co") ? profileUser.photoURL : `https://ui-avatars.com/api/?name=${encodeURIComponent(profileUser.displayName || profileUser.email || 'User')}&background=0D8ABC&color=fff&size=256`}
                             alt={profileUser.displayName || "User"}
+                            onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(profileUser.displayName || profileUser.email || 'User')}&background=0D8ABC&color=fff&size=256`;
+                            }}
                             className="profile-avatar-large"
                         />
                     </div>

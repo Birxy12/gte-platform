@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { auth, db, googleProvider } from "../../config/firebase";
-import { signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, getRedirectResult, createUserWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { useNavigate, Link } from "react-router-dom";
 import "./Login.css";

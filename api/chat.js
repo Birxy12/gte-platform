@@ -1,3 +1,5 @@
+import { fetchOpenAIWithRotation } from './openaiHelper.js';
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -12,32 +14,18 @@ export default async function handler(req, res) {
 
     const formattedMessages = messages.map(msg => ({
       role: msg.sender === "user" ? "user" : "assistant",
-      content: msg.text
+      content: msg.text || msg.content || ""
     }));
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          { role: "system", content: "You are Birxy, a smart AI learning assistant for the GlobixTech platform. You are helpful, professional, and friendly." },
-          ...formattedMessages
-        ],
-        temperature: 0.7,
-        max_tokens: 500
-      })
+    const data = await fetchOpenAIWithRotation({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: "You are Birxy, a smart AI learning assistant for the GlobixTech platform. You are helpful, professional, and friendly." },
+        ...formattedMessages
+      ],
+      temperature: 0.7,
+      max_tokens: 500
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error("OpenAI API Error:", data);
-      return res.status(response.status).json({ error: "OpenAI failed", details: data.error?.message });
-    }
 
     res.status(200).json({
       reply: data.choices?.[0]?.message?.content || "No response"
@@ -45,6 +33,6 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error("Vercel AI Handler Error:", error);
-    res.status(500).json({ error: "Mission failed: Internal Server Error" });
+    res.status(500).json({ error: "Mission failed: Internal Server Error", details: error.message });
   }
 }

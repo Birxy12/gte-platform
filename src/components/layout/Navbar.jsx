@@ -1,11 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthProvider";
-import { auth, db } from "../../config/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { auth } from "../../config/firebase";
 import { signOut } from "firebase/auth";
 import { notificationService } from "../../services/notificationService";
-import { Bell, Check, Users, MessageCircle, FileText, Heart, X } from "lucide-react";
+import { Bell, Users, MessageCircle, FileText, Heart, X } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { presenceService } from "../../services/presenceService";
 import { motion, AnimatePresence } from "framer-motion";
@@ -26,7 +25,7 @@ export default function Navbar() {
 
         notificationService.requestPermission();
 
-        const unsubscribe = notificationService.subscribeToNotifications(user.uid, async (notifs, count, newUnreadIds) => {
+        const unsubscribe = notificationService.subscribeToNotifications(user.uid, (notifs, count) => {
             setNotifications(notifs);
             setUnreadCount(count);
 
@@ -34,15 +33,6 @@ export default function Navbar() {
             for (const notif of notifs) {
                 if (!notif.read && !notifiedIdsRef.current.has(notif.id)) {
                     notifiedIdsRef.current.add(notif.id);
-                    // Fetch user info for the notification if needed
-                    let senderName = "Someone";
-                    if (notif.fromUserId) {
-                        try {
-                            const userDoc = await getDoc(doc(db, "users", notif.fromUserId));
-                            if (userDoc.exists()) senderName = userDoc.data().displayName || "Someone";
-                        } catch (e) { }
-                    }
-
                     notificationService.showNotification(`GlobixTech Notification`, {
                         body: notif.message || `New ${notif.type} notification`
                     });
@@ -252,8 +242,12 @@ export default function Navbar() {
 
                             <Link to={`/profile/${user.uid}`} className="flex items-center gap-2 group">
                                 <img
-                                    src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || user.email.split('@')[0]}&background=0D8ABC&color=fff`}
+                                    src={user.photoURL && !user.photoURL.includes("njhbnqyamkwlsobqplvm.supabase.co") ? user.photoURL : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.email.split('@')[0])}&background=0D8ABC&color=fff`}
                                     alt="User Avatar"
+                                    onError={(e) => {
+                                        e.currentTarget.onerror = null;
+                                        e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.email.split('@')[0])}&background=0D8ABC&color=fff`;
+                                    }}
                                     style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.2)' }}
                                     className="navbar-avatar group-hover:border-blue-500 transition-all shadow-lg"
                                 />

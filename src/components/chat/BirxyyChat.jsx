@@ -1,14 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { X, ArrowLeft, Check, Users, Search } from 'lucide-react';
-import { collection, getDocs, query, where, updateDoc, doc } from 'firebase/firestore';
-import { format } from 'date-fns';
+import { collection, getDocs, query, updateDoc, doc } from 'firebase/firestore';
 import Avatar from '../common/Avatar';
 
 import ChatSidebar from '../common/ChatSidebar';
 import ChatWindow from '../common/ChatWindow';
 import { chatService } from '../../services/chatService';
-import { presenceService } from '../../services/presenceService';
 import { db } from '../../config/firebase';
 import { useAuth } from '../../context/AuthProvider';
 
@@ -18,7 +16,6 @@ const BirxyyChat = () => {
   const [chats, setChats] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
   const [users, setUsers] = useState([]);
-  const [onlineUsers, setOnlineUsers] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
   const [contactSearchTerm, setContactSearchTerm] = useState("");
   const [wallpaper, setWallpaper] = useState(localStorage.getItem("chatWallpaper") || "wp-default");
@@ -151,6 +148,7 @@ const BirxyyChat = () => {
       setActiveChat(null);
       setShowUserInfo(false);
     } catch (err) {
+      console.error(err);
       setError("Failed to leave group.");
     }
   };
@@ -162,6 +160,7 @@ const BirxyyChat = () => {
       alert(`User suspended for ${days} days.`);
       setShowUserInfo(false);
     } catch (err) {
+      console.error(err);
       setError("Failed to suspend user.");
     }
   };
@@ -202,7 +201,7 @@ const BirxyyChat = () => {
         onBack={() => setActiveChat(null)}
         wallpaper={wallpaper}
         isAdmin={isAdmin}
-        onlineUsers={onlineUsers}
+        onlineUsers={{}}
         onShowUserInfo={() => activeChat && setShowUserInfo(true)}
       />
 
@@ -355,10 +354,10 @@ const NewChatModal = ({
                 className="px-4 py-3 flex items-center justify-between hover:bg-[#182229] cursor-pointer"
               >
                 <div className="flex items-center gap-3">
-                  <img 
-                    src={u.photoURL || `https://ui-avatars.com/api/?name=${u.username || 'User'}`} 
-                    alt="" 
-                    className="w-10 h-10 rounded-full"
+                  <Avatar 
+                    src={u.photoURL} 
+                    name={u.username || u.displayName} 
+                    size="chat"
                   />
                   <div>
                     <h4 className="font-medium text-white">{u.username || u.displayName || "User"}</h4>

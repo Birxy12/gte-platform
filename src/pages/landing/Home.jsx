@@ -4,8 +4,6 @@ import { collection, query, where, getDocs, limit } from "firebase/firestore";
 import { useAuth } from "../../context/AuthProvider";
 import { motion, AnimatePresence } from "framer-motion";
 import "./Home.css";
-import Navbar from "../../components/layout/Navbar";
-import Footer from "../../components/layout/Footer";
 
 const testimonials = [
     {

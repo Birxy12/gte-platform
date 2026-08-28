@@ -169,7 +169,11 @@ const ChatSidebar = ({
                 {/* Info */}
                 <div className="flex-1 min-w-0 border-b border-[#2a3942] py-2">
                   <div className="flex items-center justify-between">
-                    <span className="font-semibold text-white text-[15px] truncate max-w-[240px]">{name}</span>
+                    <span className="font-semibold text-white text-[15px] truncate max-w-[200px]">{name}</span>
+                    <span className="text-[11px] text-[#aebac1]">{formatChatTime(chat.lastMessageAt || chat.updatedAt)}</span>
+                  </div>
+                  <div className="flex items-center justify-between mt-1">
+                    <p className="text-xs text-[#aebac1] truncate max-w-[200px]">{preview}</p>
                     {unread > 0 && (
                       <span className="shrink-0 min-w-[20px] h-5 px-1.5 bg-[#00a884] text-white text-[11px] font-bold rounded-full flex items-center justify-center">
                         {unread > 99 ? '99+' : unread}

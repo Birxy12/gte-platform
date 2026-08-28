@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { db } from "../../../config/firebase";
-import { collection, getDocs, deleteDoc, doc, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
 import { 
   Play, 
   Trash2, 
@@ -66,7 +66,7 @@ export default function ManageReels() {
       try {
         await deleteDoc(doc(db, "reels", id));
         fetchData();
-      } catch (err) { alert("Delete failed"); }
+      } catch (err) { console.error(err); alert("Delete failed"); }
     }
   };
 
@@ -78,7 +78,7 @@ export default function ManageReels() {
       await missionsService.addMission(newMission);
       setNewMission({ category: "General", prompt: "" });
       fetchData();
-    } catch (err) { alert("Failed to add mission"); }
+    } catch (err) { console.error(err); alert("Failed to add mission"); }
     finally { setIsAddingMission(false); }
   };
 
@@ -96,7 +96,7 @@ export default function ManageReels() {
         await missionsService.seedMissions(legacyMissions);
         fetchData();
         alert("Mission database seeded successfully.");
-    } catch (err) { alert("Seed failed"); }
+    } catch (err) { console.error(err); alert("Seed failed"); }
     finally { setIsAddingMission(false); }
   };
 
@@ -105,7 +105,7 @@ export default function ManageReels() {
       try {
         await missionsService.deleteMission(id);
         fetchData();
-      } catch (err) { alert("Delete failed"); }
+      } catch (err) { console.error(err); alert("Delete failed"); }
     }
   };
 

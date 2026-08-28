@@ -179,6 +179,7 @@ export default function InstructorDashboard() {
       setTestimonies(prev => prev.filter(t => t.id !== id));
       alert("Testimony approved and published! ✅");
     } catch (err) {
+      console.error(err);
       alert("Failed to approve testimony.");
     }
   };
@@ -189,6 +190,7 @@ export default function InstructorDashboard() {
       await deleteDoc(doc(db, "testimonies", id));
       setTestimonies(prev => prev.filter(t => t.id !== id));
     } catch (err) {
+      console.error(err);
       alert("Failed to reject testimony.");
     }
   };
@@ -202,6 +204,7 @@ export default function InstructorDashboard() {
       setCourses(prev => prev.map(c => c.id === courseId ? { ...c, isLive: newStatus } : c));
       alert(`Course is now ${newStatus ? 'LIVE 🔴' : 'OFFLINE ⚪'}`);
     } catch (err) {
+      console.error(err);
       alert("Failed to update status.");
     } finally {
       setLoading(false);
@@ -217,6 +220,7 @@ export default function InstructorDashboard() {
       setQuizzes(prev => prev.map(q => q.id === quizId ? { ...q, isActive: newStatus } : q));
       alert(`Quiz is now ${newStatus ? 'ACTIVE 🟢' : 'INACTIVE ⚪'}`);
     } catch (err) {
+      console.error(err);
       alert("Failed to update status.");
     } finally {
       setLoading(false);
@@ -235,6 +239,7 @@ export default function InstructorDashboard() {
       setScheduleDate("");
       alert("Quiz scheduled successfully! 📅");
     } catch (err) {
+      console.error(err);
       alert("Failed to schedule quiz.");
     }
   };

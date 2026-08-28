@@ -9,7 +9,6 @@ export const useChat = (chatId, userId) => {
   useEffect(() => {
     if (!chatId) return;
 
-    setLoading(true);
     const unsubscribe = chatService.subscribeToMessages(chatId, (msgs) => {
       setMessages(msgs);
       setLoading(false);

@@ -1,10 +1,8 @@
-import { useState, useEffect } from "react";
-import { collection, getDocs, query, where, documentId } from "firebase/firestore";
+import { useState, useEffect, useCallback } from "react";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../../config/firebase";
 import { useAuth } from "../../context/AuthProvider";
 import { socialService } from "../../services/socialService";
-import { chatService } from "../../services/chatService";
-import { useNavigate } from "react-router-dom";
 import ReportUserModal from "../../components/common/ReportUserModal";
 import UserProfileModal from "../../components/social/UserProfileModal";
 import ChatPopup from "../../components/chat/ChatPopup";
@@ -12,7 +10,6 @@ import "./DiscoverUsers.css";
 
 export default function DiscoverUsers() {
     const { user } = useAuth();
-    const navigate = useNavigate();
 
     const [users, setUsers] = useState([]);
     const [friends, setFriends] = useState([]);
@@ -25,12 +22,8 @@ export default function DiscoverUsers() {
     const [viewingProfile, setViewingProfile] = useState(null);
     const [activeChatUser, setActiveChatUser] = useState(null);
 
-    useEffect(() => {
+    const fetchData = useCallback(async () => {
         if (!user) return;
-        fetchData();
-    }, [user]);
-
-    const fetchData = async () => {
         setLoading(true);
         try {
             // Fetch all users (excluding self and admins if desired, but let's just exclude self)
@@ -55,7 +48,11 @@ export default function DiscoverUsers() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [user]);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
 
     const handleFollow = async (targetId) => {
         try {
@@ -138,8 +135,12 @@ export default function DiscoverUsers() {
                                             <div key={req.id} className="flex items-center justify-between bg-slate-700/50 p-3 rounded-lg border border-slate-600">
                                                 <div className="flex items-center gap-3">
                                                     <img 
-                                                        src={sender.photoURL || `https://ui-avatars.com/api/?name=${sender.displayName || 'U'}&background=random`} 
+                                                        src={sender.photoURL && !sender.photoURL.includes("njhbnqyamkwlsobqplvm.supabase.co") ? sender.photoURL : `https://ui-avatars.com/api/?name=${encodeURIComponent(sender.displayName || 'User')}&background=0D8ABC&color=fff`} 
                                                         alt="User"
+                                                        onError={(e) => {
+                                                            e.currentTarget.onerror = null;
+                                                            e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(sender.displayName || 'User')}&background=0D8ABC&color=fff`;
+                                                        }}
                                                         className="w-10 h-10 rounded-full object-cover"
                                                     />
                                                     <div>
@@ -166,8 +167,12 @@ export default function DiscoverUsers() {
                                 <div className="card-top" style={{ cursor: 'pointer' }} onClick={() => setViewingProfile(u)}>
                                     <div className="user-avatar">
                                         <img
-                                            src={u.photoURL || `https://ui-avatars.com/api/?name=${u.displayName || u.username || u.email}&background=random`}
-                                            alt={u.displayName}
+                                            src={u.photoURL && !u.photoURL.includes("njhbnqyamkwlsobqplvm.supabase.co") ? u.photoURL : `https://ui-avatars.com/api/?name=${encodeURIComponent(u.displayName || u.username || u.email || 'User')}&background=0D8ABC&color=fff`}
+                                            alt={u.displayName || "User"}
+                                            onError={(e) => {
+                                                e.currentTarget.onerror = null;
+                                                e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(u.displayName || u.username || u.email || 'User')}&background=0D8ABC&color=fff`;
+                                            }}
                                         />
                                     </div>
                                     <div className="user-info">

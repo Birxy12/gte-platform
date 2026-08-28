@@ -11,8 +11,8 @@ import {
   AlertCircle,
   Layout
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthProvider";
+import { motion, AnimatePresence } from "framer-motion";
 import { reelsService } from "../../services/reelsService";
 import { missionsService } from "../../services/missionsService";
 import "../../styles/reels.css";

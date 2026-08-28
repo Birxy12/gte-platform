@@ -2,7 +2,6 @@ import { useEffect, useState, useCallback } from "react";
 import { db } from "../../../config/firebase";
 import { collection, getDocs, deleteDoc, doc, addDoc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { CheckCircle, Clock, Plus, Trash2, Edit3, X, Save } from "lucide-react";
-import { motion } from "framer-motion";
 
 export default function ManageTasks() {
   const [tasks, setTasks] = useState([]);

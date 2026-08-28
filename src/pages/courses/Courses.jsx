@@ -24,7 +24,6 @@ export default function Courses() {
   const [activeEnrollment, setActiveEnrollment] = useState(null);
   const [userCoins, setUserCoins] = useState(0);
   const [completedCourses, setCompletedCourses] = useState(new Set());
-  const [showQuizDirect, setShowQuizDirect] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -397,7 +396,7 @@ export default function Courses() {
           course={activeCourse}
           enrollment={activeEnrollment}
           onClose={() => { setActiveCourse(null); setActiveEnrollment(null); }}
-          onQuizComplete={(quizId, score, total) => {
+          onQuizComplete={(_quizId, score) => {
             if (score >= (activeCourse.passingScore || 15)) {
               handleComplete(activeCourse);
             }

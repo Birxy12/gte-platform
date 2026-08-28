@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { db } from "../../../config/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { useNavigate } from "react-router-dom";
 import { 
   FileText, Upload, Brain, Plus, Trash2, 
   Save, X, Check, AlertCircle, Download
@@ -32,15 +32,15 @@ export default function CreateQuiz() {
   };
 
   const updateQuestion = (index, field, value) => {
-    const newQuestions = [...questions];
-    newQuestions[index][field] = value;
-    setQuestions(newQuestions);
+    const updated = [...questions];
+    updated[index][field] = value;
+    setQuestions(updated);
   };
 
-  const updateOption = (qIdx, oIdx, value) => {
-    const newQuestions = [...questions];
-    newQuestions[qIdx].options[oIdx] = value;
-    setQuestions(newQuestions);
+  const updateOption = (qIndex, oIndex, value) => {
+    const updated = [...questions];
+    updated[qIndex].options[oIndex] = value;
+    setQuestions(updated);
   };
 
   // CSV Parsing
@@ -50,27 +50,39 @@ export default function CreateQuiz() {
 
     const reader = new FileReader();
     reader.onload = (event) => {
-      const content = event.target.result;
-      const lines = content.split("\n").filter(line => line.trim());
-      
-      const parsedQuestions = lines.slice(1).map(line => {
-        const parts = line.split(",").map(p => p.trim());
-        if (parts.length < 6) return null;
-        return {
-          question: parts[0],
-          options: [parts[1], parts[2], parts[3], parts[4]],
-          correct: parseInt(parts[5]) || 0
-        };
-      }).filter(Boolean);
-
-      if (parsedQuestions.length > 0) {
-        setQuestions(parsedQuestions);
-        setActiveTab("manual"); // Switch to manual to review
-      } else {
-        setError("Could not parse CSV. Please use the template format.");
-      }
+      const text = event.target.result;
+      parseCSV(text);
     };
     reader.readAsText(file);
+  };
+
+  const parseCSV = (text) => {
+    try {
+      const lines = text.split("\n").filter(l => l.trim().length > 0);
+      const parsed = [];
+      // Skip header if line contains 'Question'
+      const startIdx = lines[0].toLowerCase().includes("question") ? 1 : 0;
+      
+      for (let i = startIdx; i < lines.length; i++) {
+        const parts = lines[i].split(",").map(p => p.trim());
+        if (parts.length >= 6) {
+          parsed.push({
+            question: parts[0],
+            options: [parts[1], parts[2], parts[3], parts[4]],
+            correct: parseInt(parts[5]) || 0
+          });
+        }
+      }
+      
+      if (parsed.length > 0) {
+        setQuestions(parsed);
+        setActiveTab("manual");
+      } else {
+        setError("Invalid CSV format. Please ensure 6 columns: Question, OptA, OptB, OptC, OptD, CorrectIndex");
+      }
+    } catch {
+      setError("Failed to parse CSV file.");
+    }
   };
 
   // AI Parsing
@@ -85,6 +97,7 @@ export default function CreateQuiz() {
         setActiveTab("manual");
       }
     } catch (err) {
+      console.error(err);
       setError("AI Parsing failed. Ensure your text is clear or try manual entry.");
     } finally {
       setLoading(false);
@@ -106,6 +119,7 @@ export default function CreateQuiz() {
       });
       navigate("/admin/manage-quizzes");
     } catch (err) {
+      console.error(err);
       setError("Failed to deploy quiz to mission archives.");
     } finally {
       setLoading(false);

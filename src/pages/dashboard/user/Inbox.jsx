@@ -19,8 +19,8 @@ import {
     ChevronRight,
     AlertCircle
 } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
+import { formatDistanceToNow } from "date-fns";
 import "./Inbox.css";
 
 export default function Inbox() {

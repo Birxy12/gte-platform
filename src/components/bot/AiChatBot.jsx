@@ -1,13 +1,9 @@
 import { useState, useRef, useEffect } from "react";
-import { MessageSquare, X, Send, Bot, Phone, Video, MoreVertical, Plus, Smile, Camera, Mic, ChevronLeft } from "lucide-react";
-import { useLocation } from "react-router-dom";
+import { MessageSquare, X, Send, Bot, ChevronLeft } from "lucide-react";
 import { openAiService } from "../../services/openAiService";
-import { useAuth } from "../../context/AuthProvider";
 import "./AiChatBot.css";
 
 export default function AiChatBot() {
-    const { user } = useAuth();
-    const location = useLocation();
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState([
         { id: 1, sender: "bot", text: "Hi there! I'm Birxy, your AI learning assistant. How can I help you today?", time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
@@ -15,10 +11,6 @@ export default function AiChatBot() {
     const [input, setInput] = useState("");
     const [isTyping, setIsTyping] = useState(false);
     const messagesEndRef = useRef(null);
-
-    // Removed early return from here
-
-    const initials = user?.displayName ? user.displayName.substring(0, 2).toUpperCase() : (user?.email ? user.email.substring(0, 2).toUpperCase() : "BA");
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });

@@ -17,10 +17,18 @@ const ChatInput = ({
   const inputRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
+  const prevEditIdRef = useRef(null);
+
   useEffect(() => {
-    if (editingMessageId) {
-      setMessage(editingText || '');
-      inputRef.current?.focus();
+    if (editingMessageId && prevEditIdRef.current !== editingMessageId) {
+      prevEditIdRef.current = editingMessageId;
+      const timeoutId = setTimeout(() => {
+        setMessage(editingText || '');
+        inputRef.current?.focus();
+      }, 0);
+      return () => clearTimeout(timeoutId);
+    } else if (!editingMessageId) {
+      prevEditIdRef.current = null;
     }
   }, [editingMessageId, editingText]);
 

@@ -3,7 +3,6 @@ import { X, Send, Minimize2, Maximize2 } from "lucide-react";
 import { chatService } from "../../services/chatService";
 import { presenceService } from "../../services/presenceService";
 import { useAuth } from "../../context/AuthProvider";
-import { format } from "date-fns";
 import "./ChatPopup.css";
 
 export default function ChatPopup({ targetUser, onClose }) {
@@ -102,8 +101,12 @@ export default function ChatPopup({ targetUser, onClose }) {
                 <div className="flex items-center gap-2">
                     <div className="popup-avatar">
                         <img
-                            src={targetUser.photoURL || `https://ui-avatars.com/api/?name=${targetUser.displayName || targetUser.email || 'U'}`}
+                            src={targetUser.photoURL && !targetUser.photoURL.includes("njhbnqyamkwlsobqplvm.supabase.co") ? targetUser.photoURL : `https://ui-avatars.com/api/?name=${encodeURIComponent(targetUser.displayName || targetUser.email || 'User')}&background=0D8ABC&color=fff`}
                             alt="avatar"
+                            onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(targetUser.displayName || targetUser.email || 'User')}&background=0D8ABC&color=fff`;
+                            }}
                         />
                         <div className={`online-indicator ${isTargetOnline ? 'active' : ''}`} style={{ backgroundColor: isTargetOnline ? '#2ecc71' : '#95a5a6' }}></div>
                     </div>

@@ -53,7 +53,6 @@ export default function ManageCourses() {
   const [materialTitle, setMaterialTitle] = useState("");
   const [materialUrl, setMaterialUrl] = useState("");
   const [materialCoinCost, setMaterialCoinCost] = useState("0");
-  const [materialFile, setMaterialFile] = useState(null);
   const [expandedCourse, setExpandedCourse] = useState(null);
 
   const fetchCourses = useCallback(async () => {
@@ -151,7 +150,6 @@ export default function ManageCourses() {
       setMaterialTitle("");
       setMaterialUrl("");
       setMaterialCoinCost("0");
-      setMaterialFile(null);
       fetchCourses();
     } catch (err) {
       console.error("Error adding material:", err);

@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { db } from "../../config/firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { Shield, Target, Zap, Users, ChevronRight, Award, Box, MessageSquare, Rocket, Globe, BookOpen, Heart, TrendingUp, Calendar, CheckCircle } from "lucide-react";
-import "./About.css";
 import { motion } from "framer-motion";
+import "./About.css";
 
 const milestones = [
   { year: "2024", title: "Platform Founded", desc: "GTE Portal launched with a mission to transform tech education", icon: Rocket },

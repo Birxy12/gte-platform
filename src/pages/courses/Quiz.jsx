@@ -1,9 +1,31 @@
 import { useState, useEffect, useCallback } from "react";
 import { X, CheckCircle, AlertCircle, Award, Clock, ChevronLeft, ChevronRight, Flag, Loader2 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import { db } from "../../config/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import "./Quiz.css";
+
+const createMockQuestions = (title = "Course") => [
+  {
+    question: `What is the primary goal of "${title}"?`,
+    options: ["Master theory", "Practical experience", "Graduation", "Both A and B"],
+    correct: 3
+  },
+  {
+    question: "Which component is most critical in this mission?",
+    options: ["Encryption", "UI Principles", "State Management", "Infrastructure"],
+    correct: 1
+  },
+  {
+    question: "How should you approach the final project?",
+    options: ["Work alone", "Collaborate", "Templates only", "Skip planning"],
+    correct: 1
+  },
+  ...Array.from({ length: 27 }, (_, i) => ({
+    question: `CBT Proficiency Question ${i + 4}: How does indexing affect query performance in this environment?`,
+    options: ["Slows it down", "Optimizes retrieval", "No effect", "Increases storage costs"],
+    correct: 1
+  }))
+];
 
 export default function Quiz({ course, quiz: preloadedQuiz, onComplete, onClose }) {
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -16,30 +38,6 @@ export default function Quiz({ course, quiz: preloadedQuiz, onComplete, onClose 
   const [questions, setQuestions] = useState([]);
   const [loadingQuiz, setLoadingQuiz] = useState(true);
 
-  // Fallback mock questions
-  const mockQuestions = [
-    {
-      question: `What is the primary goal of "${course.title}"?`,
-      options: ["Master theory", "Practical experience", "Graduation", "Both A and B"],
-      correct: 3
-    },
-    {
-      question: "Which component is most critical in this mission?",
-      options: ["Encryption", "UI Principles", "State Management", "Infrastructure"],
-      correct: 1
-    },
-    {
-      question: "How should you approach the final project?",
-      options: ["Work alone", "Collaborate", "Templates only", "Skip planning"],
-      correct: 1
-    },
-    ...Array.from({ length: 27 }, (_, i) => ({
-      question: `CBT Proficiency Question ${i + 4}: How does indexing affect query performance in this environment?`,
-      options: ["Slows it down", "Optimizes retrieval", "No effect", "Increases storage costs"],
-      correct: 1
-    }))
-  ];
-
   // Fetch quiz from Firestore by courseId (or use preloaded quiz)
   useEffect(() => {
     const fetchQuiz = async () => {
@@ -51,27 +49,29 @@ export default function Quiz({ course, quiz: preloadedQuiz, onComplete, onClose 
           setLoadingQuiz(false);
           return;
         }
-        const q = query(collection(db, "quizzes"), where("courseId", "==", course.id));
-        const snapshot = await getDocs(q);
-        if (!snapshot.empty) {
-          const quizData = snapshot.docs[0].data();
-          if (quizData.questions && quizData.questions.length > 0) {
-            setQuestions(quizData.questions);
-            setLoadingQuiz(false);
-            return;
+        if (course?.id) {
+          const q = query(collection(db, "quizzes"), where("courseId", "==", course.id));
+          const snapshot = await getDocs(q);
+          if (!snapshot.empty) {
+            const quizData = snapshot.docs[0].data();
+            if (quizData.questions && quizData.questions.length > 0) {
+              setQuestions(quizData.questions);
+              setLoadingQuiz(false);
+              return;
+            }
           }
         }
         // No quiz found — use fallback
-        setQuestions(mockQuestions);
+        setQuestions(createMockQuestions(course?.title));
       } catch (err) {
         console.error("Error fetching quiz:", err);
-        setQuestions(mockQuestions);
+        setQuestions(createMockQuestions(course?.title));
       } finally {
         setLoadingQuiz(false);
       }
     };
     fetchQuiz();
-  }, [course.id, preloadedQuiz]);
+  }, [course?.id, course?.title, preloadedQuiz]);
 
   const calculateScore = useCallback(() => {
     let finalScore = 0;

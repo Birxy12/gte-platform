@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthProvider";
 import { db } from "../../config/firebase";
-import { collection, query, where, getDocs, doc, getDoc, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, query, where, getDocs } from "firebase/firestore";
 import { enrollmentService } from "../../services/enrollmentService";
 import { X, PlayCircle, FileText, HelpCircle, CheckCircle, Lock, ChevronRight, Award, Clock } from "lucide-react";
 import Quiz from "./Quiz";
