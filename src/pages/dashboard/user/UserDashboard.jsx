@@ -7,7 +7,7 @@ import { doc, getDoc, collection, query, where, getDocs, updateDoc, increment, s
 import { StatusFeed } from "../../../components/status/StatusSystem";
 import { progressService } from "../../../services/progressService";
 import CertificateModal from "./CertificateModal";
-import { Award, FileText, Zap, Coins, Shield, Star, Upload, X, ChevronRight, Menu } from "lucide-react";
+import { Award, FileText, Zap, Coins, Shield, Star, Upload, X, ChevronRight, Menu, Home } from "lucide-react";
 import { reelsService } from "../../../services/reelsService";
 import { socialService } from "../../../services/socialService";
 import { enrollmentService } from "../../../services/enrollmentService";
@@ -302,6 +302,9 @@ export default function UserDashboard() {
                 </button>
                 <Link to="/home" className="ud-brand"><span>GTE</span> Portal</Link>
                 <nav className="ud-nav">
+                    <Link to="/home" className="ud-nav-item">
+                        <span className="ud-nav-icon"><Home size={18} /></span> Home
+                    </Link>
                     <Link to="/dashboard" className={isActive("/dashboard")}>
                         <span className="ud-nav-icon">🏠</span> Overview
                     </Link>

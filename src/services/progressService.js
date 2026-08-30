@@ -22,8 +22,9 @@ export const progressService = {
             userId,
             courseId,
             courseTitle,
-            completedAt: serverTimestamp()
-        });
+            completedAt: serverTimestamp(),
+            completed: true
+        }, { merge: true });
     },
 
     /**

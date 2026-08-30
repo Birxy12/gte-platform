@@ -17,7 +17,8 @@ import {
   Shield,
   Compass,
   ArrowRight,
-  Flame
+  Flame,
+  Home
 } from "lucide-react";
 import CertificateModal from "../user/CertificateModal";
 
@@ -119,6 +120,14 @@ export default function StudentDashboard() {
               <div className="text-xl font-black text-amber-400">{userCoins} Coins</div>
             </div>
           </div>
+
+          <Link
+            to="/home"
+            className="w-[52px] h-[52px] rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-center text-slate-300 hover:text-white hover:bg-blue-600 hover:border-blue-500 transition-all shadow-lg active:scale-95"
+            title="Return to Home"
+          >
+            <Home size={20} />
+          </Link>
 
           <Link
             to="/courses"

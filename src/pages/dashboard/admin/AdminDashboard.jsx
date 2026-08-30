@@ -9,7 +9,7 @@ import {
   Settings, LogOut, PlusCircle, PenTool, 
   CheckCircle, Shield, Star, HelpCircle, 
   MessageSquare, Award, Clock, UserCheck, Coins,
-  Menu, ChevronRight
+  Menu, ChevronRight, Home
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import "./AdminDashboard.css";
@@ -153,6 +153,10 @@ export default function AdminDashboard() {
           <span>Admin <b>Panel</b></span>
         </Link>
         <nav className="ad-nav">
+          <Link to="/home" className="ad-nav-item">
+            <Home size={18} className="ad-nav-icon" />
+            <span>Home</span>
+          </Link>
           <Link to="/admin" className={isActive("/admin")}>
             <Layout size={18} className="ad-nav-icon" />
             <span>Overview</span>

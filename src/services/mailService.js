@@ -5,7 +5,7 @@ export const mailService = {
     /**
      * Send a templated email to a specific user
      */
-    async sendEmail(userId, templateId, extraData = {}, directPayload = null) {
+    async sendEmail(userId, templateId, extraData = {}, directPayload = null, attachments = null) {
         if (!userId) return;
 
         try {
@@ -50,13 +50,19 @@ export const mailService = {
             });
 
             // 4. Queue Email (Standard Firebase "Trigger Email" extension pattern)
+            const messagePayload = {
+                subject: subject,
+                text: body,
+                html: `<div style="font-family: sans-serif; padding: 20px; line-height: 1.6;">${body.replace(/\n/g, '<br>')}</div>`
+            };
+
+            if (attachments) {
+                messagePayload.attachments = attachments;
+            }
+
             await addDoc(collection(db, "mail"), {
                 to: userData.email,
-                message: {
-                    subject: subject,
-                    text: body,
-                    html: `<div style="font-family: sans-serif; padding: 20px; line-height: 1.6;">${body.replace(/\n/g, '<br>')}</div>`
-                },
+                message: messagePayload,
                 templateId: templateId,
                 timestamp: serverTimestamp()
             });

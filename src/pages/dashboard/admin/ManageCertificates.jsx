@@ -1,12 +1,14 @@
 import { useEffect, useState, useCallback } from "react";
 import { db } from "../../../config/firebase";
 import { collection, getDocs, deleteDoc, doc, query, where } from "firebase/firestore";
-import { Award, Trash2, User, Book, CheckCircle, Download } from "lucide-react";
+import { Award, Trash2, User, Book, CheckCircle, Download, Eye } from "lucide-react";
 import { format } from "date-fns";
+import CertificateModal from "../user/CertificateModal";
 
 export default function ManageCertificates() {
   const [certificates, setCertificates] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showPreview, setShowPreview] = useState(false);
 
   const fetchCertificates = useCallback(async () => {
     try {
@@ -38,11 +40,18 @@ export default function ManageCertificates() {
 
   return (
     <>
-      <div className="ad-page-header">
+      <div className="ad-page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div className="ad-header-title">
           <h1>Credential Registry</h1>
           <p>Verify and manage all issued mission completion certificates</p>
         </div>
+        <button 
+          onClick={() => setShowPreview(true)}
+          className="ad-btn-primary" 
+          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+        >
+          <Eye size={18} /> Preview Template
+        </button>
       </div>
 
       <div className="ad-card" style={{ padding: '0' }}>
@@ -104,6 +113,14 @@ export default function ManageCertificates() {
           </table>
         </div>
       </div>
+
+      {showPreview && (
+        <CertificateModal 
+          course={{ title: "Advanced Tactical Engineering (Demo)", description: "This is a preview of the high-res certificate template." }}
+          profile={{ username: "Admin Operator", uid: "ADMIN-0000-PREVIEW", displayName: "Admin Operator" }}
+          onClose={() => setShowPreview(false)}
+        />
+      )}
     </>
   );
 }

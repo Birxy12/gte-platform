@@ -146,7 +146,7 @@ service cloud.firestore {
 
     // --- Content & LMS ---
     match /courses/{courseId} {
-      allow read, list: if isAuthenticated();
+      allow read, list: if true;
       allow write: if isInstructor();  // Instructors & admins can manage courses
     }
     match /posts/{postId} {

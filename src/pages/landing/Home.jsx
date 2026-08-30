@@ -168,7 +168,7 @@ export default function Home() {
 
           <h1>
             Engineer Your Future with{" "}
-            <span className="gradient-text">Elite Precision</span>
+            <span className="gradient-text">GlobixTech <span>Ent</span></span>
           </h1>
 
           <p className="hero-subtitle">

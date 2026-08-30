@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Editor } from "@monaco-editor/react";
-import { Play, RotateCcw, Terminal as TerminalIcon, FilePlus, X, Square, Save, Download, CheckSquare, Square as SquareIcon, Trash2 } from "lucide-react";
+import { Play, RotateCcw, Terminal as TerminalIcon, FilePlus, X, Square, Save, Download, CheckSquare, Square as SquareIcon, Trash2, FolderOpen, ExternalLink } from "lucide-react";
 import { 
   SandpackProvider, 
   SandpackPreview, 
+  SandpackConsole,
   useActiveCode,
   useSandpack
 } from "@codesandbox/sandpack-react";
@@ -315,61 +316,7 @@ function SandpackMonacoEditor({ showPreview, setShowPreview, autoSave, onSave, o
   );
 }
 
-// Terminal panel — uses sandpack.listen() to capture console messages (no extra bundler connection)
-function TerminalPanel({ onClose }) {
-  const { sandpack } = useSandpack();
-  const [logs, setLogs] = useState([]);
-  const bottomRef = useRef(null);
 
-  useEffect(() => {
-    const unsub = sandpack.listen((msg) => {
-      if (msg.type === 'console' && Array.isArray(msg.log)) {
-        msg.log.forEach(entry => {
-          const text = entry.data?.map(d => (typeof d === 'object' ? JSON.stringify(d, null, 2) : String(d))).join(' ') ?? '';
-          if (!text) return;
-          setLogs(prev => [...prev.slice(-200), { text, level: entry.method ?? 'log', ts: Date.now() }]);
-        });
-      } else if (msg.type === 'action' && msg.action === 'show-error') {
-        setLogs(prev => [...prev.slice(-200), { text: msg.title ?? msg.message ?? 'Error', level: 'error', ts: Date.now() }]);
-      }
-    });
-    return () => unsub?.();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [logs]);
-
-  const levelColor = { log: '#e2e8f0', warn: '#fbbf24', error: '#f87171', info: '#60a5fa', debug: '#94a3b8' };
-
-  return (
-    <div style={{ height: '220px', flexShrink: 0, borderTop: '1px solid #3c3c3c', display: 'flex', flexDirection: 'column', backgroundColor: '#0d1117' }}>
-      <div style={{ display: 'flex', alignItems: 'center', padding: '4px 12px', backgroundColor: '#161b22', borderBottom: '1px solid #3c3c3c', flexShrink: 0, gap: '4px' }}>
-        <TerminalIcon size={12} style={{ color: '#64748b' }} />
-        <span style={{ fontSize: '12px', color: '#94a3b8', flex: 1 }}>Terminal / Console</span>
-        <button onClick={() => setLogs([])} title="Clear" style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', padding: '3px', display: 'flex', borderRadius: '4px' }}
-          onMouseEnter={e => e.currentTarget.style.color = '#e2e8f0'} onMouseLeave={e => e.currentTarget.style.color = '#64748b'}>
-          <Trash2 size={13} />
-        </button>
-        <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', padding: '3px', display: 'flex', borderRadius: '4px' }}
-          onMouseEnter={e => e.currentTarget.style.color = '#e2e8f0'} onMouseLeave={e => e.currentTarget.style.color = '#64748b'}>
-          <X size={13} />
-        </button>
-      </div>
-      <div style={{ flex: 1, overflowY: 'auto', padding: '6px 12px', fontFamily: "'JetBrains Mono', monospace", fontSize: '12px' }}>
-        {logs.length === 0 ? (
-          <div style={{ color: '#475569', fontStyle: 'italic', paddingTop: '8px' }}>Console output will appear here when you run code.</div>
-        ) : (
-          logs.map((log, i) => (
-            <div key={i} style={{ color: levelColor[log.level] ?? '#e2e8f0', lineHeight: 1.6, borderBottom: '1px solid rgba(255,255,255,0.04)', padding: '2px 0', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
-              <span style={{ color: '#334155', marginRight: '8px', userSelect: 'none' }}>{'>'}</span>{log.text}
-            </div>
-          ))
-        )}
-        <div ref={bottomRef} />
-      </div>
-    </div>
-  );
-}
 
 // File Explorer sidebar
 function CustomFileExplorer() {
@@ -377,6 +324,57 @@ function CustomFileExplorer() {
   const { files, activeFile, setActiveFile } = sandpack;
   const [newFileName, setNewFileName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+
+  const handleOpenFolder = async () => {
+    try {
+      if (!window.showDirectoryPicker) {
+        alert("Your browser does not support the File System Access API. Please use a modern Chromium-based browser (Chrome, Edge).");
+        return;
+      }
+      
+      const dirHandle = await window.showDirectoryPicker();
+      const newFiles = {};
+      
+      const processDirectory = async (handle, currentPath) => {
+        for await (const entry of handle.values()) {
+          if (entry.kind === 'file') {
+            const file = await entry.getFile();
+            // Try to read as text. If it's a binary file, it might fail or show gibberish, but that's okay for a simple code editor
+            try {
+              const contents = await file.text();
+              newFiles[`${currentPath}/${entry.name}`] = contents;
+            } catch (e) {
+              console.warn(`Could not read file: ${entry.name}`);
+            }
+          } else if (entry.kind === 'directory') {
+            if (entry.name !== 'node_modules' && entry.name !== '.git') {
+               await processDirectory(entry, `${currentPath}/${entry.name}`);
+            }
+          }
+        }
+      };
+
+      await processDirectory(dirHandle, "");
+      
+      if (Object.keys(newFiles).length > 0) {
+        // Clear existing files and load the new ones
+        const resetObject = {};
+        for (const [path, code] of Object.entries(newFiles)) {
+          resetObject[path] = code;
+        }
+        
+        // Use sandpack update files method (since resetAllFiles isn't directly exposed sometimes)
+        // We will just add them.
+        sandpack.updateFile(resetObject);
+        // Set first file active
+        sandpack.setActiveFile(Object.keys(resetObject)[0]);
+      }
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        console.error("Error opening folder:", err);
+      }
+    }
+  };
 
   const handleCreate = (e) => {
     e.preventDefault();
@@ -395,10 +393,16 @@ function CustomFileExplorer() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: '#252526' }}>
       <div style={{ padding: '8px 12px', borderBottom: '1px solid #3c3c3c', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
         <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#bbb', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Explorer</span>
-        <button onClick={() => setIsCreating(!isCreating)} title="New File"
-          style={{ background: 'transparent', border: 'none', color: '#ccc', cursor: 'pointer', padding: '3px', borderRadius: '4px', display: 'flex' }}>
-          <FilePlus size={15} />
-        </button>
+        <div style={{ display: 'flex', gap: '4px' }}>
+          <button onClick={handleOpenFolder} title="Open Folder"
+            style={{ background: 'transparent', border: 'none', color: '#ccc', cursor: 'pointer', padding: '3px', borderRadius: '4px', display: 'flex' }}>
+            <FolderOpen size={15} />
+          </button>
+          <button onClick={() => setIsCreating(!isCreating)} title="New File"
+            style={{ background: 'transparent', border: 'none', color: '#ccc', cursor: 'pointer', padding: '3px', borderRadius: '4px', display: 'flex' }}>
+            <FilePlus size={15} />
+          </button>
+        </div>
       </div>
       {isCreating && (
         <form onSubmit={handleCreate} style={{ padding: '6px 8px', borderBottom: '1px solid #3c3c3c', flexShrink: 0 }}>
@@ -497,19 +501,35 @@ function SandpackEditorInner({ showPreview, setShowPreview, autoSave, showTermin
               <div style={{ width: '45%', flexShrink: 0, borderLeft: '1px solid #3c3c3c', position: 'relative', display: 'flex', flexDirection: 'column', height: '100%' }}>
                 <div style={{ padding: '6px 10px', backgroundColor: '#252526', borderBottom: '1px solid #3c3c3c', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
                   <span style={{ fontSize: '12px', color: '#aaa' }}>🌐 Preview</span>
-                  <button onClick={() => setShowPreview(false)} style={{ background: 'transparent', border: 'none', color: '#aaa', cursor: 'pointer', padding: '3px', borderRadius: '3px', display: 'flex', alignItems: 'center' }}>
-                    <X size={14} />
-                  </button>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    <button onClick={() => setShowPreview(false)} style={{ background: 'transparent', border: 'none', color: '#aaa', cursor: 'pointer', padding: '3px', borderRadius: '3px', display: 'flex', alignItems: 'center' }}>
+                      <X size={14} />
+                    </button>
+                  </div>
                 </div>
                 <div style={{ flex: 1, overflow: 'hidden' }}>
-                  <SandpackPreview showOpenInCodeSandbox={false} style={{ height: '100%', width: '100%' }} />
+                  <SandpackPreview showOpenInWindow={true} showOpenInCodeSandbox={false} style={{ height: '100%', width: '100%' }} />
                 </div>
               </div>
             )}
           </div>
 
           {/* Terminal panel */}
-          {showTerminal && <TerminalPanel onClose={() => setShowTerminal(false)} />}
+          {showTerminal && (
+            <div style={{ height: '220px', flexShrink: 0, borderTop: '1px solid #3c3c3c', display: 'flex', flexDirection: 'column', backgroundColor: '#0d1117', overflow: 'hidden' }}>
+              <div style={{ display: 'flex', alignItems: 'center', padding: '4px 12px', backgroundColor: '#161b22', borderBottom: '1px solid #3c3c3c', flexShrink: 0, gap: '4px' }}>
+                <TerminalIcon size={12} style={{ color: '#64748b' }} />
+                <span style={{ fontSize: '12px', color: '#94a3b8', flex: 1 }}>Terminal / Console</span>
+                <button onClick={() => setShowTerminal(false)} style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', padding: '3px', display: 'flex', borderRadius: '4px' }}
+                  onMouseEnter={e => e.currentTarget.style.color = '#e2e8f0'} onMouseLeave={e => e.currentTarget.style.color = '#64748b'}>
+                  <X size={13} />
+                </button>
+              </div>
+              <div style={{ flex: 1, overflow: 'auto' }}>
+                <SandpackConsole resetOnPreviewRestart={true} showRestartButton={false} showClearControl={true} />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

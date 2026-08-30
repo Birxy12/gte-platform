@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { db } from "../../../config/firebase";
 import { useAuth } from "../../../context/AuthProvider";
 import {
@@ -7,7 +8,7 @@ import {
 import {
   LayoutDashboard, BookOpen, Users, MessageSquare, Settings, Plus, MoreVertical,
   TrendingUp, Star, Clock, CheckCircle, AlertCircle, ChevronRight, Search, Filter,
-  Download, Calendar, Award, Eye, FileText, HelpCircle, Shield, X, Upload, Trash2, Edit3, Menu, Play
+  Download, Calendar, Award, Eye, FileText, HelpCircle, Shield, X, Upload, Trash2, Edit3, Menu, Play, Home
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import "./InstructorDashboard.css";
@@ -297,6 +298,10 @@ export default function InstructorDashboard() {
         </div>
 
         <nav className="sidebar-nav">
+          <Link to="/home" className="nav-item" style={{ textDecoration: 'none' }}>
+            <Home size={20} />
+            {!sidebarCollapsed && <span>Home</span>}
+          </Link>
           {menuItems.map((item) => (
             <button
               key={item.id}

@@ -3,6 +3,8 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthProvider";
 import { courseService } from "../../services/courseService";
 import { enrollmentService } from "../../services/enrollmentService";
+import { progressService } from "../../services/progressService";
+import CertificateModal from "../dashboard/user/CertificateModal";
 import { 
     ChevronLeft, 
     ChevronRight, 
@@ -31,6 +33,9 @@ export default function LessonView() {
     const [loading, setLoading] = useState(true);
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [error, setError] = useState(null);
+    const [completedLessons, setCompletedLessons] = useState([]);
+    const [showCert, setShowCert] = useState(false);
+    const [isCompleting, setIsCompleting] = useState(false);
 
     useEffect(() => {
         if (authLoading) return;
@@ -52,13 +57,15 @@ export default function LessonView() {
                 }
 
                 // 2. Fetch Course & Materials
-                const [c, m] = await Promise.all([
+                const [c, m, e] = await Promise.all([
                     courseService.getCourseById(courseId),
-                    courseService.getCourseMaterials(courseId)
+                    courseService.getCourseMaterials(courseId),
+                    enrollmentService.getEnrollment(user.uid, courseId)
                 ]);
 
                 setCourse(c);
                 setMaterials(m);
+                if (e) setCompletedLessons(e.completedLessons || []);
 
                 // 3. Set Current Material
                 if (materialId) {
@@ -91,6 +98,31 @@ export default function LessonView() {
         }
     };
 
+    const handleMarkComplete = async () => {
+        if (!currentMaterial || isCompleting) return;
+        setIsCompleting(true);
+        try {
+            await enrollmentService.markLessonComplete(user.uid, courseId, currentMaterial.id);
+            const updatedLessons = [...new Set([...completedLessons, currentMaterial.id])];
+            setCompletedLessons(updatedLessons);
+
+            // Calculate overall progress
+            const progress = Math.round((updatedLessons.length / (materials.length || 1)) * 100);
+            
+            // Check if course is fully completed
+            if (updatedLessons.length >= materials.length) {
+                await progressService.markCourseCompleted(user.uid, courseId, course.title);
+                setShowCert(true);
+            } else {
+                handleNext();
+            }
+        } catch (err) {
+            console.error("Failed to mark complete:", err);
+        } finally {
+            setIsCompleting(false);
+        }
+    };
+
     if (loading) return (
         <div className="lesson-loading flex flex-col items-center justify-center min-h-screen bg-[#0a0f1e] text-blue-500">
             <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -109,7 +141,8 @@ export default function LessonView() {
     );
 
     const currentIndex = materials.findIndex(m => m.id === currentMaterial?.id);
-    const progressPercent = ((currentIndex + 1) / (materials.length || 1)) * 100;
+    const progressPercent = ((completedLessons.length) / (materials.length || 1)) * 100;
+    const isCurrentCompleted = completedLessons.includes(currentMaterial?.id);
 
     return (
         <div className="lesson-viewer-layout flex h-screen bg-[#060a14] overflow-hidden text-slate-200">
@@ -147,7 +180,7 @@ export default function LessonView() {
                                             {m.type} • {m.duration || "10m"}
                                         </p>
                                     </div>
-                                    {idx < currentIndex && <CheckCircle size={14} className="text-green-500" />}
+                                    {completedLessons.includes(m.id) && <CheckCircle size={14} className="text-green-500" />}
                                 </button>
                             ))}
                         </div>
@@ -200,8 +233,16 @@ export default function LessonView() {
                                 <ChevronRight size={20} />
                             </button>
                         </div>
-                        <button className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-xs font-black hidden sm:block">
-                            MARK COMPLETE
+                        <button 
+                            onClick={handleMarkComplete}
+                            disabled={isCurrentCompleted || isCompleting}
+                            className={`px-4 py-2 rounded-xl text-xs font-black hidden sm:flex items-center gap-2 transition-all ${
+                                isCurrentCompleted 
+                                ? 'bg-green-600/20 text-green-500 border border-green-500/30' 
+                                : 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/30'
+                            }`}
+                        >
+                            {isCompleting ? 'PROCESSING...' : isCurrentCompleted ? <><CheckCircle size={14} /> COMPLETED</> : 'MARK COMPLETE'}
                         </button>
                     </div>
                 </header>
@@ -286,6 +327,14 @@ export default function LessonView() {
                     </div>
                 </div>
             </section>
+
+            {showCert && (
+                <CertificateModal 
+                    course={course}
+                    profile={user}
+                    onClose={() => setShowCert(false)}
+                />
+            )}
         </div>
     );
 }

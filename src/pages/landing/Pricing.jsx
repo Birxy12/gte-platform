@@ -4,8 +4,11 @@ import { collection, getDocs } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
 import { Check, Sparkles, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../../context/AuthProvider';
+import './About.css';
 
 export default function Pricing() {
+  const { user } = useAuth();
   const [isAnnual, setIsAnnual] = useState(false);
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -49,38 +52,40 @@ export default function Pricing() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#080c14] text-white pt-48 pb-32 relative overflow-hidden font-sans">
+    <div className="about-page">
       
-      {/* Background Orbs */}
-      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-blue-600/10 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] rounded-full bg-indigo-600/10 blur-[120px] pointer-events-none" />
-
-      <div className="max-w-7xl mx-auto px-6 relative z-10">
-        
-        {/* Header Section */}
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-sm font-medium mb-6"
+      {/* Hero Section */}
+      <section className="about-hero">
+        <div className="hero-bg-glow"></div>
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="container mx-auto px-4"
+        >
+          <motion.span 
+            className="hero-badge"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.3, type: "spring" }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', padding: '0.5rem 1rem', borderRadius: '100px', color: '#60a5fa', textTransform: 'uppercase', fontSize: '0.875rem', fontWeight: 600 }}
           >
             <Sparkles size={14} /> Flexible Pricing
-          </motion.div>
+          </motion.span>
           
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-4xl md:text-5xl font-black mb-6 tracking-tight"
           >
-            Invest in Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Career</span>
+            Invest in Your <span className="gradient-text">Career</span>
           </motion.h1>
           
           <motion.p 
+            className="hero-subtitle"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-slate-400 text-lg"
           >
             Choose the perfect plan to accelerate your learning journey. Start building your future today.
           </motion.p>
@@ -104,10 +109,13 @@ export default function Pricing() {
               <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] uppercase tracking-wider">Save 20%</span>
             </span>
           </motion.div>
-        </div>
+        </motion.div>
+      </section>
 
-        {/* Pricing Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Pricing Grid Container */}
+      <section className="about-stats" style={{ background: 'transparent' }}>
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {loading ? (
             <div className="col-span-full flex flex-col items-center justify-center py-20 text-slate-400">
               <div className="w-8 h-8 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-4" />
@@ -182,7 +190,7 @@ export default function Pricing() {
 
                   {/* Action Button */}
                   <Link 
-                    to="/register"
+                    to={user ? `/checkout/${plan.id}` : "/register"}
                     className="relative z-10 w-full flex items-center justify-center gap-2 py-4 rounded-xl bg-white/5 hover:bg-blue-600 text-white font-bold border border-white/10 hover:border-blue-400 transition-all duration-300 group-hover:bg-blue-500 group-hover:shadow-[0_0_30px_rgba(59,130,246,0.6)]"
                   >
                     Enroll Now
@@ -193,8 +201,8 @@ export default function Pricing() {
             })
           )}
         </div>
-
       </div>
-    </div>
-  );
+    </section>
+  </div>
+);
 }

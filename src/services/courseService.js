@@ -36,11 +36,11 @@ export const courseService = {
     async getCourseMaterials(courseId) {
         const q = query(
             collection(db, "courseMaterials"),
-            where("courseId", "==", courseId),
-            orderBy("order", "asc")
+            where("courseId", "==", courseId)
         );
         const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const materials = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        return materials.sort((a, b) => (a.order || 0) - (b.order || 0));
     },
 
     /**

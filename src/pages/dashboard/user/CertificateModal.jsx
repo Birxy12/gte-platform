@@ -1,12 +1,84 @@
-import React, { useRef } from 'react';
-import { X, Download, Award } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { X, Download, Award, Mail, Loader2, CheckCircle2 } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
+import { mailService } from '../../../services/mailService';
 import './CertificateModal.css';
 
 export default function CertificateModal({ course, profile, allCompleted = [], onClose }) {
   const certRef = useRef(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [emailStatus, setEmailStatus] = useState(null); // 'success' | 'error' | null
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!certRef.current) return;
+    setIsProcessing(true);
+    try {
+      const canvas = await html2canvas(certRef.current, {
+        scale: 2,
+        useCORS: true,
+        logging: false
+      });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4'
+      });
+      
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`GlobixTech_Certificate_${studentName.replace(/\s+/g, '_')}.pdf`);
+    } catch (err) {
+      console.error("Failed to generate PDF", err);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleEmailCertificate = async () => {
+    if (!certRef.current || !profile?.uid) return;
+    setIsProcessing(true);
+    setEmailStatus(null);
+    try {
+      const canvas = await html2canvas(certRef.current, { scale: 2, useCORS: true, logging: false });
+      const imgData = canvas.toDataURL('image/png'); // Base64 string
+      const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      const pdfBase64 = pdf.output('datauristring').split('base64,')[1];
+
+      // Send email via our mailService
+      const emailPayload = {
+        subject: "🎓 Your GlobixTech Academy Certificate",
+        body: `Hello ${studentName},\n\nCongratulations on your academic excellence!\nPlease find attached your official GlobixTech Academy certificate.\n\nBest Regards,\nThe GlobixTech Team`
+      };
+      
+      const attachments = [
+        {
+          filename: `GlobixTech_Certificate_${studentName.replace(/\s+/g, '_')}.pdf`,
+          content: pdfBase64,
+          encoding: 'base64'
+        }
+      ];
+
+      await mailService.sendEmail(profile.uid, null, {}, emailPayload, attachments);
+      setEmailStatus('success');
+      setTimeout(() => setEmailStatus(null), 3000);
+    } catch (err) {
+      console.error("Failed to email certificate", err);
+      setEmailStatus('error');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const formattedDate = course.completedAt?.toDate 
@@ -35,8 +107,16 @@ export default function CertificateModal({ course, profile, allCompleted = [], o
     <div className="cert-modal-overlay" onClick={onClose}>
       <div className="cert-modal-content" onClick={e => e.stopPropagation()}>
         <div className="cert-actions">
-          <button onClick={handlePrint} className="cert-btn" title="Download / Print">
-            <Download size={20} />
+          {emailStatus === 'success' && <span className="text-emerald-500 font-bold text-sm bg-emerald-500/10 px-3 py-1 rounded-full flex items-center gap-1"><CheckCircle2 size={16} /> Sent</span>}
+          {emailStatus === 'error' && <span className="text-red-500 font-bold text-sm bg-red-500/10 px-3 py-1 rounded-full">Error sending</span>}
+          
+          <button onClick={handleEmailCertificate} className="cert-btn email" disabled={isProcessing} title="Email to Me">
+            {isProcessing ? <Loader2 size={18} className="animate-spin" /> : <Mail size={18} />}
+            Email PDF
+          </button>
+          <button onClick={handleDownloadPDF} className="cert-btn pdf" disabled={isProcessing} title="Download PDF">
+            <Download size={18} />
+            Download
           </button>
           <button onClick={onClose} className="cert-btn" title="Close">
             <X size={20} />
@@ -114,7 +194,7 @@ export default function CertificateModal({ course, profile, allCompleted = [], o
             </div>
             
             <div className="cert-seal">
-              <Award size={40} className="text-white" />
+              <img src="/GlobixTech-logo.png" alt="Seal" onError={(e) => { e.target.style.display = 'none'; }} />
               <div style={{ fontSize: '0.5rem', fontWeight: '900', position: 'absolute', bottom: '15px' }}>SEAL</div>
             </div>
 

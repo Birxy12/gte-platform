@@ -30,6 +30,7 @@ import ManageInstructors from "../pages/dashboard/admin/ManageInstructors";
 import ManageMails from "../pages/dashboard/admin/ManageMails";
 import CreateQuiz from "../pages/dashboard/admin/CreateQuiz";
 import ManageEconomy from "../pages/dashboard/admin/ManageEconomy";
+import AdminSiteEditor from "../pages/dashboard/admin/AdminSiteEditor";
 
 import StudentDashboard from "../pages/dashboard/student/StudentDashboard";
 import EnrolledCourses from "../pages/dashboard/student/EnrolledCourses";
@@ -39,6 +40,7 @@ import UserBlogPost from "../pages/dashboard/user/UserBlogPost";
 import MyPosts from "../pages/dashboard/user/MyPosts";
 import Inbox from "../pages/dashboard/user/Inbox";
 import CodeEditorTab from "../pages/dashboard/user/CodeEditorTab";
+import Checkout from "../pages/dashboard/user/Checkout";
 
 import InstructorDashboard from "../pages/dashboard/instructor/InstructorDashboard";
 import MyCourses from "../pages/dashboard/instructor/MyCourses";
@@ -131,6 +133,11 @@ export default function Router() {
             <StudentDashboard />
           </ProtectedRoute>
         } />
+        <Route path="/checkout/:courseId" element={
+          <ProtectedRoute>
+            <Checkout />
+          </ProtectedRoute>
+        } />
 
         {/* User Dashboard (nested routes) */}
         <Route path="/dashboard" element={
@@ -197,6 +204,7 @@ export default function Router() {
           <Route path="create-post" element={<CreatePost />} />
           <Route path="create-course" element={<CreateCourse />} />
           <Route path="settings" element={<AdminSettings />} />
+          <Route path="site-editor" element={<AdminSiteEditor />} />
           <Route path="reports" element={<ManageReports />} />
           <Route path="testimonies" element={<ManageTestimonies />} />
           <Route path="manage-reels" element={<ManageReels />} />
