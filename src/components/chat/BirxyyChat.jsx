@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { AnimatePresence } from 'framer-motion';
-import { X, ArrowLeft, Check, Users, Search } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { X, ArrowLeft, Check, Users, Search, Sparkles, Shield, User, Phone, Info, Image, Lock, ShieldAlert, LogOut, Settings, MessageSquarePlus } from 'lucide-react';
 import { collection, getDocs, query, updateDoc, doc } from 'firebase/firestore';
 import Avatar from '../common/Avatar';
 
 import ChatSidebar from '../common/ChatSidebar';
 import ChatWindow from '../common/ChatWindow';
+import GroupCreationView from './GroupCreationView';
 import { chatService } from '../../services/chatService';
 import { db } from '../../config/firebase';
 import { useAuth } from '../../context/AuthProvider';
@@ -68,7 +69,7 @@ const BirxyyChat = () => {
           setEditPrivacy(me.isPublic !== false);
         }
       } catch (err) {
-        console.error("Error fetching users:", err);
+        console.error("Error fetching operatives:", err);
       }
     };
     
@@ -82,9 +83,9 @@ const BirxyyChat = () => {
         const other = users.find(u => u.uid === otherId || u.id === otherId);
         return {
           ...chat,
-          displayName: other?.username || other?.displayName || "Unknown",
+          displayName: other?.username || other?.displayName || "Operative",
           photoURL: other?.photoURL || null,
-          otherUser: other || { uid: otherId }
+          otherUser: other || { uid: otherId, displayName: "Operative" }
         };
       }
       return chat;
@@ -98,26 +99,26 @@ const BirxyyChat = () => {
         id: chatId, 
         ...targetUser, 
         type: "direct",
-        displayName: targetUser.username || targetUser.displayName,
+        displayName: targetUser.username || targetUser.displayName || "Operative",
         otherUser: targetUser
       };
       setActiveChat(newChat);
       setShowNewChat(false);
     } catch (err) {
       console.error("Start chat error:", err);
-      setError("Failed to start chat.");
+      setError("Failed to establish comms channel.");
     }
   };
 
   const handleCreateGroup = async (groupName, participantIds) => {
     try {
       const chatId = await chatService.createGroupChat(user.uid, participantIds, groupName);
-      setActiveChat({ id: chatId, groupName, type: "group" });
+      setActiveChat({ id: chatId, groupName, type: "group", participants: [user.uid, ...participantIds] });
       setShowNewChat(false);
       setShowNewGroup(false);
     } catch (err) {
-      console.error("Create group error:", err);
-      setError("Failed to create group.");
+      console.error("Create squad error:", err);
+      setError("Failed to create squad channel.");
     }
   };
 
@@ -129,7 +130,8 @@ const BirxyyChat = () => {
         isPublic: editPrivacy,
         updatedAt: new Date().toISOString()
       });
-      alert("Account updated! ✅");
+      alert("Operative profile updated successfully! ✅");
+      setShowProfileSettings(false);
     } catch (err) {
       console.error(err);
       setError("Failed to update profile.");
@@ -142,7 +144,7 @@ const BirxyyChat = () => {
   };
 
   const handleLeaveGroup = async () => {
-    if (!activeChat || !window.confirm("Leave this group?")) return;
+    if (!activeChat || !window.confirm("Leave this squad channel?")) return;
     try {
       await chatService.leaveGroup(activeChat.id, user.uid);
       setActiveChat(null);
@@ -157,91 +159,89 @@ const BirxyyChat = () => {
     if (!activeChat?.otherUser || !isAdmin) return;
     try {
       await chatService.suspendUser(activeChat.otherUser.uid || activeChat.otherUser.id, days);
-      alert(`User suspended for ${days} days.`);
+      alert(`Operative suspended for ${days} days.`);
       setShowUserInfo(false);
     } catch (err) {
       console.error(err);
-      setError("Failed to suspend user.");
+      setError("Failed to suspend operative.");
     }
   };
 
   if (role === "suspended") {
     return (
-      <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-20 h-20 bg-red-600 rounded-full flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(220,38,38,0.5)]">
-          <X size={40} className="text-white" />
+      <div className="fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-2xl flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-20 h-20 bg-rose-600/20 border border-rose-500/40 rounded-3xl flex items-center justify-center mb-6 shadow-2xl">
+          <ShieldAlert size={40} className="text-rose-400" />
         </div>
-        <h2 className="text-3xl font-bold text-white mb-4">BirxyChat Access Suspended</h2>
-        <p className="text-gray-400 max-w-sm">
-          Your account has been temporarily restricted due to community guidelines violations.
+        <h2 className="text-3xl font-black text-white mb-3">Enterprise Access Suspended</h2>
+        <p className="text-slate-400 max-w-sm text-sm">
+          Your credentials have been temporarily restricted by system administrators.
         </p>
         <button 
-          className="mt-8 px-8 py-3 bg-white text-black rounded-full font-bold hover:bg-gray-200 transition-colors"
+          className="mt-8 px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-bold hover:brightness-110 shadow-lg shadow-blue-600/30 transition-all"
           onClick={() => window.location.reload()}
         >
-          Refresh
+          Re-authenticate
         </button>
       </div>
     );
   }
 
   return (
-    <div className="birxyychat-container flex h-screen w-full bg-[#0b141a] font-sans overflow-hidden">
+    <div className="birxyychat-container flex h-screen w-full bg-slate-950 font-sans overflow-hidden">
+      {/* ── Left Sidebar ── */}
       <ChatSidebar 
         selectedChat={activeChat}
         onSelectChat={setActiveChat}
         onShowNewChat={() => setShowNewChat(true)}
+        onShowNewGroup={() => setShowNewGroup(true)}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         hydratedChats={hydratedChats}
       />
 
+      {/* ── Center Conversation Canvas ── */}
       <ChatWindow 
         chat={activeChat}
         onBack={() => setActiveChat(null)}
         wallpaper={wallpaper}
+        onWallpaperChange={changeWallpaper}
         isAdmin={isAdmin}
         onlineUsers={{}}
         onShowUserInfo={() => activeChat && setShowUserInfo(true)}
       />
 
+      {/* ── New Direct Chat Modal ── */}
       <AnimatePresence>
-        {showNewChat && (
+        {showNewChat && !showNewGroup && (
           <NewChatModal 
-            showNewGroup={showNewGroup}
-            setShowNewGroup={setShowNewGroup}
             users={users}
             contactSearchTerm={contactSearchTerm}
             setContactSearchTerm={setContactSearchTerm}
-            onClose={() => { setShowNewChat(false); setShowNewGroup(false); }}
+            onClose={() => setShowNewChat(false)}
             onStartDirectChat={startDirectChat}
-            onCreateGroup={handleCreateGroup}
-            currentUser={user}
+            onOpenGroupCreator={() => setShowNewGroup(true)}
           />
         )}
       </AnimatePresence>
 
+      {/* ── Squad Creation Wizard ── */}
       <AnimatePresence>
-        {showProfileSettings && (
-          <SettingsDrawer 
-            user={user}
-            currentUserData={currentUserData}
-            editPhone={editPhone}
-            setEditPhone={setEditPhone}
-            editBio={editBio}
-            setEditBio={setEditBio}
-            editPrivacy={editPrivacy}
-            setEditPrivacy={setEditPrivacy}
-            wallpaper={wallpaper}
-            onWallpaperChange={changeWallpaper}
-            onUpdate={handleUpdateAccount}
-            onClose={() => setShowProfileSettings(false)}
+        {showNewGroup && (
+          <GroupCreationView 
+            onClose={() => setShowNewGroup(false)}
+            onCreated={(newGroup) => {
+              setActiveChat(newGroup);
+              setShowNewGroup(false);
+              setShowNewChat(false);
+            }}
           />
         )}
       </AnimatePresence>
 
+      {/* ── Right-hand Operative & Media Inspector Drawer ── */}
       <AnimatePresence>
-        {showUserInfo && activeChat?.otherUser && (
+        {showUserInfo && activeChat && (
           <UserInfoDrawer 
             activeChat={activeChat}
             isAdmin={isAdmin}
@@ -261,303 +261,124 @@ const BirxyyChat = () => {
         )}
       </AnimatePresence>
 
+      {/* Error Toast */}
       {error && (
-        <div className="fixed bottom-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-xl z-50">
-          {error}
-          <button onClick={() => setError(null)} className="ml-4 font-bold">✕</button>
+        <div className="fixed bottom-6 right-6 bg-rose-600/90 border border-rose-500 text-white px-5 py-3 rounded-2xl shadow-2xl backdrop-blur-xl z-50 flex items-center gap-3">
+          <span className="text-xs font-bold">{error}</span>
+          <button onClick={() => setError(null)} className="p-1 hover:bg-white/20 rounded-lg">✕</button>
         </div>
       )}
     </div>
   );
 };
 
+/* ── New Direct Chat Modal Component ── */
 const NewChatModal = ({ 
-  showNewGroup, 
-  setShowNewGroup, 
   users, 
   contactSearchTerm, 
   setContactSearchTerm,
   onClose,
   onStartDirectChat,
-  onCreateGroup
+  onOpenGroupCreator
 }) => {
-  const [groupName, setGroupName] = useState("");
-  const [selectedUsers, setSelectedUsers] = useState([]);
-
-  const toggleUser = (userId) => {
-    setSelectedUsers(prev => 
-      prev.includes(userId) 
-        ? prev.filter(id => id !== userId)
-        : [...prev, userId]
-    );
-  };
-
   const filteredUsers = users.filter(u => 
     (u.username || u.displayName || u.email || "").toLowerCase().includes(contactSearchTerm.toLowerCase())
   );
-
-  if (showNewGroup) {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
-        onClick={onClose}
-      >
-        <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.9, opacity: 0 }}
-          className="bg-[#233138] w-full max-w-md h-[80vh] flex flex-col border border-[#2a3942] shadow-2xl rounded-lg overflow-hidden"
-          onClick={e => e.stopPropagation()}
-        >
-          <div className="p-4 bg-[#202c33] text-white flex items-center gap-4">
-            <button onClick={() => setShowNewGroup(false)} className="hover:bg-white/10 p-1 rounded-full">
-              <ArrowLeft size={20} />
-            </button>
-            <h2 className="font-medium text-lg">New group</h2>
-          </div>
-
-          <div className="p-4">
-            <input
-              type="text"
-              placeholder="Group subject"
-              className="w-full bg-black/20 border border-[#2a3942] px-4 py-3 rounded-lg outline-none text-white placeholder:text-[#8696a0]"
-              value={groupName}
-              onChange={(e) => setGroupName(e.target.value)}
-            />
-          </div>
-
-          <div className="px-4 py-2 text-xs font-bold text-[#00a884] uppercase">
-            Select Participants ({selectedUsers.length})
-          </div>
-
-          <div className="px-4 pb-2">
-            <div className="bg-black/30 border border-[#2a3942] flex items-center px-3 py-2 rounded-lg">
-              <Search size={16} className="text-[#8696a0] mr-2"/>
-              <input 
-                type="text" 
-                placeholder="Search users..." 
-                className="bg-transparent border-none outline-none w-full text-sm text-white"
-                value={contactSearchTerm}
-                onChange={(e) => setContactSearchTerm(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-y-auto custom-scrollbar">
-            {filteredUsers.map(u => (
-              <div
-                key={u.id}
-                onClick={() => toggleUser(u.id)}
-                className="px-4 py-3 flex items-center justify-between hover:bg-[#182229] cursor-pointer"
-              >
-                <div className="flex items-center gap-3">
-                  <Avatar 
-                    src={u.photoURL} 
-                    name={u.username || u.displayName} 
-                    size="chat"
-                  />
-                  <div>
-                    <h4 className="font-medium text-white">{u.username || u.displayName || "User"}</h4>
-                    <p className="text-xs text-[#8696a0]">{u.email}</p>
-                  </div>
-                </div>
-                <div className={`w-5 h-5 rounded-sm border-2 flex items-center justify-center transition-all ${selectedUsers.includes(u.id) ? 'bg-[#00a884] border-[#00a884]' : 'border-[#8696a0]'}`}>
-                  {selectedUsers.includes(u.id) && <Check size={14} className="text-white" />}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="p-4 bg-[#202c33] border-t border-[#2a3942]">
-            <button
-              disabled={!groupName.trim() || selectedUsers.length === 0}
-              onClick={() => onCreateGroup(groupName, selectedUsers)}
-              className="w-full py-3 bg-[#00a884] text-white font-bold rounded-lg disabled:opacity-50 hover:bg-[#008f72] transition-colors"
-            >
-              Create Group
-            </button>
-          </div>
-        </motion.div>
-      </motion.div>
-    );
-  }
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4"
       onClick={onClose}
     >
       <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
+        initial={{ scale: 0.92, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        className="bg-[#233138] w-full max-w-md h-[80vh] flex flex-col border border-[#2a3942] shadow-2xl rounded-lg overflow-hidden"
+        exit={{ scale: 0.92, opacity: 0 }}
+        className="bg-slate-900 border border-white/10 w-full max-w-md h-[80vh] flex flex-col shadow-2xl rounded-3xl overflow-hidden backdrop-blur-2xl"
         onClick={e => e.stopPropagation()}
       >
-        <div className="p-4 bg-[#202c33] text-white flex items-center gap-4">
-          <button onClick={onClose} className="hover:bg-white/10 p-1 rounded-full">
-            <X size={20} />
+        <div className="p-5 border-b border-white/5 flex items-center justify-between bg-slate-950/40">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-blue-600/20 text-blue-400 flex items-center justify-center border border-blue-500/30">
+              <MessageSquarePlus size={20} />
+            </div>
+            <div>
+              <h2 className="font-bold text-white text-base">New Transmission</h2>
+              <p className="text-xs text-slate-400">Select an operative or squad channel</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors">
+            <X size={18} />
           </button>
-          <h2 className="font-medium text-lg">New chat</h2>
         </div>
 
-        <div className="p-2">
+        {/* Create Squad trigger banner */}
+        <div className="p-3 bg-slate-950/20">
           <button
-            onClick={() => setShowNewGroup(true)}
-            className="w-full p-3 hover:bg-[#182229] flex items-center gap-4 transition-all rounded-lg"
+            onClick={onOpenGroupCreator}
+            className="w-full p-3 bg-gradient-to-r from-blue-600/15 to-indigo-600/15 hover:from-blue-600/25 hover:to-indigo-600/25 border border-blue-500/30 rounded-2xl flex items-center gap-3.5 transition-all text-left group"
           >
-            <div className="w-10 h-10 rounded-full bg-[#00a884] text-white flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-600/40 group-hover:scale-105 transition-transform">
               <Users size={20} />
             </div>
-            <span className="font-medium text-white">New group</span>
+            <div>
+              <span className="font-bold text-white text-xs block">Create Squad Channel</span>
+              <span className="text-[10px] text-blue-300">Launch multi-user frequency channel</span>
+            </div>
           </button>
         </div>
 
-        <div className="px-4 py-2 text-xs font-bold text-[#8696a0] uppercase">
-          Contacts on BirxyChat
+        <div className="px-4 py-2 text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+          Enlisted Operatives ({filteredUsers.length})
         </div>
 
         <div className="px-4 pb-2">
-          <div className="bg-black/30 border border-[#2a3942] flex items-center px-3 py-2 rounded-lg">
-            <Search size={16} className="text-[#8696a0] mr-2"/>
+          <div className="bg-slate-950/60 border border-white/5 flex items-center px-3.5 py-2.5 rounded-2xl focus-within:border-blue-500/50 transition-all">
+            <Search size={16} className="text-slate-500 mr-2 shrink-0"/>
             <input 
               type="text" 
-              placeholder="Search contacts..." 
-              className="bg-transparent border-none outline-none w-full text-sm text-white"
+              placeholder="Filter operatives..." 
+              className="bg-transparent border-none outline-none w-full text-xs text-white placeholder:text-slate-500"
               value={contactSearchTerm}
               onChange={(e) => setContactSearchTerm(e.target.value)}
             />
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
           {filteredUsers.map(u => (
             <div
               key={u.id}
               onClick={() => onStartDirectChat(u)}
-              className="px-4 py-3 flex items-center gap-4 hover:bg-[#182229] cursor-pointer"
+              className="p-3 flex items-center gap-3.5 rounded-2xl hover:bg-white/5 cursor-pointer transition-all border border-transparent hover:border-white/5"
             >
               <Avatar 
                 src={u.photoURL} 
                 name={u.username || u.displayName} 
-                size="medium"
+                size="chat"
               />
-              <div className="flex-1 border-b border-[#2a3942] pb-3">
-                <h4 className="font-medium text-white">{u.username || u.displayName || "User"}</h4>
-                <p className="text-xs text-[#8696a0] truncate">{u.bio || "Available"}</p>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-semibold text-white text-xs truncate">{u.username || u.displayName || "Operative"}</h4>
+                  <span className="text-[9px] bg-blue-500/20 text-blue-300 px-1.5 py-0.2 rounded font-bold">READY</span>
+                </div>
+                <p className="text-[11px] text-slate-400 truncate mt-0.5">{u.email || u.bio || "Available"}</p>
               </div>
             </div>
           ))}
+          {filteredUsers.length === 0 && (
+            <div className="text-center py-10 text-xs text-slate-500">No operatives found matching search.</div>
+          )}
         </div>
       </motion.div>
     </motion.div>
   );
 };
 
-const SettingsDrawer = ({ 
-  user, 
-  editPhone, 
-  setEditPhone, 
-  editBio, 
-  setEditBio, 
-  editPrivacy, 
-  setEditPrivacy,
-  wallpaper,
-  onWallpaperChange,
-  onUpdate,
-  onClose 
-}) => (
-  <motion.div 
-    className="fixed inset-y-0 left-0 w-80 bg-[#111b21] border-r border-[#2a3942] z-50 shadow-2xl"
-    initial={{ x: "-100%" }}
-    animate={{ x: 0 }}
-    exit={{ x: "-100%" }}
-  >
-    <div className="p-4 bg-[#202c33] flex items-center gap-4 text-white">
-      <button onClick={onClose} className="hover:bg-white/10 p-2 rounded-full">
-        <ArrowLeft size={20} />
-      </button>
-      <h3 className="font-medium">Settings</h3>
-    </div>
-    
-    <div className="p-4 overflow-y-auto h-full pb-20 custom-scrollbar">
-      <div className="flex items-center gap-3 mb-6 p-3 bg-[#182229] rounded-xl border border-[#2a3942]">
-        <Avatar 
-          src={user?.photoURL || "/GlobixTech-logo.png"} 
-          name={user?.displayName || "Me"} 
-          size="medium"
-        />
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-white truncate">{user?.displayName || "My Account"}</p>
-          <p className="text-xs text-[#8696a0] truncate">{user?.email}</p>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <div>
-          <label className="text-xs text-[#8696a0] uppercase font-bold">Phone</label>
-          <input 
-            type="tel" 
-            value={editPhone} 
-            onChange={(e) => setEditPhone(e.target.value)}
-            placeholder="+234..."
-            className="w-full mt-1 bg-black/20 border border-[#2a3942] rounded p-2 text-white text-sm focus:border-[#00a884] outline-none"
-          />
-        </div>
-
-        <div>
-          <label className="text-xs text-[#8696a0] uppercase font-bold">About</label>
-          <textarea 
-            value={editBio} 
-            onChange={(e) => setEditBio(e.target.value)}
-            placeholder="Hi! I'm using BirxyChat."
-            className="w-full mt-1 bg-black/20 border border-[#2a3942] rounded p-2 text-white text-sm h-20 resize-none focus:border-[#00a884] outline-none"
-          />
-        </div>
-
-        <div className="flex items-center justify-between py-2">
-          <span className="text-sm text-white">Profile Visibility</span>
-          <button 
-            className={`px-3 py-1 rounded text-xs transition-colors ${editPrivacy ? 'bg-[#00a884] text-white' : 'bg-[#2a3942] text-[#8696a0]'}`}
-            onClick={() => setEditPrivacy(!editPrivacy)}
-          >
-            {editPrivacy ? "Public" : "Private"}
-          </button>
-        </div>
-
-        <div>
-          <label className="text-xs text-[#8696a0] uppercase font-bold mb-2 block">Wallpaper</label>
-          <div className="flex gap-2">
-            {['wp-default', 'wp-midnight', 'wp-starry'].map((wp) => (
-              <button
-                key={wp}
-                onClick={() => onWallpaperChange(wp)}
-                className={`w-12 h-12 rounded-lg border-2 transition-all ${wallpaper === wp ? 'border-[#00a884]' : 'border-transparent'}`}
-                style={{
-                  background: wp === 'wp-default' ? '#0b141a' : wp === 'wp-midnight' ? '#000' : '#1a1a2e'
-                }}
-              />
-            ))}
-          </div>
-        </div>
-
-        <button 
-          onClick={onUpdate}
-          className="w-full py-2 bg-[#00a884] text-white rounded font-medium hover:bg-[#008f72] transition-colors"
-        >
-          Update Profile
-        </button>
-      </div>
-    </div>
-  </motion.div>
-);
-
+/* ── Operative & Media Inspector Drawer ── */
 const UserInfoDrawer = ({ 
   activeChat, 
   isAdmin, 
@@ -566,83 +387,146 @@ const UserInfoDrawer = ({
   onBlockUser, 
   onLeaveGroup,
   onSuspendUser 
-}) => (
-  <motion.div 
-    className="fixed inset-y-0 right-0 w-80 bg-[#111b21] border-l border-[#2a3942] z-50 shadow-2xl"
-    initial={{ x: "100%" }}
-    animate={{ x: 0 }}
-    exit={{ x: "100%" }}
-  >
-    <div className="p-4 bg-[#202c33] flex items-center gap-4 text-white">
-      <button onClick={onClose} className="hover:bg-white/10 p-2 rounded-full">
-        <X size={20} />
-      </button>
-      <h3 className="font-medium">Contact Info</h3>
-    </div>
-    
-    <div className="p-4 overflow-y-auto h-full pb-20 custom-scrollbar">
-      <div className="flex flex-col items-center mb-6">
-        <Avatar 
-          src={activeChat.photoURL} 
-          name={activeChat.displayName} 
-          size="large" 
-          className="mb-3"
-        />
-        <h2 className="text-xl font-bold text-white">{activeChat.displayName}</h2>
-        <p className="text-sm text-[#8696a0]">
-          {activeChat.otherUser?.phoneNumber || "No phone number"}
-        </p>
+}) => {
+  const isGroup = activeChat.type === "group";
+  const [activeTab, setActiveTab] = useState("overview");
+
+  return (
+    <motion.div 
+      className="fixed inset-y-0 right-0 w-84 bg-slate-900/98 border-l border-white/10 z-50 shadow-2xl backdrop-blur-2xl flex flex-col"
+      initial={{ x: "100%" }}
+      animate={{ x: 0 }}
+      exit={{ x: "100%" }}
+      transition={{ duration: 0.25, ease: "easeOut" }}
+    >
+      <div className="p-5 bg-slate-950/60 border-b border-white/5 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <Info size={18} className="text-blue-400" />
+          <h3 className="font-bold text-white text-sm">Channel Dossier</h3>
+        </div>
+        <button onClick={onClose} className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors">
+          <X size={18} />
+        </button>
+      </div>
+      
+      {/* Tabs Header */}
+      <div className="flex border-b border-white/5 bg-slate-950/20 px-4 pt-2">
+        <button 
+          onClick={() => setActiveTab("overview")}
+          className={`px-4 py-2 text-xs font-bold transition-all border-b-2 ${
+            activeTab === "overview" ? "text-blue-400 border-blue-500" : "text-slate-400 border-transparent hover:text-slate-200"
+          }`}
+        >
+          Overview
+        </button>
+        <button 
+          onClick={() => setActiveTab("media")}
+          className={`px-4 py-2 text-xs font-bold transition-all border-b-2 ${
+            activeTab === "media" ? "text-blue-400 border-blue-500" : "text-slate-400 border-transparent hover:text-slate-200"
+          }`}
+        >
+          Transmissions
+        </button>
       </div>
 
-      <div className="space-y-3">
-        <div className="bg-[#202c33] p-3 rounded-lg">
-          <label className="text-xs text-[#8696a0] uppercase font-bold">About</label>
-          <p className="text-sm text-white mt-1">{activeChat.otherUser?.bio || "Available"}</p>
+      <div className="p-5 overflow-y-auto h-full custom-scrollbar space-y-5">
+        {/* Profile Card */}
+        <div className="flex flex-col items-center text-center p-5 rounded-3xl bg-slate-950/60 border border-white/5 shadow-inner">
+          <div className="relative mb-3">
+            <Avatar 
+              src={activeChat.photoURL} 
+              name={activeChat.displayName || activeChat.groupName} 
+              size="large" 
+            />
+            {activeChat.isOnline && !isGroup && (
+              <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-400 rounded-full ring-3 ring-slate-950 shadow-[0_0_10px_rgba(52,211,153,0.8)]" />
+            )}
+          </div>
+          
+          <h2 className="text-base font-extrabold text-white tracking-tight">
+            {activeChat.displayName || activeChat.groupName}
+          </h2>
+          <span className="text-[10px] text-blue-400 font-bold uppercase tracking-wider mt-1 bg-blue-500/15 border border-blue-500/30 px-2 py-0.5 rounded-full">
+            {isGroup ? "Tactical Squad" : "Verified Operative"}
+          </span>
+          <p className="text-xs text-slate-400 mt-2">
+            {activeChat.otherUser?.phoneNumber || activeChat.otherUser?.email || "Encrypted direct channel"}
+          </p>
         </div>
 
-        <button 
-          onClick={onClearChat}
-          className="w-full py-3 text-left px-3 text-white hover:bg-[#202c33] rounded-lg transition-colors"
-        >
-          Clear Chat History
-        </button>
+        {activeTab === "overview" ? (
+          <div className="space-y-3">
+            {/* Bio / Description */}
+            <div className="bg-slate-950/40 p-4 rounded-2xl border border-white/5">
+              <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block mb-1">
+                Directive / Bio
+              </label>
+              <p className="text-xs text-slate-200 leading-relaxed">
+                {activeChat.otherUser?.bio || activeChat.description || "Active operative with full clearance."}
+              </p>
+            </div>
 
-        {activeChat.type === "group" ? (
-          <button 
-            onClick={onLeaveGroup}
-            className="w-full py-3 text-left px-3 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-          >
-            Leave Group
-          </button>
-        ) : (
-          <button 
-            onClick={onBlockUser}
-            className="w-full py-3 text-left px-3 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-          >
-            Block {activeChat.displayName}
-          </button>
-        )}
+            {/* Actions */}
+            <div className="space-y-2 pt-2">
+              <button 
+                onClick={onClearChat}
+                className="w-full py-3 px-4 text-left text-xs font-semibold text-slate-300 hover:text-white bg-slate-950/40 hover:bg-white/5 border border-white/5 rounded-2xl transition-all"
+              >
+                Clear Transmission History
+              </button>
 
-        {isAdmin && activeChat.type !== "group" && (
-          <div className="mt-4 p-3 bg-red-900/20 rounded-lg border border-red-500/30">
-            <h5 className="text-xs uppercase font-bold text-red-400 mb-2">Admin Actions</h5>
-            <p className="text-xs text-[#8696a0] mb-2">Suspend user for:</p>
-            <div className="flex gap-2">
-              {[1, 5, 7].map(days => (
+              {isGroup ? (
                 <button 
-                  key={days}
-                  onClick={() => onSuspendUser(days)}
-                  className="flex-1 py-2 bg-red-500/20 text-red-400 rounded text-sm hover:bg-red-500/30 transition-colors"
+                  onClick={onLeaveGroup}
+                  className="w-full py-3 px-4 text-left text-xs font-semibold text-rose-400 hover:bg-rose-500/10 border border-rose-500/20 rounded-2xl transition-all flex items-center justify-between"
                 >
-                  {days}d
+                  <span>Leave Squad Frequency</span>
+                  <LogOut size={15} />
                 </button>
-              ))}
+              ) : (
+                <button 
+                  onClick={onBlockUser}
+                  className="w-full py-3 px-4 text-left text-xs font-semibold text-rose-400 hover:bg-rose-500/10 border border-rose-500/20 rounded-2xl transition-all flex items-center justify-between"
+                >
+                  <span>Block Operative Comms</span>
+                  <Lock size={15} />
+                </button>
+              )}
+
+              {/* Admin Actions */}
+              {isAdmin && !isGroup && (
+                <div className="mt-4 p-4 bg-rose-950/20 rounded-2xl border border-rose-500/30">
+                  <h5 className="text-[10px] uppercase font-bold text-rose-400 mb-2 flex items-center gap-1.5">
+                    <Shield size={12} />
+                    <span>Command Override: Suspend Operative</span>
+                  </h5>
+                  <div className="flex gap-2">
+                    {[1, 5, 7].map(days => (
+                      <button 
+                        key={days}
+                        onClick={() => onSuspendUser(days)}
+                        className="flex-1 py-1.5 bg-rose-600/20 hover:bg-rose-600/40 text-rose-300 rounded-xl text-xs font-bold border border-rose-500/30 transition-colors"
+                      >
+                        {days}d
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div className="p-4 rounded-2xl bg-slate-950/40 border border-white/5 text-center">
+              <Image size={24} className="text-slate-500 mx-auto mb-2" />
+              <p className="text-xs font-bold text-slate-300">Shared Transmissions</p>
+              <p className="text-[10px] text-slate-500 mt-0.5">Images and attachments exchanged in this channel</p>
             </div>
           </div>
         )}
       </div>
-    </div>
-  </motion.div>
-);
+    </motion.div>
+  );
+};
 
 export default BirxyyChat;

@@ -220,6 +220,22 @@ export const chatService = {
         }
     },
 
+    // Add Reaction
+    addReaction: async (chatId, messageId, emoji) => {
+        try {
+            const messageRef = doc(db, "chats", chatId, "messages", messageId);
+            const snap = await getDoc(messageRef);
+            if (snap.exists()) {
+                const data = snap.data();
+                const reactions = data.reactions || {};
+                reactions[emoji] = (reactions[emoji] || 0) + 1;
+                await updateDoc(messageRef, { reactions });
+            }
+        } catch (error) {
+            console.error("Add reaction error:", error);
+        }
+    },
+
     // Clear all messages in a chat (for both users)
     clearChatMessages: async (chatId) => {
         try {

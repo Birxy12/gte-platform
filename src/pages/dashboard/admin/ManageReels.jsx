@@ -20,6 +20,7 @@ import { format } from "date-fns";
 import { missionsService } from "../../../services/missionsService";
 import { reelsService } from "../../../services/reelsService";
 import { useAuth } from "../../../context/AuthProvider";
+import { getValidVideoUrl } from "../../../utils/helpers";
 
 export default function ManageReels() {
   const { user, isAdmin, loading: authLoading } = useAuth();
@@ -218,7 +219,7 @@ export default function ManageReels() {
                     <td>
                       <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                         <div style={{ width: '60px', height: '80px', background: '#020617', borderRadius: '8px', overflow: 'hidden', position: 'relative' }}>
-                          <video src={reel.videoUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted />
+                          <video src={getValidVideoUrl(reel.videoUrl)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted />
                         </div>
                         <div>
                           <div className="font-bold text-white line-clamp-1">{reel.description || 'No data'}</div>

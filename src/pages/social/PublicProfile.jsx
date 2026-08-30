@@ -5,6 +5,7 @@ import { doc, getDoc, collection, query, where, getDocs } from "firebase/firesto
 import { socialService } from "../../services/socialService";
 import { ARMY_RANKS, getArmyRank } from "../../config/armyRanks";
 import { Shield, MapPin, Calendar, Users, Video, MessageCircle, ArrowLeft } from "lucide-react";
+import { getValidAvatarUrl, getValidVideoUrl } from "../../utils/helpers";
 import "./PublicProfile.css";
 
 export default function PublicProfile() {
@@ -123,9 +124,9 @@ export default function PublicProfile() {
                             {reels.length === 0 ? (
                                 <div className="no-deployments">No active deployments found.</div>
                             ) : (
-                                reels.map(reel => (
+                                reels.map((reel, idx) => (
                                     <div key={reel.id} className="dossier-reel-card" onClick={() => navigate(`/reels?id=${reel.id}`)}>
-                                        <video src={reel.videoUrl} />
+                                        <video src={getValidVideoUrl(reel.videoUrl, idx)} />
                                         <div className="reel-card-overlay">
                                             <Video size={20} />
                                             <span>{reel.likes?.length || 0} Salutes</span>

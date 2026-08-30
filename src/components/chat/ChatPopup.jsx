@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { X, Send, Minimize2, Maximize2 } from "lucide-react";
+import { X, Send, Minimize2, Maximize2, Sparkles } from "lucide-react";
 import { chatService } from "../../services/chatService";
 import { presenceService } from "../../services/presenceService";
 import { useAuth } from "../../context/AuthProvider";
+import Avatar from "../common/Avatar";
 import "./ChatPopup.css";
 
 export default function ChatPopup({ targetUser, onClose }) {
@@ -49,7 +50,6 @@ export default function ChatPopup({ targetUser, onClose }) {
         });
 
         const unsubscribeTyping = chatService.subscribeToStatuses(chatId, (statuses) => {
-            // Check if the target user is currently in a 'typing' status
             setIsTyping(statuses[targetUser.uid || targetUser.id] === 'typing');
         });
 
@@ -95,42 +95,49 @@ export default function ChatPopup({ targetUser, onClose }) {
 
     if (!targetUser) return null;
 
+    const displayName = targetUser.displayName || targetUser.username || targetUser.email?.split('@')[0] || "Operative";
+
     return (
         <div className={`chat-popup-container ${minimized ? 'minimized' : ''}`}>
             <div className="chat-popup-header" onClick={() => setMinimized(!minimized)}>
-                <div className="flex items-center gap-2">
-                    <div className="popup-avatar">
-                        <img
-                            src={targetUser.photoURL && !targetUser.photoURL.includes("njhbnqyamkwlsobqplvm.supabase.co") ? targetUser.photoURL : `https://ui-avatars.com/api/?name=${encodeURIComponent(targetUser.displayName || targetUser.email || 'User')}&background=0D8ABC&color=fff`}
-                            alt="avatar"
-                            onError={(e) => {
-                                e.currentTarget.onerror = null;
-                                e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(targetUser.displayName || targetUser.email || 'User')}&background=0D8ABC&color=fff`;
-                            }}
+                <div className="flex items-center gap-2.5">
+                    <div className="relative">
+                        <Avatar
+                            src={targetUser.photoURL}
+                            name={displayName}
+                            size="mini"
                         />
-                        <div className={`online-indicator ${isTargetOnline ? 'active' : ''}`} style={{ backgroundColor: isTargetOnline ? '#2ecc71' : '#95a5a6' }}></div>
+                        {isTargetOnline && (
+                            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 rounded-full ring-2 ring-slate-900" />
+                        )}
                     </div>
-                    <span className="font-semibold text-sm truncate max-w-[120px]">
-                        {targetUser.displayName || targetUser.username || targetUser.email.split('@')[0]}
-                    </span>
+                    <div>
+                        <span className="font-bold text-xs truncate max-w-[130px] block text-white">
+                            {displayName}
+                        </span>
+                        <span className="text-[10px] text-blue-200 block">
+                            {isTargetOnline ? "Active" : "Offline"}
+                        </span>
+                    </div>
                 </div>
 
                 <div className="popup-actions" onClick={e => e.stopPropagation()}>
-                    <button onClick={() => setMinimized(!minimized)} className="popup-btn">
-                        {minimized ? <Maximize2 size={16} /> : <Minimize2 size={16} />}
+                    <button onClick={() => setMinimized(!minimized)} className="popup-btn" title={minimized ? "Expand" : "Minimize"}>
+                        {minimized ? <Maximize2 size={15} /> : <Minimize2 size={15} />}
                     </button>
-                    <button onClick={onClose} className="popup-btn hover:text-red-400">
-                        <X size={18} />
+                    <button onClick={onClose} className="popup-btn hover:text-rose-400" title="Close">
+                        <X size={16} />
                     </button>
                 </div>
             </div>
 
             {!minimized && (
                 <>
-                    <div className="chat-popup-body no-scrollbar">
+                    <div className="chat-popup-body custom-scrollbar">
                         {messages.length === 0 ? (
-                            <div className="text-center text-xs text-gray-400 mt-4">
-                                Say hi to {targetUser.displayName || "your new friend"}! 👋
+                            <div className="text-center text-xs text-slate-400 mt-6 flex flex-col items-center gap-2">
+                                <Sparkles size={20} className="text-blue-400" />
+                                <span>Direct mission comms with {displayName}</span>
                             </div>
                         ) : (
                             messages.map(msg => {
@@ -146,7 +153,7 @@ export default function ChatPopup({ targetUser, onClose }) {
                         )}
                         {isTyping && (
                             <div className="popup-msg-wrapper received">
-                                <div className="popup-msg-bubble text-gray-500 italic text-xs">
+                                <div className="popup-msg-bubble text-slate-400 italic text-[11px]">
                                     typing...
                                 </div>
                             </div>
@@ -161,8 +168,12 @@ export default function ChatPopup({ targetUser, onClose }) {
                             value={inputText}
                             onChange={handleInputChange}
                         />
-                        <button type="submit" disabled={!inputText.trim()} className="text-blue-500 disabled:opacity-50">
-                            <Send size={18} />
+                        <button 
+                            type="submit" 
+                            disabled={!inputText.trim()} 
+                            className="p-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white disabled:opacity-40 transition-all cursor-pointer"
+                        >
+                            <Send size={14} />
                         </button>
                     </form>
                 </>

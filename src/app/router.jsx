@@ -38,6 +38,7 @@ import EditProfile from "../pages/dashboard/user/EditProfile";
 import UserBlogPost from "../pages/dashboard/user/UserBlogPost";
 import MyPosts from "../pages/dashboard/user/MyPosts";
 import Inbox from "../pages/dashboard/user/Inbox";
+import CodeEditorTab from "../pages/dashboard/user/CodeEditorTab";
 
 import InstructorDashboard from "../pages/dashboard/instructor/InstructorDashboard";
 import MyCourses from "../pages/dashboard/instructor/MyCourses";
@@ -142,6 +143,7 @@ export default function Router() {
           <Route path="my-posts" element={<MyPosts />} />
           <Route path="enrolled" element={<EnrolledCourses />} />
           <Route path="inbox" element={<Inbox />} />
+          <Route path="editor" element={<CodeEditorTab />} />
         </Route>
 
         {/* Real-time Comms & Social Hub */}

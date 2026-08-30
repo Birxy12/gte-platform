@@ -1,6 +1,6 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, PhoneAuthProvider } from "firebase/auth";
-import { initializeFirestore } from "firebase/firestore";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getAnalytics, isSupported } from "firebase/analytics";
 
@@ -17,14 +17,24 @@ const firebaseConfig = {
   measurementId: "G-F50LKBYLDD"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase (safely for HMR)
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
 // Services
 export const auth = getAuth(app);
-export const db = initializeFirestore(app, {
-  experimentalForceLongPolling: true,
-});
+
+// Enable offline persistence with multi-tab support (safely for HMR)
+let firestoreDb;
+try {
+  firestoreDb = initializeFirestore(app, {
+    experimentalForceLongPolling: true,
+    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+  });
+} catch (e) {
+  firestoreDb = getFirestore(app);
+}
+export const db = firestoreDb;
+
 export const storage = getStorage(app);
 
 // Analytics (safe initialization)

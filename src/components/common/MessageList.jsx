@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useMemo } from 'react';
-import { AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Sparkles } from 'lucide-react';
 import MessageBubble from './MessageBubble';
 
 const MessageList = ({ 
@@ -8,6 +9,8 @@ const MessageList = ({
   currentUserId,
   onEditMessage, 
   onDeleteMessage,
+  onReplyMessage,
+  onAddReaction,
   searchTerm,
   userStatuses
 }) => {
@@ -26,8 +29,8 @@ const MessageList = ({
   const groupedMessages = useMemo(() => {
     const groups = {};
     messages.forEach(msg => {
-      const date = msg.timestamp?.toDate ? msg.timestamp.toDate() : new Date(msg.timestamp);
-      const dateKey = date.toLocaleDateString();
+      const date = msg.timestamp?.toDate ? msg.timestamp.toDate() : new Date(msg.timestamp || Date.now());
+      const dateKey = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
       if (!groups[dateKey]) groups[dateKey] = [];
       groups[dateKey].push(msg);
     });
@@ -39,27 +42,40 @@ const MessageList = ({
     setActiveContextMenu(activeContextMenu === msgId ? null : msgId);
   };
 
-  const isSomeoneTyping = Object.entries(userStatuses).some(([uid, status]) => 
+  const isSomeoneTyping = Object.entries(userStatuses || {}).some(([uid, status]) => 
     uid !== currentUserId && (status === 'typing' || status === 'recording')
   );
 
   return (
     <div 
-      className="messages-container flex-1 overflow-y-auto p-5 custom-scrollbar bg-[url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')] bg-[#0b141a]"
+      className="messages-container flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar"
       ref={containerRef}
       onClick={() => setActiveContextMenu(null)}
     >
+      {messages.length === 0 && (
+        <div className="h-full flex flex-col items-center justify-center text-center p-8 text-slate-500 gap-3">
+          <div className="w-14 h-14 rounded-2xl bg-slate-900/80 border border-white/5 flex items-center justify-center shadow-xl">
+            <Sparkles size={24} className="text-blue-400" />
+          </div>
+          <div>
+            <h4 className="text-sm font-bold text-slate-300">Secure Mission Channel Established</h4>
+            <p className="text-xs text-slate-500 mt-1 max-w-xs">Transmissions are end-to-end encrypted across the enterprise network.</p>
+          </div>
+        </div>
+      )}
+
       <AnimatePresence>
         {Object.entries(groupedMessages).map(([date, dateMessages]) => (
           <motion.div 
             key={date} 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="message-group mb-4"
+            className="message-group mb-5"
           >
+            {/* Stitch Date Divider Pill */}
             <div className="flex justify-center my-4">
-              <span className="text-[11px] text-msger-text-dim bg-[#1e2a30] px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
-                {date === new Date().toLocaleDateString() ? 'Today' : date}
+              <span className="text-[11px] font-bold text-slate-400 bg-slate-900/70 border border-white/5 px-4 py-1 rounded-full uppercase tracking-wider shadow-sm backdrop-blur-md">
+                {date}
               </span>
             </div>
             
@@ -71,6 +87,8 @@ const MessageList = ({
                 isAdmin={isAdmin}
                 onEdit={onEditMessage}
                 onDelete={onDeleteMessage}
+                onReply={onReplyMessage}
+                onAddReaction={onAddReaction}
                 searchTerm={searchTerm}
                 onContextMenu={handleContextMenu}
                 isContextMenuActive={activeContextMenu === message.id}
@@ -80,13 +98,15 @@ const MessageList = ({
         ))}
       </AnimatePresence>
 
+      {/* Typing Indicator with wave dots */}
       {isSomeoneTyping && (
-        <div className="message-wrapper received mb-1">
-          <div className="message-bubble received bg-[#202c33] flex items-center gap-1 py-3 px-4 rounded-lg rounded-tl-none max-w-[100px]">
-            <div className="w-2 h-2 bg-msger-text-dim/70 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-            <div className="w-2 h-2 bg-msger-text-dim/70 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-            <div className="w-2 h-2 bg-msger-text-dim/70 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+        <div className="flex items-center gap-2 px-4 mb-2">
+          <div className="typing-wave">
+            <div className="typing-dot" />
+            <div className="typing-dot" />
+            <div className="typing-dot" />
           </div>
+          <span className="text-xs text-slate-400 italic">Operative is typing...</span>
         </div>
       )}
 

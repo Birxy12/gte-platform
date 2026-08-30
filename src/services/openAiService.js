@@ -27,30 +27,14 @@ const rotateToNextKey = () => {
  * Execute OpenAI completion with automatic fallback and key rotation
  */
 const executeOpenAIWithRotation = async (endpoint, payload, fallbackDirectOptions) => {
-    // 1. First attempt via backend proxy/endpoint
-    try {
-        const response = await fetch(endpoint, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        });
-
-        const contentType = response.headers.get("content-type") || "";
-        if (response.ok && contentType.includes("application/json")) {
-            return await response.json();
-        }
-    } catch (err) {
-        console.warn(`[OpenAI Service] Backend route ${endpoint} unavailable, trying direct client completion:`, err);
-    }
-
-    // 2. Direct OpenAI completion with key rotation
+    // Direct OpenAI completion with key rotation (via Vite Proxy to bypass CORS)
     const pool = getKeyPool();
     let lastError = null;
 
     for (let attempts = 0; attempts < Math.min(pool.length, 5); attempts++) {
         const apiKey = getActiveKey();
         try {
-            const res = await fetch("https://api.openai.com/v1/chat/completions", {
+            const res = await fetch("/api/openai/chat/completions", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

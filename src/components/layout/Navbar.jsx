@@ -4,264 +4,539 @@ import { useAuth } from "../../context/AuthProvider";
 import { auth } from "../../config/firebase";
 import { signOut } from "firebase/auth";
 import { notificationService } from "../../services/notificationService";
-import { Bell, Users, MessageCircle, FileText, Heart, X } from "lucide-react";
+import {
+  Bell, Users, MessageCircle, FileText, Heart, X,
+  Menu, ChevronDown, LogOut, LayoutDashboard,
+  BookOpen, Info, DollarSign, Rss, Mail, Compass,
+  Film, Trophy, MessageSquare, Home
+} from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { presenceService } from "../../services/presenceService";
 import { motion, AnimatePresence } from "framer-motion";
-import "./Navbar.css";
+import Avatar from "../common/Avatar";
+
+const NAV_LINKS = [
+  { to: "/home", label: "Home", icon: Home },
+  { to: "/courses", label: "Courses", icon: BookOpen },
+  { to: "/pricing", label: "Pricing", icon: DollarSign },
+  { to: "/blog", label: "Blog", icon: Rss },
+  { to: "/about", label: "About", icon: Info },
+  { to: "/contact", label: "Contact", icon: Mail },
+];
+
+const AUTH_LINKS = [
+  { to: "/discover", label: "Discover", icon: Compass },
+  { to: "/leaderboard", label: "Leaderboard", icon: Trophy },
+  { to: "/chat", label: "Live Comms", icon: MessageSquare },
+];
 
 export default function Navbar() {
-    const { user, isAdmin, isInstructor, siteSettings } = useAuth();
-    const location = useLocation();
-    const navigate = useNavigate();
-    const [menuOpen, setMenuOpen] = useState(false);
-    const [unreadCount, setUnreadCount] = useState(0);
-    const [notifications, setNotifications] = useState([]);
-    const [showNotifications, setShowNotifications] = useState(false);
-    const notifiedIdsRef = useRef(new Set());
+  const { user, role, isAdmin, isInstructor, siteSettings } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const notifRef = useRef(null);
+  const notifiedIdsRef = useRef(new Set());
 
-    useEffect(() => {
-        if (!user) return;
+  // Scroll shadow
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
-        notificationService.requestPermission();
+  // Close mobile menu on route change
+  useEffect(() => { setMenuOpen(false); }, [location.pathname]);
 
-        const unsubscribe = notificationService.subscribeToNotifications(user.uid, (notifs, count) => {
-            setNotifications(notifs);
-            setUnreadCount(count);
-
-            // Trigger Desktop Notification for new unread notifications
-            for (const notif of notifs) {
-                if (!notif.read && !notifiedIdsRef.current.has(notif.id)) {
-                    notifiedIdsRef.current.add(notif.id);
-                    notificationService.showNotification(`GlobixTech Notification`, {
-                        body: notif.message || `New ${notif.type} notification`
-                    });
-                }
-            }
-        });
-
-        return () => unsubscribe();
-    }, [user]);
-
-    const handleNotificationClick = async (notif) => {
-        if (!notif.read) {
-            await notificationService.markAsRead(notif.id);
-        }
+  // Close notifications when clicking outside
+  useEffect(() => {
+    const handler = (e) => {
+      if (notifRef.current && !notifRef.current.contains(e.target)) {
         setShowNotifications(false);
-        if (notif.link) {
-            navigate(notif.link);
-        }
+      }
     };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
-    const getNotificationIcon = (type) => {
-        switch (type) {
-            case 'message': return <MessageCircle size={16} className="text-blue-500" />;
-            case 'follow': return <Users size={16} className="text-purple-500" />;
-            case 'friend_request': return <Users size={16} className="text-green-500" />;
-            case 'blog': return <FileText size={16} className="text-orange-500" />;
-            case 'like': return <Heart size={16} className="text-red-500" />;
-            default: return <Bell size={16} className="text-gray-500" />;
+  // Notifications subscription
+  useEffect(() => {
+    if (!user) return;
+    notificationService.requestPermission();
+    const unsub = notificationService.subscribeToNotifications(user.uid, (notifs, count) => {
+      setNotifications(notifs);
+      setUnreadCount(count);
+      for (const notif of notifs) {
+        if (!notif.read && !notifiedIdsRef.current.has(notif.id)) {
+          notifiedIdsRef.current.add(notif.id);
+          notificationService.showNotification("GlobixTech", {
+            body: notif.message || `New ${notif.type} notification`
+          });
         }
+      }
+    });
+    return () => unsub();
+  }, [user]);
+
+  // Hidden on auth/dashboard pages
+  const hiddenPaths = ["/login", "/register", "/forgot-password", "/chat", "/reels"];
+  if (
+    hiddenPaths.includes(location.pathname) ||
+    location.pathname.startsWith("/dashboard") ||
+    location.pathname.startsWith("/admin") ||
+    location.pathname.startsWith("/instructor")
+  ) return null;
+
+  const handleLogout = async () => {
+    try {
+      if (user) await presenceService.setOffline(user.uid);
+      await signOut(auth);
+      navigate("/login");
+    } catch (e) { console.error(e); }
+  };
+
+  const handleNotifClick = async (notif) => {
+    if (!notif.read) await notificationService.markAsRead(notif.id);
+    setShowNotifications(false);
+    if (notif.link) navigate(notif.link);
+  };
+
+  const getNotifIcon = (type) => {
+    const map = {
+      message: <MessageCircle size={14} style={{ color: '#60a5fa' }} />,
+      follow: <Users size={14} style={{ color: '#a78bfa' }} />,
+      friend_request: <Users size={14} style={{ color: '#34d399' }} />,
+      blog: <FileText size={14} style={{ color: '#fb923c' }} />,
+      like: <Heart size={14} style={{ color: '#f87171' }} />,
     };
+    return map[type] || <Bell size={14} style={{ color: '#94a3b8' }} />;
+  };
 
-    // Hide navbar on auth pages, Chat, Reels, and Dashboards
-    const hiddenPaths = ["/login", "/register", "/forgot-password", "/chat", "/reels"];
-    if (hiddenPaths.includes(location.pathname) || location.pathname.startsWith("/dashboard") || location.pathname.startsWith("/admin") || location.pathname.startsWith("/instructor")) return null;
+  const getDashConfig = () => {
+    if (isAdmin) return { label: "Command Center", path: "/admin", badge: "ADMIN", color: "#f43f5e" };
+    if (isInstructor) return { label: "Instructor Hub", path: "/instructor", badge: "INSTRUCTOR", color: "#818cf8" };
+    if (role === "student") return { label: "Cadet Dashboard", path: "/dashboard", badge: "CADET", color: "#34d399" };
+    return { label: "Dashboard", path: "/dashboard", badge: "OPERATIVE", color: "#60a5fa" };
+  };
 
-    const handleLogout = async () => {
-        try {
-            if (user) await presenceService.setOffline(user.uid);
-            await signOut(auth);
-            navigate("/login");
-        } catch (error) {
-            console.error("Error logging out:", error);
-        }
-    };
+  const dash = getDashConfig();
 
-    const isActive = (path) => location.pathname === path ? "nav-link active" : "nav-link";
+  const isActive = (path) => location.pathname === path;
 
-    return (
-        <nav className="navbar">
-            <div className="navbar-container">
-                <Link to="/home" className="navbar-logo">
-                    <img src="/GlobixTech-logo.png" alt="Globix Tech" />
-                    <h5>{siteSettings?.siteName || "GTE Portal"}</h5>
+  const linkStyle = (path) => ({
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    fontSize: '14px',
+    fontWeight: isActive(path) ? 600 : 500,
+    color: isActive(path) ? '#ffffff' : '#94a3b8',
+    textDecoration: 'none',
+    padding: '6px 2px',
+    position: 'relative',
+    transition: 'color 0.2s',
+    borderBottom: isActive(path) ? '2px solid #3b82f6' : '2px solid transparent',
+  });
+
+  return (
+    <>
+      <nav style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 1000,
+        background: scrolled ? 'rgba(8,12,20,0.97)' : 'rgba(8,12,20,0.85)',
+        backdropFilter: 'blur(20px)',
+        borderBottom: '1px solid rgba(255,255,255,0.06)',
+        transition: 'all 0.3s ease',
+        boxShadow: scrolled ? '0 4px 30px rgba(0,0,0,0.4)' : 'none',
+      }}>
+        <div style={{
+          maxWidth: '1320px',
+          margin: '0 auto',
+          padding: '0 20px',
+          height: '60px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '16px',
+        }}>
+
+          {/* ── Logo ── */}
+          <Link to="/home" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', flexShrink: 0 }}>
+            <img
+              src="/GlobixTech-logo.png"
+              alt="GTE"
+              style={{ height: '32px', width: '32px', borderRadius: '8px', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.15)' }}
+            />
+            <span style={{ fontWeight: 700, fontSize: '16px', color: '#fff', letterSpacing: '-0.3px' }}>
+              {siteSettings?.siteName || "GTE Platform"}
+            </span>
+          </Link>
+
+          {/* ── Desktop Nav Links (center) ── */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 1, justifyContent: 'center' }} className="navbar-desktop-links">
+            {NAV_LINKS.map(({ to, label }) => (
+              <Link key={to} to={to} style={linkStyle(to)}
+                onMouseEnter={e => { if (!isActive(to)) e.currentTarget.style.color = '#fff'; }}
+                onMouseLeave={e => { if (!isActive(to)) e.currentTarget.style.color = '#94a3b8'; }}
+              >
+                <span style={{ padding: '4px 10px', borderRadius: '8px' }}>{label}</span>
+              </Link>
+            ))}
+            {user && AUTH_LINKS.map(({ to, label }) => (
+              <Link key={to} to={to} style={linkStyle(to)}
+                onMouseEnter={e => { if (!isActive(to)) e.currentTarget.style.color = '#fff'; }}
+                onMouseLeave={e => { if (!isActive(to)) e.currentTarget.style.color = '#94a3b8'; }}
+              >
+                <span style={{ padding: '4px 10px', borderRadius: '8px' }}>{label}</span>
+              </Link>
+            ))}
+          </div>
+
+          {/* ── Right: Actions ── */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+            {user ? (
+              <>
+                {/* Dashboard pill */}
+                <Link
+                  to={dash.path}
+                  className="navbar-desktop-links"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                    padding: '5px 12px', borderRadius: '20px',
+                    background: `${dash.color}18`, border: `1px solid ${dash.color}40`,
+                    color: dash.color, fontSize: '12px', fontWeight: 700,
+                    textDecoration: 'none', letterSpacing: '0.03em',
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = `${dash.color}30`; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = `${dash.color}18`; }}
+                >
+                  <LayoutDashboard size={13} /> {dash.badge}
                 </Link>
 
-                <button className="navbar-toggle" onClick={() => setMenuOpen(!menuOpen)}>
-                    {menuOpen ? "✕" : "☰"}
-                </button>
+                {/* Bell notification */}
+                <div ref={notifRef} style={{ position: 'relative' }}>
+                  <button
+                    onClick={() => setShowNotifications(!showNotifications)}
+                    style={{
+                      position: 'relative', background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px',
+                      color: '#94a3b8', cursor: 'pointer', padding: '8px',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      transition: 'all 0.2s',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
+                  >
+                    <Bell size={18} />
+                    {unreadCount > 0 && (
+                      <span style={{
+                        position: 'absolute', top: '-4px', right: '-4px',
+                        background: 'linear-gradient(135deg,#3b82f6,#6366f1)',
+                        color: '#fff', fontSize: '10px', fontWeight: 800,
+                        width: '17px', height: '17px', borderRadius: '50%',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        border: '2px solid #080c14',
+                      }}>
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </span>
+                    )}
+                  </button>
 
-                <div className={`navbar-links ${menuOpen ? "open" : ""}`}>
-                    <Link to="/home" className={isActive("/home")} onClick={() => setMenuOpen(false)}>Home</Link>
-                    
-                    {/* Courses Dropdown */}
-                    <div className="relative group">
-                        <Link to="/courses" className={isActive("/courses")} onClick={() => setMenuOpen(false)}>Courses</Link>
-                        
-                        <div className="absolute left-0 mt-4 w-48 bg-slate-900/95 backdrop-blur-xl rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 overflow-hidden border border-slate-700/50 hidden md:block">
-                            <Link 
-                                to="/courses" 
-                                className="block px-4 py-3 text-sm text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
-                                onClick={() => setMenuOpen(false)}
-                            >
-                                📚 Enroll in Catalog
-                            </Link>
-                            {user && (
-                                <Link 
-                                    to="/dashboard/enrolled" 
-                                    className="block px-4 py-3 text-sm text-amber-400 font-bold hover:bg-slate-800 hover:text-amber-300 border-t border-slate-700/50 transition-colors"
-                                    onClick={() => setMenuOpen(false)}
-                                >
-                                    ▶ Continue with Class
-                                </Link>
-                            )}
+                  <AnimatePresence>
+                    {showNotifications && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8, scale: 0.97 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 8, scale: 0.97 }}
+                        transition={{ duration: 0.18 }}
+                        style={{
+                          position: 'absolute', top: 'calc(100% + 10px)', right: 0,
+                          width: '340px', background: 'rgba(15,20,35,0.98)',
+                          border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px',
+                          boxShadow: '0 20px 60px rgba(0,0,0,0.5)', overflow: 'hidden',
+                          backdropFilter: 'blur(24px)',
+                        }}
+                      >
+                        <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontWeight: 700, fontSize: '13px', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <Bell size={14} style={{ color: '#60a5fa' }} /> Notifications
+                          </span>
+                          {notifications.length > 0 && (
+                            <button onClick={() => notificationService.clearAll(user.uid, notifications)}
+                              style={{ fontSize: '11px', color: '#f87171', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+                              Clear All
+                            </button>
+                          )}
                         </div>
-                        
-                        {/* Mobile view sub-links */}
-                        <div className="md:hidden flex flex-col pl-4 mt-2 border-l-2 border-slate-700 gap-2 mb-2">
-                             <Link to="/courses" className="text-sm text-slate-400 hover:text-white" onClick={() => setMenuOpen(false)}>
-                                Enroll Catalog
-                            </Link>
-                            {user && (
-                                <Link to="/dashboard/enrolled" className="text-sm text-amber-500 font-bold" onClick={() => setMenuOpen(false)}>
-                                    Continue Class
-                                </Link>
-                            )}
-                        </div>
-                    </div>
-
-
-                    <Link to="/pricing" className={isActive("/pricing")} onClick={() => setMenuOpen(false)}>Pricing</Link>
-                    <Link to="/blog" className={isActive("/blog")} onClick={() => setMenuOpen(false)}>Blog</Link>
-                    <Link to="/about" className={isActive("/about")} onClick={() => setMenuOpen(false)}>About</Link>
-                    <Link to="/contact" className={isActive("/contact")} onClick={() => setMenuOpen(false)}>Contact</Link>
-                    {user && (
-                        <>
-                            <Link to="/discover" className={isActive("/discover")} onClick={() => setMenuOpen(false)}>Discover</Link>
-                            <Link to="/reels" className={isActive("/reels")} onClick={() => setMenuOpen(false)}>Reels</Link>
-                            <Link to="/leaderboard" className={isActive("/leaderboard")} onClick={() => setMenuOpen(false)}>Leaderboard</Link>
-                            <Link to="/dashboard" className={isActive("/dashboard")} onClick={() => setMenuOpen(false)}>Dashboard</Link>
-                        </>
-                    )}
-                    {isAdmin && (
-                        <Link to="/admin" className={isActive("/admin")} onClick={() => setMenuOpen(false)}>Admin</Link>
-                    )}
-                    {(isInstructor || isAdmin) && (
-                        <Link to="/instructor" className={isActive("/instructor")} onClick={() => setMenuOpen(false)}>Instructor</Link>
-                    )}
-                </div>
-
-                <div className="navbar-actions">
-                    {user ? (
-                        <div className="user-menu" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', position: 'relative' }}>
-                             <div 
-                                className="relative mr-2 cursor-pointer text-gray-300 hover:text-white transition-colors" 
-                                title="Comms Center"
-                                onClick={() => navigate("/dashboard/inbox")}
-                            >
-                                <Bell size={20} />
-                                {unreadCount > 0 && (
-                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full border border-slate-900 animate-pulse">
-                                        {unreadCount > 9 ? '9+' : unreadCount}
-                                    </span>
-                                )}
+                        <div style={{ maxHeight: '340px', overflowY: 'auto' }}>
+                          {notifications.length === 0 ? (
+                            <div style={{ padding: '32px', textAlign: 'center', color: '#64748b' }}>
+                              <Bell size={28} style={{ margin: '0 auto 8px', opacity: 0.3 }} />
+                              <p style={{ fontSize: '12px', margin: 0 }}>No new notifications</p>
                             </div>
-
-                            {/* WhatsApp Style Notification Dropdown */}
-                            <AnimatePresence>
-                                {showNotifications && (
-                                    <motion.div 
-                                        initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                                        exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                                        className="notification-dropdown absolute top-full right-0 mt-3 w-80 sm:w-96 bg-slate-800 rounded-xl shadow-2xl border border-slate-700 overflow-hidden z-50 shadow-blue-500/10"
-                                    >
-                                        <div className="p-4 border-b border-slate-700 flex items-center justify-between bg-slate-900/50">
-                                            <h3 className="font-bold text-white text-lg flex items-center gap-2">
-                                                <Bell size={18} className="text-blue-400" /> Notifications
-                                            </h3>
-                                            {notifications.length > 0 && (
-                                                <button 
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        notificationService.clearAll(user.uid, notifications);
-                                                    }}
-                                                    className="text-xs text-red-400 hover:text-red-300 transition-colors flex items-center gap-1 font-bold underline underline-offset-4"
-                                                >
-                                                    <X size={14} /> Empty Tray
-                                                </button>
-                                            )}
-                                        </div>
-                                        <div className="max-h-[400px] overflow-y-auto no-scrollbar bg-slate-800/80">
-                                            {notifications.length === 0 ? (
-                                                <div className="p-10 text-center text-slate-400 flex flex-col items-center">
-                                                    <div className="w-16 h-16 rounded-full bg-slate-700/50 flex items-center justify-center mb-4">
-                                                        <Bell size={32} className="opacity-20" />
-                                                    </div>
-                                                    <p className="font-medium">All quiet on the front</p>
-                                                    <span className="text-xs opacity-50">No new intel received.</span>
-                                                </div>
-                                            ) : (
-                                                notifications.map(notif => (
-                                                    <div 
-                                                        key={notif.id} 
-                                                        onClick={() => handleNotificationClick(notif)}
-                                                        className={`p-4 border-b border-slate-700/50 cursor-pointer hover:bg-slate-700/50 transition-all flex gap-3 items-start ${!notif.read ? 'bg-blue-500/5 relative group' : 'opacity-70 hover:opacity-100'}`}
-                                                    >
-                                                        {!notif.read && <div className="absolute left-0 top-2 bottom-2 w-1 bg-blue-500 rounded-r-full"></div>}
-                                                        <div className={`p-2 rounded-lg shrink-0 ${!notif.read ? 'bg-blue-500/20 text-blue-400' : 'bg-slate-900 text-slate-500'}`}>
-                                                            {getNotificationIcon(notif.type)}
-                                                        </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <p className={`text-sm ${!notif.read ? 'text-white font-semibold' : 'text-slate-300'} line-clamp-2`}>
-                                                                {notif.message}
-                                                            </p>
-                                                            <div className="flex items-center gap-2 mt-1">
-                                                                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                                                                    {notif.timestamp ? formatDistanceToNow(notif.timestamp.toDate(), { addSuffix: true }) : 'Just now'}
-                                                                </span>
-                                                                {!notif.read && <span className="w-1 h-1 rounded-full bg-blue-500"></span>}
-                                                            </div>
-                                                        </div>
-                                                        {!notif.read && <div className="w-2 h-2 rounded-full bg-blue-500 mt-2 shrink-0 group-hover:scale-125 transition-transform"></div>}
-                                                    </div>
-                                                ))
-                                            )}
-                                        </div>
-                                        {notifications.length > 0 && (
-                                            <div className="p-3 bg-slate-900/50 border-t border-slate-700 text-center">
-                                                <Link to="/dashboard/inbox" onClick={() => setShowNotifications(false)} className="text-xs text-slate-400 hover:text-white font-bold uppercase tracking-widest transition-colors">
-                                                    View All Intel
-                                                </Link>
-                                            </div>
-                                        )}
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-
-                            <Link to={`/profile/${user.uid}`} className="flex items-center gap-2 group">
-                                <img
-                                    src={user.photoURL && !user.photoURL.includes("njhbnqyamkwlsobqplvm.supabase.co") ? user.photoURL : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.email.split('@')[0])}&background=0D8ABC&color=fff`}
-                                    alt="User Avatar"
-                                    onError={(e) => {
-                                        e.currentTarget.onerror = null;
-                                        e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.email.split('@')[0])}&background=0D8ABC&color=fff`;
-                                    }}
-                                    style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.2)' }}
-                                    className="navbar-avatar group-hover:border-blue-500 transition-all shadow-lg"
-                                />
-                                <span className="user-email hidden sm:block font-bold text-gray-300 group-hover:text-white transition-colors">
-                                    {user.displayName || user.email.split("@")[0]}
+                          ) : notifications.map(n => (
+                            <div key={n.id} onClick={() => handleNotifClick(n)}
+                              style={{
+                                padding: '12px 16px', cursor: 'pointer',
+                                background: !n.read ? 'rgba(59,130,246,0.08)' : 'transparent',
+                                borderBottom: '1px solid rgba(255,255,255,0.04)',
+                                display: 'flex', gap: '10px', alignItems: 'flex-start',
+                                transition: 'background 0.15s',
+                              }}
+                              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
+                              onMouseLeave={e => { e.currentTarget.style.background = !n.read ? 'rgba(59,130,246,0.08)' : 'transparent'; }}
+                            >
+                              <div style={{ padding: '6px', borderRadius: '8px', background: 'rgba(255,255,255,0.07)', flexShrink: 0 }}>
+                                {getNotifIcon(n.type)}
+                              </div>
+                              <div>
+                                <p style={{ margin: 0, fontSize: '12px', color: n.read ? '#94a3b8' : '#e2e8f0', fontWeight: n.read ? 400 : 600 }}>{n.message}</p>
+                                <span style={{ fontSize: '10px', color: '#475569' }}>
+                                  {n.timestamp ? formatDistanceToNow(n.timestamp.toDate(), { addSuffix: true }) : 'Just now'}
                                 </span>
-                            </Link>
-                            <button onClick={handleLogout} className="btn-nav-outline ml-2">Sign Out</button>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                    ) : (
-                        <Link to="/login" className="btn-nav-primary">Sign In</Link>
+                        <div style={{ padding: '10px', borderTop: '1px solid rgba(255,255,255,0.06)', textAlign: 'center' }}>
+                          <Link to="/dashboard/inbox" onClick={() => setShowNotifications(false)}
+                            style={{ fontSize: '12px', color: '#60a5fa', fontWeight: 600, textDecoration: 'none' }}>
+                            View All →
+                          </Link>
+                        </div>
+                      </motion.div>
                     )}
+                  </AnimatePresence>
                 </div>
-            </div>
-        </nav>
-    );
+
+                {/* Avatar */}
+                <Link to={`/profile/${user.uid}`} style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', padding: '4px', borderRadius: '12px' }}>
+                  <Avatar src={user.photoURL} name={user.displayName || user.email} size="small" />
+                  <span className="navbar-desktop-links" style={{ fontSize: '13px', fontWeight: 600, color: '#e2e8f0', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {user.displayName || user.email?.split("@")[0]}
+                  </span>
+                </Link>
+
+                {/* Sign out */}
+                <button
+                  onClick={handleLogout}
+                  className="navbar-desktop-links"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '5px',
+                    background: 'transparent', border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: '8px', color: '#94a3b8', fontSize: '13px',
+                    fontWeight: 500, cursor: 'pointer', padding: '6px 12px',
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.color = '#f87171'; e.currentTarget.style.borderColor = 'rgba(248,113,113,0.4)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
+                >
+                  <LogOut size={14} /> Sign Out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/login" style={{ fontSize: '13px', fontWeight: 600, color: '#94a3b8', textDecoration: 'none', padding: '6px 12px', transition: 'color 0.2s' }}
+                  onMouseEnter={e => { e.currentTarget.style.color = '#fff'; }}
+                  onMouseLeave={e => { e.currentTarget.style.color = '#94a3b8'; }}
+                >
+                  Sign In
+                </Link>
+                <Link to="/register" style={{
+                  fontSize: '13px', fontWeight: 700, color: '#fff', textDecoration: 'none',
+                  padding: '7px 18px', borderRadius: '10px',
+                  background: 'linear-gradient(135deg, #3b82f6, #6366f1)',
+                  boxShadow: '0 2px 12px rgba(59,130,246,0.35)',
+                  transition: 'opacity 0.2s',
+                }}
+                  onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; }}
+                  onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
+                >
+                  Get Started
+                </Link>
+              </>
+            )}
+
+            {/* ── Hamburger ── */}
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="navbar-hamburger"
+              style={{
+                background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: '10px', color: '#fff', cursor: 'pointer',
+                padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'all 0.2s',
+              }}
+            >
+              {menuOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* ── Mobile Drawer ── */}
+      <AnimatePresence>
+        {menuOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMenuOpen(false)}
+              style={{
+                position: 'fixed', inset: 0, zIndex: 998,
+                background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+              }}
+            />
+            {/* Drawer panel */}
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              style={{
+                position: 'fixed', top: 0, right: 0, bottom: 0, zIndex: 999,
+                width: 'min(300px, 85vw)',
+                background: 'rgba(8,12,20,0.98)',
+                backdropFilter: 'blur(24px)',
+                borderLeft: '1px solid rgba(255,255,255,0.08)',
+                display: 'flex', flexDirection: 'column',
+                overflowY: 'auto',
+              }}
+            >
+              {/* Drawer header */}
+              <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Link to="/home" onClick={() => setMenuOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
+                  <img src="/GlobixTech-logo.png" alt="GTE" style={{ height: '28px', width: '28px', borderRadius: '6px', objectFit: 'cover' }} />
+                  <span style={{ fontWeight: 700, fontSize: '15px', color: '#fff' }}>{siteSettings?.siteName || "GTE Platform"}</span>
+                </Link>
+                <button onClick={() => setMenuOpen(false)} style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', cursor: 'pointer', padding: '6px', display: 'flex' }}>
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Nav links */}
+              <div style={{ padding: '12px 16px', flex: 1 }}>
+                <p style={{ fontSize: '10px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 8px 4px' }}>Navigation</p>
+                {NAV_LINKS.map(({ to, label, icon: Icon }) => (
+                  <Link
+                    key={to}
+                    to={to}
+                    onClick={() => setMenuOpen(false)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '10px',
+                      padding: '11px 14px', borderRadius: '10px', textDecoration: 'none',
+                      marginBottom: '2px',
+                      background: isActive(to) ? 'rgba(59,130,246,0.15)' : 'transparent',
+                      color: isActive(to) ? '#60a5fa' : '#94a3b8',
+                      fontWeight: isActive(to) ? 600 : 500,
+                      fontSize: '14px',
+                      transition: 'all 0.15s',
+                      borderLeft: isActive(to) ? '3px solid #3b82f6' : '3px solid transparent',
+                    }}
+                  >
+                    <Icon size={16} /> {label}
+                  </Link>
+                ))}
+
+                {user && (
+                  <>
+                    <p style={{ fontSize: '10px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '16px 0 8px 4px' }}>Community</p>
+                    {AUTH_LINKS.map(({ to, label, icon: Icon }) => (
+                      <Link
+                        key={to}
+                        to={to}
+                        onClick={() => setMenuOpen(false)}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '10px',
+                          padding: '11px 14px', borderRadius: '10px', textDecoration: 'none',
+                          marginBottom: '2px',
+                          background: isActive(to) ? 'rgba(59,130,246,0.15)' : 'transparent',
+                          color: isActive(to) ? '#60a5fa' : '#94a3b8',
+                          fontWeight: isActive(to) ? 600 : 500,
+                          fontSize: '14px',
+                          transition: 'all 0.15s',
+                          borderLeft: isActive(to) ? '3px solid #3b82f6' : '3px solid transparent',
+                        }}
+                      >
+                        <Icon size={16} /> {label}
+                      </Link>
+                    ))}
+
+                    {/* Dashboard link */}
+                    <Link
+                      to={dash.path}
+                      onClick={() => setMenuOpen(false)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '10px',
+                        padding: '11px 14px', borderRadius: '10px', textDecoration: 'none',
+                        marginTop: '8px',
+                        background: `${dash.color}15`,
+                        color: dash.color,
+                        fontWeight: 700, fontSize: '14px',
+                        border: `1px solid ${dash.color}30`,
+                      }}
+                    >
+                      <LayoutDashboard size={16} /> {dash.label}
+                      <span style={{ marginLeft: 'auto', fontSize: '10px', padding: '2px 6px', borderRadius: '4px', background: `${dash.color}20`, border: `1px solid ${dash.color}40` }}>
+                        {dash.badge}
+                      </span>
+                    </Link>
+                  </>
+                )}
+              </div>
+
+              {/* Drawer footer */}
+              <div style={{ padding: '16px 20px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                {user ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Link to={`/profile/${user.uid}`} onClick={() => setMenuOpen(false)} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
+                      <Avatar src={user.photoURL} name={user.displayName || user.email} size="small" />
+                      <div>
+                        <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: '#e2e8f0' }}>{user.displayName || user.email?.split("@")[0]}</p>
+                        <p style={{ margin: 0, fontSize: '11px', color: '#64748b' }}>{user.email}</p>
+                      </div>
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)', borderRadius: '8px', color: '#f87171', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center' }}
+                    >
+                      <LogOut size={16} />
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <Link to="/login" onClick={() => setMenuOpen(false)} style={{ textAlign: 'center', padding: '10px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', color: '#e2e8f0', fontWeight: 600, fontSize: '14px', textDecoration: 'none' }}>
+                      Sign In
+                    </Link>
+                    <Link to="/register" onClick={() => setMenuOpen(false)} style={{ textAlign: 'center', padding: '10px', borderRadius: '10px', background: 'linear-gradient(135deg,#3b82f6,#6366f1)', color: '#fff', fontWeight: 700, fontSize: '14px', textDecoration: 'none' }}>
+                      Get Started
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Global Navbar CSS */}
+      <style>{`
+        .navbar-desktop-links { display: flex !important; }
+        .navbar-hamburger { display: none !important; }
+        @media (max-width: 900px) {
+          .navbar-desktop-links { display: none !important; }
+          .navbar-hamburger { display: flex !important; }
+        }
+      `}</style>
+    </>
+  );
 }

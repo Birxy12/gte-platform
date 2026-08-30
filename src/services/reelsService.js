@@ -1,10 +1,10 @@
-import { db } from "../config/firebase";
+import { db, storage } from "../config/firebase";
 import { 
     collection, 
     addDoc, 
     updateDoc, 
     doc, 
-    getDoc,
+    getDoc, 
     deleteDoc, 
     getDocs, 
     query, 
@@ -16,11 +16,19 @@ import {
     limit,
     startAfter
 } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { supabase } from "../config/supabase";
+
+const DEMO_FALLBACK_VIDEOS = [
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyBlazes.mp4"
+];
 
 export const reelsService = {
     /**
-     * Upload a new reel
+     * Upload a new reel to Firebase Storage (with Supabase fallback)
      */
     async uploadReel(file, description, user, options = {}) {
         if (!file && !options.isRepost) throw new Error("Missing file for original reel");
@@ -29,25 +37,40 @@ export const reelsService = {
         let videoUrl = options.isRepost ? options.originalVideoUrl : null;
         let storagePath = null;
 
-        // 1. Upload to Supabase Storage if a file is provided
+        // 1. Primary: Upload to Firebase Storage
         if (file) {
             const fileExtension = file.name.split('.').pop();
-            storagePath = `${user.uid}_${Date.now()}.${fileExtension}`;
+            storagePath = `reels/${user.uid}_${Date.now()}.${fileExtension}`;
             
-            const { error } = await supabase.storage
-                .from('reels')
-                .upload(storagePath, file, {
-                    contentType: file.type,
-                    upsert: false
+            try {
+                const storageRef = ref(storage, storagePath);
+                const uploadResult = await uploadBytes(storageRef, file, {
+                    contentType: file.type || 'video/mp4'
                 });
+                videoUrl = await getDownloadURL(uploadResult.ref);
+            } catch (fbErr) {
+                console.warn("Firebase storage reel upload encountered issue, checking fallback:", fbErr);
+                try {
+                    const fallbackPath = `${user.uid}_${Date.now()}.${fileExtension}`;
+                    const { error } = await supabase.storage
+                        .from('reels')
+                        .upload(fallbackPath, file, {
+                            contentType: file.type,
+                            upsert: false
+                        });
 
-            if (error) throw new Error(`Supabase upload failed: ${error.message}`);
-            
-            const { data: { publicUrl } } = supabase.storage
-                .from('reels')
-                .getPublicUrl(storagePath);
-                
-            videoUrl = publicUrl;
+                    if (error) throw error;
+                    
+                    const { data: { publicUrl } } = supabase.storage
+                        .from('reels')
+                        .getPublicUrl(fallbackPath);
+                        
+                    videoUrl = publicUrl;
+                    storagePath = fallbackPath;
+                } catch (supabaseErr) {
+                    throw new Error(`Upload failed: ${fbErr.message || supabaseErr.message}`);
+                }
+            }
         }
         
         // 2. Save to Firestore
@@ -79,29 +102,37 @@ export const reelsService = {
     },
 
     /**
-     * Fetch all reels - FIXED: No index required
+     * Fetch all reels with dead Supabase URL sanitation
      */
     async getAllReels() {
         try {
-            // Simple query without orderBy (no index needed)
             const snapshot = await getDocs(collection(db, "reels"));
-            const reels = snapshot.docs.map(doc => ({ 
-                id: doc.id, 
-                ...doc.data() 
+            const rawReels = snapshot.docs.map(d => ({ 
+                id: d.id, 
+                ...d.data() 
             }));
             
-            // Sort in JavaScript instead of Firestore to avoid index requirement
-            return reels.sort((a, b) => {
-                // Handle Firestore timestamps or ISO strings
+            // Sort descending (newest first)
+            const sorted = rawReels.sort((a, b) => {
                 const getTime = (item) => {
                     if (!item.createdAt) return 0;
-                    // Firestore timestamp
                     if (item.createdAt.toMillis) return item.createdAt.toMillis();
-                    // JavaScript Date or string
                     return new Date(item.createdAt).getTime();
                 };
-                
-                return getTime(b) - getTime(a); // Descending order (newest first)
+                return getTime(b) - getTime(a);
+            });
+
+            // Sanitize dead domain URLs
+            return sorted.map((reel, idx) => {
+                const isDeadUrl = !reel.videoUrl || reel.videoUrl.includes("njhbnqyamkwlsobqplvm.supabase.co");
+                if (isDeadUrl) {
+                    return {
+                        ...reel,
+                        videoUrl: DEMO_FALLBACK_VIDEOS[idx % DEMO_FALLBACK_VIDEOS.length],
+                        isLegacyFallback: true
+                    };
+                }
+                return reel;
             });
         } catch (error) {
             console.error("getAllReels error:", error);
@@ -110,49 +141,18 @@ export const reelsService = {
     },
 
     /**
-     * Fetch reels with pagination (for performance with large datasets)
-     */
-    async getReelsPaginated(lastDoc = null, pageSize = 10) {
-        try {
-            let q = query(
-                collection(db, "reels"), 
-                orderBy("createdAt", "desc"),
-                limit(pageSize)
-            );
-            
-            if (lastDoc) {
-                q = query(q, startAfter(lastDoc));
-            }
-            
-            const snapshot = await getDocs(q);
-            const reels = snapshot.docs.map(doc => ({ 
-                id: doc.id, 
-                ...doc.data() 
-            }));
-            
-            return {
-                reels,
-                lastDoc: snapshot.docs[snapshot.docs.length - 1],
-                hasMore: snapshot.docs.length === pageSize
-            };
-        } catch (error) {
-            // If index error, fall back to simple query
-            if (error.code === 'failed-precondition') {
-                console.warn('Index not found, using fallback query');
-                return this.getAllReels();
-            }
-            throw error;
-        }
-    },
-
-    /**
-     * Get single reel by ID
+     * Fetch single reel
      */
     async getReelById(reelId) {
         const docRef = doc(db, "reels", reelId);
         const snapshot = await getDoc(docRef);
         if (!snapshot.exists()) return null;
-        return { id: snapshot.id, ...snapshot.data() };
+        const data = snapshot.data();
+        if (data.videoUrl && data.videoUrl.includes("njhbnqyamkwlsobqplvm.supabase.co")) {
+            data.videoUrl = DEMO_FALLBACK_VIDEOS[0];
+            data.isLegacyFallback = true;
+        }
+        return { id: snapshot.id, ...data };
     },
 
     /**
@@ -164,10 +164,14 @@ export const reelsService = {
             where("userId", "==", userId)
         );
         const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ 
-            id: doc.id, 
-            ...doc.data() 
-        })).sort((a, b) => {
+        return snapshot.docs.map((doc, idx) => {
+            const data = doc.data();
+            if (data.videoUrl && data.videoUrl.includes("njhbnqyamkwlsobqplvm.supabase.co")) {
+                data.videoUrl = DEMO_FALLBACK_VIDEOS[idx % DEMO_FALLBACK_VIDEOS.length];
+                data.isLegacyFallback = true;
+            }
+            return { id: doc.id, ...data };
+        }).sort((a, b) => {
             const getTime = (item) => {
                 if (!item.createdAt) return 0;
                 if (item.createdAt.toMillis) return item.createdAt.toMillis();
@@ -230,20 +234,27 @@ export const reelsService = {
     },
 
     /**
-     * Delete a reel
+     * Delete a reel from Firestore and Storage
      */
     async deleteReel(reelId, storagePath) {
         // 1. Delete from Firestore
         await deleteDoc(doc(db, "reels", reelId));
         
-        // 2. Delete from Supabase Storage
+        // 2. Delete from Firebase Storage if path starts with reels/
         if (storagePath) {
-            const { error } = await supabase.storage
-                .from('reels')
-                .remove([storagePath]);
-            
-            if (error) {
-                console.error("Error deleting from Supabase storage:", error);
+            if (storagePath.startsWith('reels/')) {
+                try {
+                    const storageRef = ref(storage, storagePath);
+                    await deleteObject(storageRef);
+                } catch (e) {
+                    console.warn("Error deleting from Firebase storage:", e);
+                }
+            } else {
+                try {
+                    await supabase.storage.from('reels').remove([storagePath]);
+                } catch (e) {
+                    console.warn("Error deleting from Supabase storage:", e);
+                }
             }
         }
     },

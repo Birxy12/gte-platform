@@ -31,6 +31,7 @@ import { enrollmentService } from '../../services/enrollmentService';
 import { useAuth } from '../../context/AuthProvider';
 import { db } from '../../config/firebase';
 import { updateDoc, doc, increment } from 'firebase/firestore';
+import { getValidVideoUrl } from '../../utils/helpers';
 import '../../styles/reels.css';
 
 // Constants
@@ -97,17 +98,21 @@ const Reel = memo(function Reel({ data, isActive, onDeleted }) {
     const handlePlayback = async () => {
       try {
         if (isActive && unlocked) {
-          if (!data.videoUrl) {
-              throw new Error("Mission Intel corrupted: No video source found.");
-          }
+          const videoSrc = getValidVideoUrl(data.videoUrl);
+          if (!videoSrc) return;
+
           setIsLoading(true);
-          // Always mute before autoplay — browser policy requires user gesture for unmuted play
           video.muted = true;
           setIsMuted(true);
-          await video.play();
-          if (isMounted) {
-            setIsPlaying(true);
-            setIsLoading(false);
+
+          const playPromise = video.play();
+          if (playPromise !== undefined) {
+            await playPromise;
+            if (isMounted) {
+              setIsPlaying(true);
+              setIsLoading(false);
+              setError(null);
+            }
           }
         } else {
           video.pause();
@@ -118,12 +123,14 @@ const Reel = memo(function Reel({ data, isActive, onDeleted }) {
         }
       } catch (err) {
         if (isMounted) {
-          console.error('Playback error:', err);
           if (err.name === 'NotAllowedError') {
-            // Autoplay blocked — show tap-to-play prompt, video will play on first user tap
             setError('Tap to play');
+          } else if (err.name === 'AbortError') {
+            // Normal interruption during scroll
+          } else if (err.name === 'NotSupportedError') {
+            setError('Video unavailable (Offline)');
           } else {
-            setError('Failed to load video');
+            setError('Video unavailable');
           }
           setIsLoading(false);
         }
@@ -143,8 +150,8 @@ const Reel = memo(function Reel({ data, isActive, onDeleted }) {
     if (!video) return;
 
     const handleWaiting = () => setIsLoading(true);
-    const handleCanPlay = () => setIsLoading(false);
-    const handleError = () => setError('Failed to load video');
+    const handleCanPlay = () => { setIsLoading(false); setError(null); };
+    const handleError = () => { setIsLoading(false); setError('Tap to play'); };
 
     video.addEventListener('waiting', handleWaiting);
     video.addEventListener('canplay', handleCanPlay);
@@ -319,7 +326,7 @@ const Reel = memo(function Reel({ data, isActive, onDeleted }) {
       {unlocked ? (
         <video
           ref={videoRef}
-          src={data.videoUrl}
+          src={getValidVideoUrl(data.videoUrl)}
           className="reel-video"
           loop
           playsInline

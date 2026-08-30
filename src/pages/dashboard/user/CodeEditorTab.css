@@ -1,0 +1,158 @@
+.editor-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 100px);
+  min-height: 600px;
+  gap: 0;
+  padding: 1.5rem;
+  padding-bottom: 0;
+  background-color: var(--color-surface);
+  border-radius: 1rem;
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+.editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.editor-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text-main);
+  margin: 0 0 0.25rem 0;
+}
+
+.editor-subtitle {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.editor-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.editor-lang-select {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-background);
+  color: var(--color-text-main);
+  font-size: 0.875rem;
+  font-weight: 500;
+  outline: none;
+  cursor: pointer;
+}
+
+.editor-lang-select:focus {
+  border-color: var(--color-primary);
+}
+
+.editor-btn-secondary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  background-color: transparent;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.editor-btn-secondary:hover {
+  background-color: var(--color-surface-hover);
+  color: var(--color-text-main);
+}
+
+.editor-btn-primary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: 0.5rem;
+  background: linear-gradient(to right, var(--color-primary), var(--color-secondary));
+  color: white;
+  border: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.editor-btn-primary:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.editor-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.editor-workspace {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding-bottom: 1rem;
+}
+
+.editor-pane, .console-pane {
+  display: flex;
+  flex-direction: column;
+  background-color: #1e1e1e; /* VS Code dark bg */
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+.pane-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background-color: #2d2d2d;
+  border-bottom: 1px solid #404040;
+}
+
+.pane-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #d4d4d4;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.console-output {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.console-line {
+  margin-bottom: 0.25rem;
+  word-break: break-all;
+}
+
+.console-chevron {
+  color: #569cd6; /* Blueish chevron */
+  margin-right: 0.5rem;
+  user-select: none;
+}
